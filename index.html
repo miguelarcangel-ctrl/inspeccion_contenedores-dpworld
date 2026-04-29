@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inspección de Contenedores — DP World</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+
+  :root {
+    --navy: #1A1060;
+    --navy-deep: #110b45;
+    --green: #00C389;
+    --green-dim: #00a372;
+    --white: #ffffff;
+    --gray-100: #f4f5f8;
+    --gray-200: #e8eaf0;
+    --gray-400: #9ca3b0;
+    --gray-600: #5a6075;
+    --gray-800: #2d3148;
+    --red: #e53935;
+    --red-light: #fdecea;
+    --amber: #f59e0b;
+    --amber-light: #fffbeb;
+    --green-light: #e8faf4;
+    --shadow: 0 2px 12px rgba(26,16,96,0.10);
+    --shadow-lg: 0 8px 32px rgba(26,16,96,0.15);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: var(--navy);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-logo {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-logo svg { width: 100%; height: 100%; }
+  .header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+  .header-sub {
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-header {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-header:hover { background: rgba(255,255,255,0.22); }
+  .btn-header.green { background: var(--green); border-color: var(--green); color: var(--navy); }
+  .btn-header.green:hover { background: var(--green-dim); }
+
+  /* ── VIEWS ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── HOME ── */
+  .home-hero {
+    background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, #1e1580 100%);
+    padding: 36px 20px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(0,195,137,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-label {
+    font-size: 10px;
+    color: var(--green);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .hero-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: white;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .hero-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--green);
+    line-height: 1;
+  }
+  .hero-stat-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .home-actions {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .btn-main {
+    background: var(--green);
+    color: var(--navy);
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(0,195,137,0.3);
+  }
+  .btn-main:hover { background: var(--green-dim); transform: translateY(-1px); }
+  .btn-main svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  .btn-secondary {
+    background: white;
+    color: var(--navy);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--navy); background: var(--gray-100); }
+  .btn-secondary svg { width: 20px; height: 20px; }
+
+  /* ── HISTORIAL ── */
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    padding: 0 20px 10px;
+    margin-top: 4px;
+  }
+  .inspection-list {
+    padding: 0 20px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .inspection-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1.5px solid transparent;
+  }
+  .inspection-card:hover { border-color: var(--navy); box-shadow: var(--shadow-lg); }
+  .card-icon {
+    width: 42px; height: 42px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .card-icon.despacho { background: #e8eeff; color: var(--navy); }
+  .card-icon.exportacion { background: var(--green-light); color: var(--green-dim); }
+  .card-icon svg { width: 20px; height: 20px; }
+  .card-body { flex: 1; min-width: 0; }
+  .card-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-meta {
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-top: 2px;
+  }
+  .card-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .badge-ok { background: var(--green-light); color: var(--green-dim); }
+  .badge-fail { background: var(--red-light); color: var(--red); }
+  .badge-partial { background: var(--amber-light); color: var(--amber); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray-400);
+  }
+  .empty-state svg { width: 56px; height: 56px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── FORM ── */
+  .form-header {
+    background: var(--navy);
+    padding: 16px 20px 14px;
+  }
+  .form-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .btn-back {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-back svg { width: 18px; height: 18px; }
+  .form-header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+  }
+  .form-header-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .form-progress {
+    height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .form-progress-bar {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .form-body {
+    padding: 16px 20px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* INFO FIELDS */
+  .info-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .info-section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .info-grid.full { grid-template-columns: 1fr; }
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .field-input {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    color: var(--gray-800);
+    background: var(--gray-100);
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: var(--navy);
+    background: white;
+  }
+  select.field-input { cursor: pointer; }
+
+  .tipo-selector {
+    display: flex;
+    gap: 8px;
+  }
+  .tipo-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--gray-200);
+    background: var(--gray-100);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .tipo-btn.active {
+    border-color: var(--navy);
+    background: #eeedf8;
+    color: var(--navy);
+  }
+
+  /* CHECKLIST SECTION */
+  .checklist-section {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .checklist-section-header {
+    background: var(--navy);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .checklist-section-num {
+    background: var(--green);
+    color: var(--navy);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .checklist-section-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .checklist-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .checklist-item:last-child { border-bottom: none; }
+  .item-question {
+    flex: 1;
+    font-size: 13px;
+    color: var(--gray-800);
+    line-height: 1.4;
+    padding-top: 2px;
+  }
+  .item-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-400);
+    width: 28px;
+    flex-shrink: 0;
+    padding-top: 3px;
+  }
+  .item-controls {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .answer-btn {
+    width: 38px; height: 34px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--gray-200);
+    background: var(--gray-100);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--gray-400);
+  }
+  .answer-btn.si.active {
+    background: var(--green-light);
+    border-color: var(--green);
+    color: var(--green-dim);
+  }
+  .answer-btn.no.active {
+    background: var(--red-light);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* FOTOS */
+  .fotos-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .fotos-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .fotos-sub {
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+  }
+  .fotos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .foto-thumb {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+    background: var(--gray-100);
+    border: 1.5px solid var(--gray-200);
+  }
+  .foto-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .foto-del {
+    position: absolute;
+    top: 4px; right: 4px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .foto-add-btn {
+    border: 1.5px dashed var(--gray-300);
+    border-radius: var(--radius-sm);
+    background: var(--gray-100);
+    color: var(--gray-400);
+    padding: 10px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  .foto-add-btn:hover { border-color: var(--navy); color: var(--navy); }
+  .foto-add-btn svg { width: 16px; height: 16px; }
+  #fotoInput { display: none; }
+
+  /* COMENTARIOS */
+  .comentarios-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  textarea.field-input {
+    resize: none;
+    min-height: 80px;
+    font-size: 14px;
+  }
+
+  /* BOTTOM ACTIONS */
+  .form-bottom {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    padding: 12px 20px;
+    box-shadow: 0 -4px 20px rgba(26,16,96,0.12);
+    display: flex;
+    gap: 10px;
+    z-index: 50;
+  }
+  .btn-save {
+    flex: 1;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-save:hover { background: var(--navy-deep); }
+  .btn-pdf {
+    flex: 1;
+    background: var(--green);
+    color: var(--navy);
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-pdf:hover { background: var(--green-dim); }
+
+  /* HISTORIAL VIEW */
+  .hist-header {
+    background: var(--navy);
+    padding: 16px 20px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hist-header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+  }
+  .hist-search {
+    padding: 12px 20px 8px;
+  }
+  .search-input {
+    width: 100%;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    background: white;
+  }
+  .search-input:focus { outline: none; border-color: var(--navy); }
+
+  /* DETAIL VIEW */
+  .detail-header {
+    background: var(--navy);
+    padding: 16px 20px;
+  }
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 20px;
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .btn-action {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn-action.edit { border-color: var(--navy); color: var(--navy); background: white; }
+  .btn-action.edit:hover { background: var(--gray-100); }
+  .btn-action.pdf { border-color: var(--green); color: var(--navy); background: var(--green); }
+  .btn-action.pdf:hover { background: var(--green-dim); }
+  .btn-action.share { border-color: #0088cc; color: #0088cc; background: white; }
+  .btn-action.share:hover { background: #e8f4fb; }
+  .btn-action.del { border-color: var(--red); color: var(--red); background: white; }
+  .btn-action.del:hover { background: var(--red-light); }
+
+  .detail-body {
+    padding: 16px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .detail-info-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .detail-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .detail-field { display: flex; flex-direction: column; gap: 2px; }
+  .detail-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .detail-field-value {
+    font-size: 15px;
+    color: var(--gray-800);
+    font-weight: 500;
+  }
+  .detail-checklist {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .detail-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .detail-item:last-child { border-bottom: none; }
+  .detail-answer {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    min-width: 30px;
+    text-align: center;
+  }
+  .ans-si { background: var(--green-light); color: var(--green-dim); }
+  .ans-no { background: var(--red-light); color: var(--red); }
+  .ans-nd { background: var(--gray-200); color: var(--gray-400); }
+
+  .detail-fotos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .detail-foto {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1.5px solid var(--gray-200);
+  }
+  .detail-foto img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gray-800);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.green { background: var(--green); color: var(--navy); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 150;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-box {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .modal-msg { font-size: 14px; color: var(--gray-600); margin-bottom: 20px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal-btn.cancel { background: var(--gray-200); color: var(--gray-600); }
+  .modal-btn.confirm { background: var(--red); color: white; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL CONFIRM -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">Confirmar</div>
+    <div class="modal-msg" id="modalMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-btn confirm" id="modalConfirm">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VIEW: HOME
+════════════════════════════════════════════ -->
+<div class="view active" id="view-home">
+  <div class="app-header">
+    <div class="header-brand">
+      <div class="header-logo">
+        <svg viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="8" fill="rgba(255,255,255,0.1)"/>
+          <path d="M20 8C13.37 8 8 13.37 8 20s5.37 12 12 12 12-5.37 12-12S26.63 8 20 8zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10S10 25.52 10 20 14.48 10 20 10z" fill="#00C389"/>
+          <rect x="14" y="18" width="12" height="2.5" rx="1.25" fill="white"/>
+          <rect x="14" y="22" width="8" height="2" rx="1" fill="rgba(255,255,255,0.5)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">DP WORLD</div>
+        <div class="header-sub">Inspección de Contenedores</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-hero">
+    <div class="hero-label">SL-02-007 · DAL Colón</div>
+    <div class="hero-title">FORMULARIO<br>DE INSPECCIÓN</div>
+    <div class="hero-sub">Guía de 7 puntos — Despacho y Exportación</div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="stat-total">0</div>
+        <div class="hero-stat-label">Total</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="stat-ok">0</div>
+        <div class="hero-stat-label">Aptos</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="stat-fail">0</div>
+        <div class="hero-stat-label">No aptos</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-actions">
+    <button class="btn-main" onclick="startNewInspection()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva Inspección
+    </button>
+    <button class="btn-secondary" onclick="goTo('view-historial')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Ver Historial
+    </button>
+  </div>
+
+  <div class="section-title">RECIENTES</div>
+  <div class="inspection-list" id="home-recent-list">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      <p>No hay inspecciones registradas</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VIEW: FORM
+════════════════════════════════════════════ -->
+<div class="view" id="view-form">
+  <div class="form-header">
+    <div class="form-header-top">
+      <button class="btn-back" onclick="confirmBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <div class="form-header-title" id="form-title">Nueva Inspección</div>
+        <div class="form-header-sub">SL-02-007 · R004</div>
+      </div>
+    </div>
+    <div class="form-progress">
+      <div class="form-progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="progress-label">
+      <span id="progress-text">0 de 17 puntos</span>
+      <span id="progress-pct">0%</span>
+    </div>
+  </div>
+
+  <div class="form-body">
+    <!-- INFORMACIÓN GENERAL -->
+    <div class="info-section">
+      <div class="info-section-title">Información General</div>
+      <div class="info-grid">
+        <div class="field-group">
+          <div class="field-label">N° Contenedor</div>
+          <input type="text" class="field-input" id="f-contenedor" placeholder="ABCD1234567" oninput="this.value=this.value.toUpperCase()" onchange="updateFormTitle()">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Tipo Contenedor</div>
+          <select class="field-input" id="f-tipo-cont">
+            <option value="">Seleccionar</option>
+            <option value="20FT">20FT</option>
+            <option value="40FT">40FT</option>
+            <option value="45FT">45FT</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Fecha</div>
+          <input type="date" class="field-input" id="f-fecha">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Hora</div>
+          <input type="time" class="field-input" id="f-hora">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Nave</div>
+          <input type="text" class="field-input" id="f-nave" placeholder="Nombre nave">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Puerta</div>
+          <input type="text" class="field-input" id="f-puerta" placeholder="N° puerta">
+        </div>
+      </div>
+      <div class="info-grid full" style="margin-top:10px;">
+        <div class="field-group">
+          <div class="field-label">Cliente</div>
+          <input type="text" class="field-input" id="f-cliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <div class="field-label">Inspeccionado por</div>
+          <input type="text" class="field-input" id="f-inspector" placeholder="Nombre del verificador">
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <div class="field-label">Tipo de Operación</div>
+          <div class="tipo-selector">
+            <button class="tipo-btn active" id="tipo-despacho" onclick="setTipo('Despacho')">📦 DESPACHO</button>
+            <button class="tipo-btn" id="tipo-exportacion" onclick="setTipo('Exportación')">🚢 EXPORTACIÓN</button>
+          </div>
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <div class="field-label">Medidas del Láser</div>
+          <input type="text" class="field-input" id="f-laser" placeholder="XX.XX FT">
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST SECTIONS -->
+    <div id="checklist-container"></div>
+
+    <!-- FOTOS -->
+    <div class="fotos-section">
+      <div class="fotos-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Registro Fotográfico
+      </div>
+      <div class="fotos-sub">Opcional · Se incluirán en el PDF</div>
+      <div class="fotos-grid" id="fotos-grid"></div>
+      <button class="foto-add-btn" onclick="document.getElementById('fotoInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Agregar fotos (cámara o galería)
+      </button>
+      <input type="file" id="fotoInput" accept="image/*" multiple capture="environment" onchange="addFotos(event)">
+    </div>
+
+    <!-- COMENTARIOS -->
+    <div class="comentarios-section">
+      <div class="field-group">
+        <div class="field-label">Comentarios</div>
+        <textarea class="field-input" id="f-comentarios" placeholder="Observaciones adicionales, hallazgos, novedades..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-bottom">
+    <button class="btn-save" onclick="saveInspection()">💾 GUARDAR</button>
+    <button class="btn-pdf" onclick="saveAndDownloadPDF()">📄 GUARDAR Y PDF</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VIEW: HISTORIAL
+════════════════════════════════════════════ -->
+<div class="view" id="view-historial">
+  <div class="hist-header">
+    <button class="btn-back" onclick="goTo('view-home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="hist-header-title">Historial de Inspecciones</div>
+  </div>
+  <div class="hist-search">
+    <input type="text" class="search-input" placeholder="Buscar por N° contenedor, cliente..." oninput="filterHistorial(this.value)">
+  </div>
+  <div class="inspection-list" id="historial-list"></div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     VIEW: DETAIL
+════════════════════════════════════════════ -->
+<div class="view" id="view-detail">
+  <div class="detail-header">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <button class="btn-back" onclick="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div>
+        <div class="form-header-title" id="detail-num" style="color:white;font-size:22px;"></div>
+        <div class="form-header-sub" id="detail-meta"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div id="detail-badge-result"></div>
+    </div>
+  </div>
+  <div class="detail-actions">
+    <button class="btn-action edit" onclick="editInspection()">✏️ Editar</button>
+    <button class="btn-action pdf" onclick="downloadDetailPDF()">📄 PDF</button>
+    <button class="btn-action share" onclick="shareDetailPDF()">📤 Compartir</button>
+    <button class="btn-action del" onclick="confirmDelete()">🗑 Eliminar</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA: CHECKLIST STRUCTURE
+// ══════════════════════════════════════════════
+const CHECKLIST = [
+  { id: 1, name: "EXTERIOR Y BASTIDOR", items: [
+    { id: "1.1", q: "¿Son visibles los soportes superiores externos de suspensión del contenedor?" },
+    { id: "1.2", q: "¿Es el número interno del contenedor igual al externo?" },
+    { id: "1.3", q: "¿Están las vigas del bastidor visibles y en forma de corchete izquierdo ([)?" },
+  ]},
+  { id: 2, name: "PUERTAS — EXTERIOR E INTERIOR", items: [
+    { id: "2.1", q: "¿Tienen las puertas en las partes interna, superior e inferior, los espacios abiertos?" },
+    { id: "2.2", q: "¿Todos los cerrojos tienen las mismas condiciones físicas?" },
+    { id: "2.3", q: "¿Se encuentran los mecanismos de cierre del contenedor (bisagras, manijas, guía o barra de cierre, cierre de manijas, cerrojos) sin muestras de alteración?" },
+  ]},
+  { id: 3, name: "TECHO Y CUBIERTA", items: [
+    { id: "3.1", q: "¿Sobresalen los bloques esquineros del techo?" },
+  ]},
+  { id: 4, name: "LADOS — IZQUIERDO Y DERECHO", items: [
+    { id: "4.1", q: "¿Son metálicas las paredes del contenedor?" },
+  ]},
+  { id: 5, name: "PARED FRONTAL", items: [
+    { id: "5.1", q: "¿Las rejillas de ventilación y bloques están visibles?" },
+    { id: "5.2", q: "¿Tienen las rejillas de ventilación y bloques la misma distancia, fuera y dentro del contenedor?" },
+  ]},
+  { id: 6, name: "PISO E INTERIOR", items: [
+    { id: "6.1", q: "¿Está el piso al nivel del marco de las puertas?" },
+    { id: "6.2", q: "¿En términos generales está el piso del contenedor nivelado?" },
+    { id: "6.3", q: "¿Son visibles las proyecciones interiores de los bloques elevadores?" },
+    { id: "6.4", q: "¿Son visibles los bloques esquineros?" },
+    { id: "6.5", q: "¿Están las paredes y piso del contenedor mojados? (NEGATIVO = APTO)" },
+  ]},
+  { id: 7, name: "ESTRUCTURA COMPLETA", items: [
+    { id: "7.1", q: "¿Tiene el contenedor señales de pintura fresca? (NEGATIVO = APTO)" },
+    { id: "7.2", q: "¿Tiene el contenedor señales de quemadura o soldadura en todos o alguno de sus lados? (NEGATIVO = APTO)" },
+    { id: "7.3", q: "¿La estructura de todos los lados del contenedor es uniforme?" },
+    { id: "7.4", q: "¿Las condiciones de pintura y textura son uniformes en todos los lados internos y externos del contenedor?" },
+    { id: "7.5", q: "¿Se produce un sonido metálico de vacío al aplicar golpes con una herramienta?" },
+  ]},
+];
+
+// Items where NO = APTO (negativas)
+const NEGATIVAS = ["6.5", "7.1", "7.2"];
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let currentView = 'view-home';
+let previousView = 'view-home';
+let currentInspection = null; // editing
+let currentDetailId = null;
+let fotos = []; // base64 strings
+let operacionTipo = 'Despacho';
+
+// ══════════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════════
+function getInspections() {
+  try { return JSON.parse(localStorage.getItem('dpw_inspections') || '[]'); }
+  catch(e) { return []; }
+}
+function saveInspections(arr) {
+  localStorage.setItem('dpw_inspections', JSON.stringify(arr));
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+function goTo(viewId) {
+  previousView = currentView;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  currentView = viewId;
+  window.scrollTo(0,0);
+
+  if (viewId === 'view-home') renderHomeStats();
+  if (viewId === 'view-historial') renderHistorial();
+}
+
+function goBack() {
+  goTo(previousView === currentView ? 'view-home' : previousView);
+}
+
+// ══════════════════════════════════════════════
+// FORM INIT
+// ══════════════════════════════════════════════
+function buildChecklist() {
+  const container = document.getElementById('checklist-container');
+  container.innerHTML = '';
+  CHECKLIST.forEach(section => {
+    const sec = document.createElement('div');
+    sec.className = 'checklist-section';
+    sec.innerHTML = `
+      <div class="checklist-section-header">
+        <div class="checklist-section-num">${section.id}</div>
+        <div class="checklist-section-name">${section.name}</div>
+      </div>
+      ${section.items.map(item => `
+        <div class="checklist-item">
+          <div class="item-num">${item.id}</div>
+          <div class="item-question">${item.q}</div>
+          <div class="item-controls">
+            <button class="answer-btn si" data-id="${item.id}" data-val="SI" onclick="setAnswer('${item.id}','SI')">SÍ</button>
+            <button class="answer-btn no" data-id="${item.id}" data-val="NO" onclick="setAnswer('${item.id}','NO')">NO</button>
+          </div>
+        </div>
+      `).join('')}
+    `;
+    container.appendChild(sec);
+  });
+}
+
+function setAnswer(itemId, val) {
+  document.querySelectorAll(`[data-id="${itemId}"]`).forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.val === val) btn.classList.add('active');
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const allIds = CHECKLIST.flatMap(s => s.items.map(i => i.id));
+  const answered = allIds.filter(id => {
+    return document.querySelector(`[data-id="${id}"].active`) !== null;
+  });
+  const pct = Math.round((answered.length / allIds.length) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${answered.length} de ${allIds.length} puntos`;
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+function setTipo(tipo) {
+  operacionTipo = tipo;
+  document.getElementById('tipo-despacho').classList.toggle('active', tipo === 'Despacho');
+  document.getElementById('tipo-exportacion').classList.toggle('active', tipo === 'Exportación');
+}
+
+function updateFormTitle() {
+  const num = document.getElementById('f-contenedor').value;
+  document.getElementById('form-title').textContent = num || 'Nueva Inspección';
+}
+
+function startNewInspection() {
+  currentInspection = null;
+  fotos = [];
+  operacionTipo = 'Despacho';
+  buildChecklist();
+
+  // defaults
+  const now = new Date();
+  document.getElementById('f-fecha').value = now.toISOString().split('T')[0];
+  document.getElementById('f-hora').value = now.toTimeString().slice(0,5);
+  document.getElementById('f-contenedor').value = '';
+  document.getElementById('f-tipo-cont').value = '';
+  document.getElementById('f-nave').value = '';
+  document.getElementById('f-puerta').value = '';
+  document.getElementById('f-cliente').value = '';
+  document.getElementById('f-inspector').value = '';
+  document.getElementById('f-laser').value = '';
+  document.getElementById('f-comentarios').value = '';
+  document.getElementById('form-title').textContent = 'Nueva Inspección';
+  setTipo('Despacho');
+  renderFotos();
+  updateProgress();
+  goTo('view-form');
+}
+
+// ══════════════════════════════════════════════
+// FOTOS
+// ══════════════════════════════════════════════
+function addFotos(event) {
+  const files = Array.from(event.target.files);
+  const promises = files.map(file => new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.readAsDataURL(file);
+  }));
+  Promise.all(promises).then(results => {
+    fotos = [...fotos, ...results];
+    renderFotos();
+    event.target.value = '';
+  });
+}
+
+function deleteFoto(idx) {
+  fotos.splice(idx, 1);
+  renderFotos();
+}
+
+function renderFotos() {
+  const grid = document.getElementById('fotos-grid');
+  grid.innerHTML = fotos.map((src, i) => `
+    <div class="foto-thumb">
+      <img src="${src}" alt="foto ${i+1}">
+      <button class="foto-del" onclick="deleteFoto(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+// COLLECT FORM DATA
+// ══════════════════════════════════════════════
+function collectFormData() {
+  const answers = {};
+  CHECKLIST.forEach(section => {
+    section.items.forEach(item => {
+      const active = document.querySelector(`[data-id="${item.id}"].active`);
+      answers[item.id] = active ? active.dataset.val : null;
+    });
+  });
+
+  // Determine result
+  const result = determineResult(answers);
+
+  return {
+    id: currentInspection ? currentInspection.id : Date.now().toString(),
+    contenedor: document.getElementById('f-contenedor').value.trim().toUpperCase(),
+    tipoContenedor: document.getElementById('f-tipo-cont').value,
+    fecha: document.getElementById('f-fecha').value,
+    hora: document.getElementById('f-hora').value,
+    nave: document.getElementById('f-nave').value.trim(),
+    puerta: document.getElementById('f-puerta').value.trim(),
+    cliente: document.getElementById('f-cliente').value.trim(),
+    inspector: document.getElementById('f-inspector').value.trim(),
+    laser: document.getElementById('f-laser').value.trim(),
+    operacion: operacionTipo,
+    comentarios: document.getElementById('f-comentarios').value.trim(),
+    answers,
+    fotos,
+    result,
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function determineResult(answers) {
+  const allIds = CHECKLIST.flatMap(s => s.items.map(i => i.id));
+  const unanswered = allIds.filter(id => answers[id] === null);
+  if (unanswered.length === allIds.length) return 'sin-datos';
+
+  let fail = false;
+  allIds.forEach(id => {
+    const val = answers[id];
+    if (val === null) return;
+    const isNeg = NEGATIVAS.includes(id);
+    // For negative items: NO is correct (apto), SI is fail
+    // For positive items: SI is correct, NO is fail
+    if (isNeg && val === 'SI') fail = true;
+    if (!isNeg && val === 'NO') fail = true;
+  });
+
+  if (unanswered.length > 0) return 'parcial';
+  return fail ? 'no-apto' : 'apto';
+}
+
+// ══════════════════════════════════════════════
+// SAVE
+// ══════════════════════════════════════════════
+function saveInspection(silent = false) {
+  const data = collectFormData();
+  if (!data.contenedor) {
+    showToast('⚠ Ingresa el N° de contenedor', false);
+    return null;
+  }
+  const list = getInspections();
+  const idx = list.findIndex(i => i.id === data.id);
+  if (idx >= 0) list[idx] = data;
+  else list.unshift(data);
+  saveInspections(list);
+  currentInspection = data;
+  if (!silent) showToast('✓ Inspección guardada', true);
+  renderHomeStats();
+  return data;
+}
+
+function saveAndDownloadPDF() {
+  const data = saveInspection(true);
+  if (data) generatePDF(data);
+}
+
+// ══════════════════════════════════════════════
+// RENDER HOME
+// ══════════════════════════════════════════════
+function renderHomeStats() {
+  const list = getInspections();
+  document.getElementById('stat-total').textContent = list.length;
+  document.getElementById('stat-ok').textContent = list.filter(i => i.result === 'apto').length;
+  document.getElementById('stat-fail').textContent = list.filter(i => i.result === 'no-apto').length;
+
+  const recent = list.slice(0, 5);
+  const container = document.getElementById('home-recent-list');
+  renderCardList(container, recent, 5);
+}
+
+function renderCardList(container, list, limit) {
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      <p>No hay inspecciones registradas</p>
+    </div>`;
+    return;
+  }
+  container.innerHTML = list.slice(0, limit || list.length).map(insp => {
+    const badge = getBadge(insp.result);
+    const icon = insp.operacion === 'Exportación'
+      ? `<div class="card-icon exportacion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`
+      : `<div class="card-icon despacho"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>`;
+    return `<div class="inspection-card" onclick="openDetail('${insp.id}')">
+      ${icon}
+      <div class="card-body">
+        <div class="card-num">${insp.contenedor || '—'}</div>
+        <div class="card-meta">${insp.operacion} · ${formatDate(insp.fecha)} · ${insp.cliente || 'Sin cliente'}</div>
+      </div>
+      <div class="card-badge ${badge.cls}">${badge.label}</div>
+    </div>`;
+  }).join('');
+}
+
+function getBadge(result) {
+  switch(result) {
+    case 'apto': return { cls: 'badge-ok', label: 'APTO' };
+    case 'no-apto': return { cls: 'badge-fail', label: 'NO APTO' };
+    case 'parcial': return { cls: 'badge-partial', label: 'PARCIAL' };
+    default: return { cls: 'badge-partial', label: 'SIN DATOS' };
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ══════════════════════════════════════════════
+// HISTORIAL
+// ══════════════════════════════════════════════
+function renderHistorial(filter = '') {
+  let list = getInspections();
+  if (filter) {
+    const q = filter.toLowerCase();
+    list = list.filter(i =>
+      (i.contenedor||'').toLowerCase().includes(q) ||
+      (i.cliente||'').toLowerCase().includes(q) ||
+      (i.inspector||'').toLowerCase().includes(q)
+    );
+  }
+  const container = document.getElementById('historial-list');
+  renderCardList(container, list, 999);
+}
+
+function filterHistorial(val) { renderHistorial(val); }
+
+// ══════════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════════
+function openDetail(id) {
+  const list = getInspections();
+  const insp = list.find(i => i.id === id);
+  if (!insp) return;
+  currentDetailId = id;
+  currentInspection = insp;
+
+  const badge = getBadge(insp.result);
+  document.getElementById('detail-num').textContent = insp.contenedor || '—';
+  document.getElementById('detail-meta').textContent = `${insp.operacion} · ${formatDate(insp.fecha)} · ${insp.hora || ''}`;
+  document.getElementById('detail-badge-result').innerHTML = `<span class="card-badge ${badge.cls}" style="font-size:14px;padding:4px 12px;">${badge.label}</span>`;
+
+  const body = document.getElementById('detail-body');
+  body.innerHTML = '';
+
+  // Info card
+  const infoCard = document.createElement('div');
+  infoCard.className = 'detail-info-card';
+  infoCard.innerHTML = `
+    <div class="detail-info-grid">
+      <div class="detail-field"><div class="detail-field-label">N° Contenedor</div><div class="detail-field-value">${insp.contenedor||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Tipo</div><div class="detail-field-value">${insp.tipoContenedor||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Fecha</div><div class="detail-field-value">${formatDate(insp.fecha)}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Hora</div><div class="detail-field-value">${insp.hora||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Cliente</div><div class="detail-field-value">${insp.cliente||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Inspector</div><div class="detail-field-value">${insp.inspector||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Nave</div><div class="detail-field-value">${insp.nave||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Puerta</div><div class="detail-field-value">${insp.puerta||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Medidas Láser</div><div class="detail-field-value">${insp.laser||'—'}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Operación</div><div class="detail-field-value">${insp.operacion||'—'}</div></div>
+    </div>
+  `;
+  body.appendChild(infoCard);
+
+  // Checklist
+  CHECKLIST.forEach(section => {
+    const sec = document.createElement('div');
+    sec.className = 'detail-checklist';
+    sec.innerHTML = `<div class="checklist-section-header">
+      <div class="checklist-section-num">${section.id}</div>
+      <div class="checklist-section-name">${section.name}</div>
+    </div>
+    ${section.items.map(item => {
+      const val = insp.answers[item.id];
+      const isNeg = NEGATIVAS.includes(item.id);
+      let cls = 'ans-nd', label = 'N/D';
+      if (val === 'SI') { cls = 'ans-si'; label = 'SÍ'; }
+      if (val === 'NO') { cls = 'ans-no'; label = 'NO'; }
+      return `<div class="detail-item">
+        <div class="item-num">${item.id}</div>
+        <div class="item-question">${item.q}</div>
+        <div class="detail-answer ${cls}">${label}</div>
+      </div>`;
+    }).join('')}`;
+    body.appendChild(sec);
+  });
+
+  // Fotos
+  if (insp.fotos && insp.fotos.length > 0) {
+    const fotosCard = document.createElement('div');
+    fotosCard.className = 'detail-info-card';
+    fotosCard.innerHTML = `<div class="info-section-title">REGISTRO FOTOGRÁFICO (${insp.fotos.length})</div>
+    <div class="detail-fotos-grid">
+      ${insp.fotos.map(src => `<div class="detail-foto"><img src="${src}"></div>`).join('')}
+    </div>`;
+    body.appendChild(fotosCard);
+  }
+
+  // Comentarios
+  if (insp.comentarios) {
+    const comCard = document.createElement('div');
+    comCard.className = 'detail-info-card';
+    comCard.innerHTML = `<div class="info-section-title">COMENTARIOS</div>
+    <div style="font-size:14px;color:var(--gray-800);line-height:1.5;">${insp.comentarios}</div>`;
+    body.appendChild(comCard);
+  }
+
+  goTo('view-detail');
+}
+
+function editInspection() {
+  const insp = currentInspection;
+  if (!insp) return;
+  fotos = insp.fotos ? [...insp.fotos] : [];
+  operacionTipo = insp.operacion || 'Despacho';
+  buildChecklist();
+
+  document.getElementById('f-contenedor').value = insp.contenedor || '';
+  document.getElementById('f-tipo-cont').value = insp.tipoContenedor || '';
+  document.getElementById('f-fecha').value = insp.fecha || '';
+  document.getElementById('f-hora').value = insp.hora || '';
+  document.getElementById('f-nave').value = insp.nave || '';
+  document.getElementById('f-puerta').value = insp.puerta || '';
+  document.getElementById('f-cliente').value = insp.cliente || '';
+  document.getElementById('f-inspector').value = insp.inspector || '';
+  document.getElementById('f-laser').value = insp.laser || '';
+  document.getElementById('f-comentarios').value = insp.comentarios || '';
+  document.getElementById('form-title').textContent = insp.contenedor || 'Editar Inspección';
+  setTipo(operacionTipo);
+
+  // Set answers
+  if (insp.answers) {
+    Object.entries(insp.answers).forEach(([id, val]) => {
+      if (val) {
+        document.querySelectorAll(`[data-id="${id}"]`).forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.dataset.val === val) btn.classList.add('active');
+        });
+      }
+    });
+  }
+
+  renderFotos();
+  updateProgress();
+  goTo('view-form');
+}
+
+// ══════════════════════════════════════════════
+// DELETE
+// ══════════════════════════════════════════════
+function confirmDelete() {
+  showModal('Eliminar Inspección',
+    `¿Eliminar la inspección del contenedor <strong>${currentInspection.contenedor || '—'}</strong>? Esta acción no se puede deshacer.`,
+    () => {
+      const list = getInspections().filter(i => i.id !== currentDetailId);
+      saveInspections(list);
+      closeModal();
+      showToast('Inspección eliminada');
+      goTo('view-home');
+      renderHomeStats();
+    }
+  );
+}
+
+// ══════════════════════════════════════════════
+// BACK GUARD
+// ══════════════════════════════════════════════
+function confirmBack() {
+  showModal('¿Salir sin guardar?',
+    'Los cambios no guardados se perderán.',
+    () => { closeModal(); goTo('view-home'); }
+  );
+}
+
+// ══════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════
+function showModal(title, msg, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMsg').innerHTML = msg;
+  document.getElementById('modalConfirm').onclick = onConfirm;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function showToast(msg, ok = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (ok ? ' green' : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+// ══════════════════════════════════════════════
+// PDF GENERATION
+// ══════════════════════════════════════════════
+function downloadDetailPDF() { generatePDF(currentInspection); }
+
+async function shareDetailPDF() {
+  const insp = currentInspection;
+  if (!insp) return;
+
+  // Generate PDF as blob
+  const { jsPDF } = window.jspdf;
+  // Reuse generatePDF but capture blob instead of saving
+  showToast('Generando PDF…');
+
+  // Small delay so toast shows
+  await new Promise(r => setTimeout(r, 100));
+
+  try {
+    const pdfBlob = await buildPDFBlob(insp);
+    const filename = `Inspeccion_${insp.contenedor || 'CONT'}_${insp.fecha || 'fecha'}.pdf`;
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], filename, { type: 'application/pdf' })] })) {
+      const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+      await navigator.share({
+        title: `Inspección ${insp.contenedor || ''} — DP World`,
+        text: `Inspección de contenedor ${insp.contenedor || ''} · ${insp.operacion} · ${formatDate(insp.fecha)} · Resultado: ${getBadge(insp.result).label}`,
+        files: [file],
+      });
+      showToast('✓ Compartido', true);
+    } else if (navigator.share) {
+      // Share without file (text only fallback)
+      await navigator.share({
+        title: `Inspección ${insp.contenedor || ''} — DP World`,
+        text: `Inspección de contenedor ${insp.contenedor || ''} · ${insp.operacion} · ${formatDate(insp.fecha)} · Resultado: ${getBadge(insp.result).label}`,
+      });
+      showToast('✓ Compartido (sin adjunto en este dispositivo)', true);
+    } else {
+      // Desktop fallback — just download
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('PDF descargado (compartir no disponible en desktop)', false);
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showToast('Error al compartir — descargando PDF');
+      generatePDF(insp);
+    }
+  }
+}
+
+// Builds PDF and returns a Blob (shared logic with generatePDF)
+async function buildPDFBlob(insp) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const W = 210, margin = 14;
+  let y = 0;
+
+  const navy = [26, 16, 96];
+  const green = [0, 195, 137];
+  const white = [255, 255, 255];
+  const gray = [90, 96, 117];
+  const lightGray = [240, 241, 245];
+  const red = [229, 57, 53];
+
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, W, 32, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...white);
+  doc.text('DP WORLD PANAMÁ', margin, 12);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...green);
+  doc.text('FORMULARIO DE INSPECCIÓN DE CONTENEDORES', margin, 18);
+  doc.setTextColor(180, 180, 200);
+  doc.setFontSize(8);
+  doc.text('SL-02-007 · R004 · DAL Colón Logistics Park', margin, 23);
+  doc.text(`Generado: ${new Date().toLocaleString('es-PA')}`, margin, 28);
+
+  const badge = getBadge(insp.result);
+  const bColor = insp.result === 'apto' ? green : insp.result === 'no-apto' ? red : [245, 158, 11];
+  doc.setFillColor(...bColor);
+  doc.roundedRect(W - margin - 36, 10, 36, 14, 3, 3, 'F');
+  doc.setTextColor(...navy);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(badge.label, W - margin - 18, 19, { align: 'center' });
+
+  y = 38;
+
+  function drawInfoGrid(fields, startY) {
+    doc.setFillColor(...lightGray);
+    doc.rect(margin, startY, W - margin*2, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...navy);
+    doc.text('INFORMACIÓN GENERAL', margin + 2, startY + 4);
+    startY += 8;
+    const colW = (W - margin*2) / 2;
+    const rowH = 9;
+    fields.forEach((field, i) => {
+      const col = i % 2, row = Math.floor(i / 2);
+      const x = margin + col * colW, fy = startY + row * rowH;
+      if (row % 2 === 0) { doc.setFillColor(250, 250, 252); doc.rect(x, fy, colW, rowH, 'F'); }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...gray);
+      doc.text(field.label + ':', x + 2, fy + 3.5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...navy);
+      doc.text(field.val || '—', x + 2, fy + 7.5);
+    });
+    return startY + Math.ceil(fields.length / 2) * rowH + 4;
+  }
+
+  y = drawInfoGrid([
+    { label: 'N° Contenedor', val: insp.contenedor },
+    { label: 'Tipo Contenedor', val: insp.tipoContenedor },
+    { label: 'Fecha', val: formatDate(insp.fecha) },
+    { label: 'Hora', val: insp.hora },
+    { label: 'Cliente', val: insp.cliente },
+    { label: 'Inspector', val: insp.inspector },
+    { label: 'Nave', val: insp.nave },
+    { label: 'Puerta', val: insp.puerta },
+    { label: 'Tipo Operación', val: insp.operacion },
+    { label: 'Medidas Láser', val: insp.laser },
+  ], y);
+  y += 4;
+
+  function checkPage(needed = 10) { if (y + needed > 277) { doc.addPage(); y = 14; } }
+
+  CHECKLIST.forEach(section => {
+    checkPage(14);
+    doc.setFillColor(...navy); doc.rect(margin, y, W - margin*2, 7, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...white);
+    doc.text(`${section.id}. ${section.name}`, margin + 3, y + 4.8);
+    y += 9;
+    section.items.forEach((item, idx) => {
+      checkPage(8);
+      const rowH = 7.5;
+      const bgColor = idx % 2 === 0 ? [249, 249, 252] : [255, 255, 255];
+      doc.setFillColor(...bgColor); doc.rect(margin, y, W - margin*2, rowH, 'F');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(45, 49, 72);
+      const isNeg = NEGATIVAS.includes(item.id);
+      const lines = doc.splitTextToSize(item.id + '. ' + item.q + (isNeg ? ' ★' : ''), W - margin*2 - 30);
+      doc.text(lines, margin + 2, y + 4.5);
+      const val = insp.answers ? insp.answers[item.id] : null;
+      if (val) {
+        const isOk = (!isNeg && val === 'SI') || (isNeg && val === 'NO');
+        doc.setFillColor(...(isOk ? [232, 250, 244] : [253, 236, 234]));
+        doc.roundedRect(W - margin - 20, y + 1.5, 18, 4.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7);
+        doc.setTextColor(...(isOk ? [0, 163, 114] : [229, 57, 53]));
+        doc.text(val === 'SI' ? 'SÍ' : 'NO', W - margin - 11, y + 4.5, { align: 'center' });
+      } else {
+        doc.setFillColor(...lightGray); doc.roundedRect(W - margin - 20, y + 1.5, 18, 4.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...gray);
+        doc.text('N/D', W - margin - 11, y + 4.5, { align: 'center' });
+      }
+      y += rowH + (lines.length > 1 ? (lines.length - 1) * 3.5 : 0);
+    });
+    y += 3;
+  });
+
+  checkPage(20);
+  doc.setFillColor(255, 251, 235); doc.rect(margin, y, W - margin*2, 18, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(180, 100, 0);
+  doc.text('NOTA: ★ = Pregunta NEGATIVA (respuesta correcta para aprobación = NO)', margin + 2, y + 5);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 80, 0);
+  const notaLines = doc.splitTextToSize('A) Todos los puntos evaluados deben ser POSITIVOS, excepto los puntos 6.5, 7.1 y 7.2 que son NEGATIVOS, para que el contenedor sea calificado apto para el uso de Exportación.', W - margin*2 - 4);
+  doc.text(notaLines, margin + 2, y + 10);
+  y += 22;
+
+  if (insp.comentarios) {
+    checkPage(18);
+    doc.setFillColor(...lightGray); doc.rect(margin, y, W - margin*2, 6, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...navy);
+    doc.text('COMENTARIOS', margin + 2, y + 4); y += 8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(45, 49, 72);
+    const comLines = doc.splitTextToSize(insp.comentarios, W - margin*2 - 4);
+    doc.text(comLines, margin + 2, y + 4);
+    y += comLines.length * 5 + 6;
+  }
+
+  if (insp.fotos && insp.fotos.length > 0) {
+    doc.addPage(); y = 14;
+    doc.setFillColor(...lightGray); doc.rect(margin, y, W - margin*2, 6, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...navy);
+    doc.text(`REGISTRO FOTOGRÁFICO (${insp.fotos.length} foto${insp.fotos.length > 1 ? 's' : ''})`, margin + 2, y + 4);
+    y += 10;
+    const cols = 3, imgW = (W - margin*2 - 8) / cols, imgH = imgW * 0.75;
+    insp.fotos.forEach((src, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      if (col === 0 && row > 0 && y + imgH + 6 > 277) { doc.addPage(); y = 14; }
+      const x = margin + col * (imgW + 4), fy = y + row * (imgH + 6);
+      try { doc.addImage(src, 'JPEG', x, fy, imgW, imgH, undefined, 'MEDIUM'); }
+      catch(e) { doc.setFillColor(...lightGray); doc.rect(x, fy, imgW, imgH, 'F'); }
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...gray);
+      doc.text(`Foto ${i+1}`, x + imgW/2, fy + imgH + 3.5, { align: 'center' });
+    });
+  }
+
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(...navy); doc.rect(0, 287, W, 10, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(180, 180, 200);
+    doc.text('DP World Panamá · DAL Colón Logistics Park · SL-02-007 R004', margin, 293);
+    doc.text(`Pág. ${p} / ${pages}`, W - margin, 293, { align: 'right' });
+  }
+  doc.setPage(pages);
+  const sigY = Math.min(y + 20, 260);
+  doc.setDrawColor(...gray); doc.setLineWidth(0.3);
+  doc.line(margin, sigY, margin + 55, sigY);
+  doc.line(W/2, sigY, W/2 + 55, sigY);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...gray);
+  doc.text('Firma del Inspector', margin, sigY + 4);
+  doc.text('Firma del Supervisor', W/2, sigY + 4);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...navy);
+  doc.text(insp.inspector || '______________________', margin, sigY + 9);
+
+  return doc.output('blob');
+}
+
+function generatePDF(insp) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const W = 210, margin = 14;
+  let y = 0;
+
+  const navy = [26, 16, 96];
+  const green = [0, 195, 137];
+  const white = [255, 255, 255];
+  const gray = [90, 96, 117];
+  const lightGray = [240, 241, 245];
+  const red = [229, 57, 53];
+
+  // ── HEADER ──
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, W, 32, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...white);
+  doc.text('DP WORLD PANAMÁ', margin, 12);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...green);
+  doc.text('FORMULARIO DE INSPECCIÓN DE CONTENEDORES', margin, 18);
+
+  doc.setTextColor(180, 180, 200);
+  doc.setFontSize(8);
+  doc.text('SL-02-007 · R004 · DAL Colón Logistics Park', margin, 23);
+  doc.text(`Generado: ${new Date().toLocaleString('es-PA')}`, margin, 28);
+
+  // Result badge
+  const badge = getBadge(insp.result);
+  const bColor = insp.result === 'apto' ? green : insp.result === 'no-apto' ? red : [245, 158, 11];
+  doc.setFillColor(...bColor);
+  doc.roundedRect(W - margin - 36, 10, 36, 14, 3, 3, 'F');
+  doc.setTextColor(...navy);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text(badge.label, W - margin - 18, 19, { align: 'center' });
+
+  y = 38;
+
+  // ── INFO GENERAL ──
+  function drawInfoGrid(fields, startY) {
+    doc.setFillColor(...lightGray);
+    doc.rect(margin, startY, W - margin*2, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...navy);
+    doc.text('INFORMACIÓN GENERAL', margin + 2, startY + 4);
+    startY += 8;
+
+    const colW = (W - margin*2) / 2;
+    const rowH = 9;
+    fields.forEach((field, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = margin + col * colW;
+      const fy = startY + row * rowH;
+
+      if (row % 2 === 0) {
+        doc.setFillColor(250, 250, 252);
+        doc.rect(x, fy, colW, rowH, 'F');
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...gray);
+      doc.text(field.label + ':', x + 2, fy + 3.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...navy);
+      doc.text(field.val || '—', x + 2, fy + 7.5);
+    });
+
+    return startY + Math.ceil(fields.length / 2) * rowH + 4;
+  }
+
+  y = drawInfoGrid([
+    { label: 'N° Contenedor', val: insp.contenedor },
+    { label: 'Tipo Contenedor', val: insp.tipoContenedor },
+    { label: 'Fecha', val: formatDate(insp.fecha) },
+    { label: 'Hora', val: insp.hora },
+    { label: 'Cliente', val: insp.cliente },
+    { label: 'Inspector', val: insp.inspector },
+    { label: 'Nave', val: insp.nave },
+    { label: 'Puerta', val: insp.puerta },
+    { label: 'Tipo Operación', val: insp.operacion },
+    { label: 'Medidas Láser', val: insp.laser },
+  ], y);
+
+  y += 4;
+
+  // ── CHECKLIST ──
+  function checkPage(needed = 10) {
+    if (y + needed > 277) {
+      doc.addPage();
+      y = 14;
+    }
+  }
+
+  CHECKLIST.forEach(section => {
+    checkPage(14);
+    doc.setFillColor(...navy);
+    doc.rect(margin, y, W - margin*2, 7, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...white);
+    doc.text(`${section.id}. ${section.name}`, margin + 3, y + 4.8);
+    y += 9;
+
+    section.items.forEach((item, idx) => {
+      checkPage(8);
+      const rowH = 7.5;
+      const bgColor = idx % 2 === 0 ? [249, 249, 252] : [255, 255, 255];
+      doc.setFillColor(...bgColor);
+      doc.rect(margin, y, W - margin*2, rowH, 'F');
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(45, 49, 72);
+
+      const isNeg = NEGATIVAS.includes(item.id);
+      const qText = item.id + '. ' + item.q + (isNeg ? ' ★' : '');
+      const lines = doc.splitTextToSize(qText, W - margin*2 - 30);
+      doc.text(lines, margin + 2, y + 4.5);
+
+      const val = insp.answers ? insp.answers[item.id] : null;
+      if (val) {
+        const isOk = (!isNeg && val === 'SI') || (isNeg && val === 'NO');
+        doc.setFillColor(...(isOk ? [232, 250, 244] : [253, 236, 234]));
+        doc.roundedRect(W - margin - 20, y + 1.5, 18, 4.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...(isOk ? [0, 163, 114] : [229, 57, 53]));
+        doc.text(val === 'SI' ? 'SÍ' : 'NO', W - margin - 11, y + 4.5, { align: 'center' });
+      } else {
+        doc.setFillColor(...lightGray);
+        doc.roundedRect(W - margin - 20, y + 1.5, 18, 4.5, 1, 1, 'F');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(...gray);
+        doc.text('N/D', W - margin - 11, y + 4.5, { align: 'center' });
+      }
+
+      const extraH = lines.length > 1 ? (lines.length - 1) * 3.5 : 0;
+      y += rowH + extraH;
+    });
+
+    y += 3;
+  });
+
+  // ── NOTA ──
+  checkPage(20);
+  doc.setFillColor(255, 251, 235);
+  doc.rect(margin, y, W - margin*2, 18, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(180, 100, 0);
+  doc.text('NOTA: ★ = Pregunta NEGATIVA (respuesta correcta para aprobación = NO)', margin + 2, y + 5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 80, 0);
+  const notaLines = doc.splitTextToSize(
+    'A) Todos los puntos evaluados deben ser POSITIVOS, excepto los puntos 6.5, 7.1 y 7.2 que son NEGATIVOS, para que el contenedor sea calificado apto para el uso de Exportación.',
+    W - margin*2 - 4
+  );
+  doc.text(notaLines, margin + 2, y + 10);
+  y += 22;
+
+  // ── COMENTARIOS ──
+  if (insp.comentarios) {
+    checkPage(18);
+    doc.setFillColor(...lightGray);
+    doc.rect(margin, y, W - margin*2, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...navy);
+    doc.text('COMENTARIOS', margin + 2, y + 4);
+    y += 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(45, 49, 72);
+    const comLines = doc.splitTextToSize(insp.comentarios, W - margin*2 - 4);
+    doc.text(comLines, margin + 2, y + 4);
+    y += comLines.length * 5 + 6;
+  }
+
+  // ── FOTOS ──
+  if (insp.fotos && insp.fotos.length > 0) {
+    doc.addPage();
+    y = 14;
+    doc.setFillColor(...lightGray);
+    doc.rect(margin, y, W - margin*2, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...navy);
+    doc.text(`REGISTRO FOTOGRÁFICO (${insp.fotos.length} foto${insp.fotos.length > 1 ? 's' : ''})`, margin + 2, y + 4);
+    y += 10;
+
+    const cols = 3;
+    const imgW = (W - margin*2 - 8) / cols;
+    const imgH = imgW * 0.75;
+
+    insp.fotos.forEach((src, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      if (col === 0 && row > 0) {
+        if (y + imgH + 6 > 277) { doc.addPage(); y = 14; }
+      }
+      const x = margin + col * (imgW + 4);
+      const fy = y + row * (imgH + 6);
+      try {
+        doc.addImage(src, 'JPEG', x, fy, imgW, imgH, undefined, 'MEDIUM');
+      } catch(e) {
+        doc.setFillColor(...lightGray);
+        doc.rect(x, fy, imgW, imgH, 'F');
+        doc.setFontSize(7);
+        doc.setTextColor(...gray);
+        doc.text('Imagen no disponible', x + imgW/2, fy + imgH/2, { align: 'center' });
+      }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(...gray);
+      doc.text(`Foto ${i+1}`, x + imgW/2, fy + imgH + 3.5, { align: 'center' });
+    });
+  }
+
+  // ── FIRMA / FOOTER ──
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(...navy);
+    doc.rect(0, 287, W, 10, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(180, 180, 200);
+    doc.text('DP World Panamá · DAL Colón Logistics Park · SL-02-007 R004', margin, 293);
+    doc.text(`Pág. ${p} / ${pages}`, W - margin, 293, { align: 'right' });
+  }
+
+  // Firma en última página
+  doc.setPage(pages);
+  const sigY = Math.min(y + 20, 260);
+  doc.setDrawColor(...gray);
+  doc.setLineWidth(0.3);
+  doc.line(margin, sigY, margin + 55, sigY);
+  doc.line(W/2, sigY, W/2 + 55, sigY);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...gray);
+  doc.text('Firma del Inspector', margin, sigY + 4);
+  doc.text('Firma del Supervisor', W/2, sigY + 4);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...navy);
+  doc.text(insp.inspector || '______________________', margin, sigY + 9);
+
+  const filename = `Inspeccion_${insp.contenedor || 'CONT'}_${insp.fecha || 'fecha'}.pdf`;
+  doc.save(filename);
+  showToast('✓ PDF descargado', true);
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderHomeStats();
+});
+</script>
+</body>
+</html>
