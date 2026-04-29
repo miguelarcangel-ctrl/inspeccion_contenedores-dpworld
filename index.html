@@ -892,13 +892,19 @@ function determineResult(answers) {
 // ══════════════════════════════════════════════
 function saveInspection(silent = false) {
   const data = collectFormData();
-  if (!data.contenedor) { showToast('⚠ Ingresa el N° de contenedor'); return null; }
-  const list = getInspections();
-  const idx = list.findIndex(i => i.id === data.id);
-  if (idx >= 0) list[idx] = data; else list.unshift(data);
-  saveInspections(list);
+  if (!data.contenedor) { showToast("⚠ Ingresa el N° de contenedor"); return null; }
+  const dataToStore = Object.assign({}, data, { itemFotos: {}, globalFotos: [] });
+  try {
+    const list = getInspections();
+    const idx = list.findIndex(i => i.id === dataToStore.id);
+    if (idx >= 0) list[idx] = dataToStore; else list.unshift(dataToStore);
+    saveInspections(list);
+  } catch(e) {
+    showToast("⚠ Error al guardar");
+    return null;
+  }
   currentInspection = data;
-  if (!silent) showToast('✓ Inspección guardada', true);
+  if (!silent) showToast("✓ Inspección guardada", true);
   renderHomeStats();
   return data;
 }
