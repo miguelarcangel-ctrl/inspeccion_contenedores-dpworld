@@ -34,14 +34,14 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .lg-card{background:rgba(17,16,58,.9);border:1px solid var(--b2);border-radius:16px;padding:26px 22px;width:100%;max-width:360px;backdrop-filter:blur(10px);box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .lg-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--t2);margin-bottom:16px;text-align:center;letter-spacing:.5px}
 .role-row{display:flex;gap:8px;margin-bottom:18px}
-.role-btn{flex:1;padding:12px 6px;border-radius:8px;border:1.5px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.5px}
+.role-btn{flex:1;padding:12px 6px;border-radius:8px;border:1.5px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.5px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .role-btn.active{border-color:var(--green);color:var(--green);background:rgba(0,195,137,.08);box-shadow:0 0 12px rgba(0,195,137,.2)}
 .role-ic{display:block;margin-bottom:4px}
 .fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .flbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
 .fin{border:1.5px solid var(--b1);border-radius:7px;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--t);background:rgba(255,255,255,.04);width:100%;transition:border-color .2s}
 .fin:focus{outline:none;border-color:var(--green);background:rgba(0,195,137,.04)}
-.btn-lg{width:100%;background:linear-gradient(135deg,var(--green) 0%,var(--gd) 100%);color:var(--bg);border:none;border-radius:8px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .2s;margin-top:6px;box-shadow:0 4px 20px rgba(0,195,137,.3)}
+.btn-lg{width:100%;background:linear-gradient(135deg,var(--green) 0%,var(--gd) 100%);color:var(--bg);border:none;border-radius:8px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .2s;margin-top:6px;box-shadow:0 4px 20px rgba(0,195,137,.3);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .btn-lg:hover{box-shadow:0 6px 28px rgba(0,195,137,.4);transform:translateY(-1px)}
 .lg-err{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:#ff8888;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:10px;display:none}
 
@@ -204,8 +204,8 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .pcard-act{padding:0 12px 10px}
 
 /* ── MODAL ── */
-.mov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;backdrop-filter:blur(4px)}
-.mov.hidden{display:none}
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;}
+.mov.hidden{display:none!important;pointer-events:none!important;visibility:hidden!important;}
 .msheet{background:linear-gradient(180deg,#13113e 0%,#0f0c38 100%);border:1px solid var(--b2);border-bottom:none;border-radius:16px 16px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding-bottom:20px;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .mhandle{width:32px;height:3px;background:var(--b2);border-radius:2px;margin:10px auto 0}
@@ -398,11 +398,14 @@ input[type=file]{display:none}
   <div class="lg-card">
     <div class="lg-title">ACCESO AL SISTEMA</div>
     <div class="role-row">
-      <div class="role-btn active" id="rbsup" onclick="setRole('sup')">
+      <button type="button" class="role-btn active" id="rbsup" onclick="setRole('sup')">
         <span class="role-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
         SUPERVISOR
-      </div>
-      <div class="role-btn" id="rbcli" onclick="setRole('cli')">
+      </button>
+      <button type="button" class="role-btn" id="rbcli" onclick="setRole('cli')">
+        <span class="role-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+        CLIENTE
+      </button>
         <span class="role-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
         CLIENTE
       </div>
@@ -1189,7 +1192,4 @@ function openCliDetail(opId){
       ${pct>0?`<div class="bprogbar"><div class="bprogfill" style="width:${pct}%;background:${bc};box-shadow:0 0 8px ${bc}66;"></div></div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--t3);">${pct}% ${op.tipo==='ENTRADA'?'descargado':'cargado'}</div>`:''}
     </div>
-    <div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">ESTADO DEL PROCESO</div>
-    <div style="overflow-x:auto;padding-bottom:8px;scrollbar-width:none;"><div style="display:flex;align-items:center;min-width:max-content;">${stH}</div></div>
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${s.c};text-shadow:0 0 8px ${s.g};margin-top:8px;">${s.l}</div>
-    ${op.inspeccion&&op.tipo==='SALIDA'?`<div cla
+    <div style="font-size
