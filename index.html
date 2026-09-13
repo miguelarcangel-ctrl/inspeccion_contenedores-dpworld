@@ -409,7 +409,7 @@ input[type=file]{display:none}
     </div>
     <div id="lerr" class="lg-err"></div>
     <div id="fsup">
-      <div class="fg"><div class="flbl">Contraseña</div><input type="password" class="fin" id="fpwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><div class="flbl">Contraseña</div><input type="password" class="fin" id="fpwd" placeholder="••••••••" autocomplete="off" autocorrect="off" autocapitalize="off" onkeydown="if(event.key==='Enter')doLogin()"></div>
     </div>
     <div id="fcli" style="display:none">
       <div class="fg"><div class="flbl">Empresa</div><input type="text" class="fin" id="femp" placeholder="CERNAC, ALICORP..." oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doLogin()"></div>
@@ -500,7 +500,7 @@ input[type=file]{display:none}
 <script>
 // ══ CONFIG ══
 const CFG={CLP:{label:'Colón Logistics Park',rampas:6,buffer:8},MSL:{label:'MSL Bodega',rampas:20,buffer:0}};
-const PWD='dpworld';
+const PWD='1234';
 const ST={
   ESPERA_RAMPA:{l:'En espera de rampa',s:'ESPERA',c:'#f5a20b',g:'rgba(245,162,11,.4)'},
   EN_RAMPA:{l:'En rampa',s:'RAMPA',c:'rgba(255,255,255,.4)',g:'rgba(255,255,255,.15)'},
@@ -701,7 +701,7 @@ function buildCBox(op,isDestAvail,isBuf){
   const boxClass=isBuf?'bbox':'cbox';
   const ht=isBuf?'90':'148';
   const selCls=isSelected?' selected':'';
-  const clickFn=isBuf?`handleBufTap('${op.bodega}',0,'${op.id}')`:`handleRampTap('${op.bodega}','${op.rampa||''}')`;
+  var clickFn=isBuf?("handleBufTap('"+op.bodega+"',0,'"+op.id+"')"):"handleRampTap('"+op.bodega+"','"+( op.rampa||'')+"')";
   const contNum=op.contenedor.substring(0,4)+'···'+op.contenedor.slice(-4);
   const cliShort=op.cliente.substring(0,6).toUpperCase();
   if(isBuf){
@@ -1142,7 +1142,7 @@ function buildCliCBox(op,isMine,dimmed,clickFn,isBuf=false){
   const clickAttr=clickFn&&isMine?`onclick="${clickFn}"`:'';
   const contNum=op.contenedor.substring(0,4)+'···'+op.contenedor.slice(-4);
   const cliShort=op.cliente.substring(0,6).toUpperCase();
-  const boxCls=isBuf?`bbox ${op.tipo.toLowerCase()}`:`cbox ${sc}`;
+  const boxCls=isBuf?('bbox '+op.tipo.toLowerCase()):('cbox '+sc);
   return `<div class="${boxCls}" style="height:${ht}px;${dimStyle}" ${clickAttr}>
     <div class="cfill" style="height:${fillH}%;background:${fillColor};"></div>
     <div class="ccont">
@@ -1192,4 +1192,4 @@ function openCliDetail(opId){
     <div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">ESTADO DEL PROCESO</div>
     <div style="overflow-x:auto;padding-bottom:8px;scrollbar-width:none;"><div style="display:flex;align-items:center;min-width:max-content;">${stH}</div></div>
     <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:${s.c};text-shadow:0 0 8px ${s.g};margin-top:8px;">${s.l}</div>
-    ${op.inspeccion&&op.tipo==='SALIDA'?`<div class="abox ${op.inspeccion.result==='apto'?'suc':'err'}" style="
+    ${op.inspeccion&&op.tipo==='SALIDA'?`<div cla
