@@ -8,13 +8,14 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
 :root{
-  --bg:#06041a; --surf:#0d0a2e; --card:#11103a; --raised:#181550;
+  --bg:#0d0b28; --surf:#16143d; --card:#1e1c50; --raised:#252368;
   --b0:rgba(255,255,255,.05); --b1:rgba(255,255,255,.1); --b2:rgba(255,255,255,.18); --b3:rgba(255,255,255,.28);
   --t:#fff; --t2:rgba(255,255,255,.6); --t3:rgba(255,255,255,.3); --t4:rgba(255,255,255,.12);
+  --primary:#3E3C90; --primary-dk:#2D2B6B;
   --green:#00C389; --gg:rgba(0,195,137,.5); --gd:#00a372;
   --blue:#0099e6; --bg2:rgba(0,153,230,.5);
   --amber:#f5a20b; --ag:rgba(245,162,11,.4);
-  --red:#ff4444; --rg:rgba(255,68,68,.5);
+  --red:#E8003D; --rg:rgba(232,0,61,.5);
   --orange:#ff6830;
   --r:10px; --r2:6px;
 }
@@ -26,7 +27,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 
 /* ── LOGIN ── */
-.lgbg{min-height:100vh;background:radial-gradient(ellipse at 30% 20%,rgba(0,195,137,.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(0,153,230,.06) 0%,transparent 60%),linear-gradient(160deg,#0a0728 0%,#070519 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
+.lgbg{min-height:100vh;background:radial-gradient(ellipse at 30% 20%,rgba(0,195,137,.1) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(62,60,144,.2) 0%,transparent 60%),linear-gradient(160deg,#0d0b28 0%,#16143d 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
 .lg-hero{text-align:center;margin-bottom:30px}
 .globe-ring{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;background:rgba(0,195,137,.07);border:1.5px solid rgba(0,195,137,.2);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(0,195,137,.12)}
 .lg-brand{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:2px}
@@ -41,12 +42,12 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .flbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
 .fin{border:1.5px solid var(--b1);border-radius:7px;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--t);background:rgba(255,255,255,.04);width:100%;transition:border-color .2s}
 .fin:focus{outline:none;border-color:var(--green);background:rgba(0,195,137,.04)}
-.btn-lg{width:100%;background:linear-gradient(135deg,var(--green) 0%,var(--gd) 100%);color:var(--bg);border:none;border-radius:8px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .2s;margin-top:6px;box-shadow:0 4px 20px rgba(0,195,137,.3);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.btn-lg{width:100%;background:var(--green);color:#0d0b28;border:none;border-radius:8px;padding:14px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .2s;margin-top:8px;box-shadow:0 4px 20px rgba(0,195,137,.4);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .btn-lg:hover{box-shadow:0 6px 28px rgba(0,195,137,.4);transform:translateY(-1px)}
 .lg-err{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:#ff8888;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:10px;display:none}
 
 /* ── APP HEADER ── */
-.ahdr{background:linear-gradient(90deg,#0d0a2e 0%,#0a0828 100%);border-bottom:1px solid var(--b1);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 20px rgba(0,0,0,.4)}
+.ahdr{background:linear-gradient(90deg,var(--primary-dk) 0%,var(--primary) 100%);border-bottom:1px solid var(--b1);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 20px rgba(0,0,0,.4)}
 .ahdr-l{display:flex;align-items:center;gap:10px}
 .ahdr-logo{width:28px;height:28px;flex-shrink:0}
 .ahdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1}
@@ -67,7 +68,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 /* ── TABS ── */
 .btabs{display:flex;padding:8px 14px 6px;gap:6px;background:var(--bg)}
 .btab{flex:1;padding:8px 4px;border-radius:6px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.3px}
-.btab.active{border-color:var(--green);background:rgba(0,195,137,.1);color:var(--green);box-shadow:0 0 10px rgba(0,195,137,.15)}
+.btab.active{border-color:var(--primary);background:rgba(62,60,144,.2);color:#fff;box-shadow:0 0 10px rgba(62,60,144,.3)}
 
 /* ── DOCK SCENE ── */
 .dock-wrap{padding:0 12px 10px;position:relative}
@@ -398,26 +399,27 @@ input[type=file]{display:none}
   <div class="lg-card">
     <div class="lg-title">ACCESO AL SISTEMA</div>
     <div class="role-row">
-      <button type="button" class="role-btn active" id="rbsup" onclick="setRole('sup')">
-        <span class="role-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <button type="button" class="role-btn active" id="rbsup">
+        <span class="role-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         SUPERVISOR
       </button>
-      <button type="button" class="role-btn" id="rbcli" onclick="setRole('cli')">
-        <span class="role-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+      <button type="button" class="role-btn" id="rbcli">
+        <span class="role-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
         CLIENTE
       </button>
-        <span class="role-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-        CLIENTE
-      </div>
     </div>
     <div id="lerr" class="lg-err"></div>
     <div id="fsup">
-      <div class="fg"><div class="flbl">Contraseña</div><input type="password" class="fin" id="fpwd" placeholder="••••••••" autocomplete="off" autocorrect="off" autocapitalize="off" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><div class="flbl">Contrasena</div>
+      <input type="password" class="fin" id="fpwd" placeholder="1234"
+        autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
     </div>
     <div id="fcli" style="display:none">
-      <div class="fg"><div class="flbl">Empresa</div><input type="text" class="fin" id="femp" placeholder="CERNAC, ALICORP..." oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><div class="flbl">Empresa</div>
+      <input type="text" class="fin" id="femp" placeholder="CERNAC, ALICORP..."
+        autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
     </div>
-    <button class="btn-lg" onclick="doLogin()">INGRESAR</button>
+    <button type="button" class="btn-lg" id="btnIngresar">INGRESAR</button>
   </div>
 </div>
 </div>
@@ -564,13 +566,52 @@ function loadDemo(){
 
 // ══ LOGIN ══
 let role='sup';
-function setRole(r){role=r;['sup','cli'].forEach(x=>document.getElementById('rb'+x).classList.toggle('active',x===r));document.getElementById('fsup').style.display=r==='sup'?'block':'none';document.getElementById('fcli').style.display=r==='cli'?'block':'none';document.getElementById('lerr').style.display='none';}
-function doLogin(){
-  const err=document.getElementById('lerr');err.style.display='none';
-  if(role==='sup'){if(document.getElementById('fpwd').value!==PWD){err.textContent='Contraseña incorrecta';err.style.display='block';return;}user={rol:'sup',nombre:'Supervisor'};goTo('vdash');renderDash();}
-  else{const e=document.getElementById('femp').value.trim().toUpperCase();if(!e){err.textContent='Ingresa el nombre de tu empresa';err.style.display='block';return;}user={rol:'cli',nombre:e};goTo('vcli');renderCli();cliRef=setInterval(renderCli,30000);}
+function setRole(r){
+  role=r;
+  ['sup','cli'].forEach(function(x){
+    var el=document.getElementById('rb'+x);
+    if(el) el.classList.toggle('active',x===r);
+  });
+  var fsup=document.getElementById('fsup');
+  var fcli=document.getElementById('fcli');
+  if(fsup) fsup.style.display=r==='sup'?'block':'none';
+  if(fcli) fcli.style.display=r==='cli'?'block':'none';
+  var lerr=document.getElementById('lerr');
+  if(lerr) lerr.style.display='none';
 }
-function doLogout(){user=null;cancelMove();closeMod();if(cliRef){clearInterval(cliRef);cliRef=null;}goTo('vlogin');}
+function doLogin(){
+  var err=document.getElementById('lerr');
+  if(err) err.style.display='none';
+  if(role==='sup'){
+    var pwd=document.getElementById('fpwd');
+    if(!pwd||pwd.value!==PWD){
+      if(err){err.textContent='Contraseña incorrecta. Use: '+PWD;err.style.display='block';}
+      return false;
+    }
+    user={rol:'sup',nombre:'Supervisor'};
+    goTo('vdash');
+    renderDash();
+  } else {
+    var femp=document.getElementById('femp');
+    var e=femp?femp.value.trim().toUpperCase():'';
+    if(!e){
+      if(err){err.textContent='Ingresa el nombre de tu empresa';err.style.display='block';}
+      return false;
+    }
+    user={rol:'cli',nombre:e};
+    goTo('vcli');
+    renderCli();
+    cliRef=setInterval(renderCli,30000);
+  }
+  return false;
+}
+function doLogout(){
+  user=null;
+  cancelMove();
+  closeMod();
+  if(cliRef){clearInterval(cliRef);cliRef=null;}
+  goTo('vlogin');
+}
 function goTo(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
 function setBod(b){bod=b;['CLP','MSL','AMBAS'].forEach(x=>document.getElementById('tab-'+x)?.classList.toggle('active',x===b));renderDockView();}
 
@@ -1192,4 +1233,4 @@ function openCliDetail(opId){
       ${pct>0?`<div class="bprogbar"><div class="bprogfill" style="width:${pct}%;background:${bc};box-shadow:0 0 8px ${bc}66;"></div></div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--t3);">${pct}% ${op.tipo==='ENTRADA'?'descargado':'cargado'}</div>`:''}
     </div>
-    <div style="font-size
+    <div sty
