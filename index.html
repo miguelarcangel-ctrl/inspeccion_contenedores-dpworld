@@ -72,9 +72,8 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .cfill{position:absolute;bottom:0;left:0;right:0;transition:height .7s cubic-bezier(.4,0,.2,1);z-index:1}
 .ccont{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;padding:4px 2px 2px}
 .ctag{font-family:'Barlow Condensed',sans-serif;font-size:7px;font-weight:800;letter-spacing:.5px;padding:1px 3px;border-radius:2px;white-space:nowrap;text-align:center;line-height:1.3;margin-bottom:3px;width:100%}
-.cvert{flex:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;width:100%}
-.cnum-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1.5px;white-space:nowrap;line-height:1;overflow:hidden;max-height:80px}
-.ccli-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:600;letter-spacing:.8px;white-space:nowrap;opacity:.55;margin-top:4px;line-height:1;overflow:hidden;max-height:40px}
+.cvert{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;width:100%}
+.ctext-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.2px;white-space:nowrap;line-height:1.3;overflow:hidden;flex:1}
 .cbox.libre{border:1.5px dashed rgba(255,255,255,.1);background:rgba(255,255,255,.02)}
 .cbox.libre .ccont{justify-content:center}
 .libre-plus{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.15);color:rgba(255,255,255,.2);transition:all .2s}
@@ -261,6 +260,14 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .pslbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;display:block}
 .pssub{font-size:10px;color:var(--t3);display:block;margin-top:1px}
 
+/* BUFFER POST (completed, in buffer) */
+.cbox.buffer-post{border-color:var(--green);box-shadow:0 0 8px rgba(0,195,137,.3)}
+.bbox.buffer-post{border-color:var(--green);box-shadow:0 0 6px rgba(0,195,137,.25)}
+
+/* DRAG GHOST */
+.drag-ghost{position:fixed;z-index:999;pointer-events:none;opacity:.85;transform:rotate(3deg) scale(1.08);border-radius:3px;overflow:hidden;background:linear-gradient(180deg,#0e0b28 0%,#0a0820 100%);border:2px solid var(--green);box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 16px var(--gg);transition:none}
+.drop-hint{position:absolute;inset:0;background:rgba(0,195,137,.15);border:2px dashed var(--green);border-radius:3px;z-index:5;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:800;color:var(--green);letter-spacing:1px;pointer-events:none}
+
 /* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--card);color:var(--t);border:1px solid var(--b2);padding:9px 16px;border-radius:28px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:400;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -382,6 +389,75 @@ var CL = [
 // ═══ STATE ═══
 var bod = 'CLP';
 var mvState = {active:false, opId:null};
+
+// ═══ DRAG SYSTEM ═══
+var drag = {
+  active: false, opId: null, ghost: null,
+  timer: null, startX: 0, startY: 0, sourceEl: null
+};
+
+function startDragTimer(el, opId, touch) {
+  clearDragTimer();
+  drag.opId = opId; drag.sourceEl = el;
+  drag.startX = touch.clientX; drag.startY = touch.clientY;
+  drag.timer = setTimeout(function() { activateDrag(el, opId); }, 400);
+}
+function clearDragTimer() { if(drag.timer) { clearTimeout(drag.timer); drag.timer=null; } }
+
+function activateDrag(el, opId) {
+  drag.active = true; drag.opId = opId;
+  if(navigator.vibrate) navigator.vibrate(60);
+  var rect = el.getBoundingClientRect();
+  var g = document.createElement('div');
+  g.className = 'drag-ghost';
+  g.style.width = rect.width+'px'; g.style.height = rect.height+'px';
+  g.style.left = (drag.startX - rect.width/2)+'px';
+  g.style.top = (drag.startY - rect.height*0.7)+'px';
+  g.innerHTML = el.innerHTML;
+  document.body.appendChild(g);
+  drag.ghost = g;
+  el.style.opacity = '0.25';
+  renderDockView();
+  document.getElementById('mvbanner').classList.add('on');
+  document.getElementById('mvbanner').querySelector('.mvbanner-t').textContent = 'Suelta en la rampa o buffer destino';
+}
+
+function moveDrag(touch) {
+  if(!drag.ghost) return;
+  var w = parseInt(drag.ghost.style.width);
+  var h = parseInt(drag.ghost.style.height);
+  drag.ghost.style.left = (touch.clientX - w/2)+'px';
+  drag.ghost.style.top = (touch.clientY - h*0.7)+'px';
+}
+
+function endDrag(touch) {
+  clearDragTimer();
+  if(!drag.active) { drag.opId=null; return; }
+  var opId = drag.opId;
+  if(drag.ghost) { drag.ghost.remove(); drag.ghost=null; }
+  if(drag.sourceEl) { drag.sourceEl.style.opacity=''; drag.sourceEl=null; }
+  drag.active = false; drag.opId = null;
+  document.getElementById('mvbanner').classList.remove('on');
+  renderDockView();
+  // Detect drop target
+  var el = document.elementFromPoint(touch.clientX, touch.clientY);
+  if(!el) return;
+  var target = el;
+  while(target && !target.dataset.drop) { target = target.parentElement; }
+  if(!target) return;
+  var b = target.dataset.bodega;
+  var existingOp = null;
+  if(target.dataset.opId) existingOp = target.dataset.opId;
+  if(target.dataset.drop==='ramp') {
+    var r = target.dataset.rampa;
+    if(!r) return;
+    var occupied = getRampOp(b, r);
+    if(!occupied) { openMoveToRamp(opId, b, r); }
+  } else if(target.dataset.drop==='buf') {
+    var pos = parseInt(target.dataset.pos)||0;
+    openMoveToBuf(opId, b, pos);
+  }
+}
 var inspA = {}, inspIP = {}, inspGP = [];
 
 // ═══ STORAGE ═══
@@ -400,7 +476,7 @@ function getRampOp(b, r) {
   return null;
 }
 function getPostOps() {
-  return getOps().filter(function(o){ return RS.indexOf(o.estado)<0 && o.estado!=='ESPERA_RAMPA' && o.estado!=='EIR'; });
+  return getOps().filter(function(o){ return RS.indexOf(o.estado)<0 && o.estado!=='ESPERA_RAMPA' && o.estado!=='BUFFER_POST' && o.estado!=='EIR'; });
 }
 
 // ═══ DEMO DATA ═══
@@ -482,7 +558,7 @@ function renderDock(b) {
   // Buffer
   var bufHtml = '';
   if(BN > 0) {
-    var bops = ops.filter(function(o){ return o.bodega===b && o.estado==='ESPERA_RAMPA'; });
+    var bops = ops.filter(function(o){ return o.bodega===b && (o.estado==='ESPERA_RAMPA'||o.estado==='BUFFER_POST'); });
     var bslots = '';
     for(var i=1; i<=BN; i++) {
       var bop = bops[i-1] || null;
@@ -503,26 +579,26 @@ function renderDock(b) {
 function buildCBox(op, isDA, isBuf) {
   var s = ST[op.estado] || ST['EN_RAMPA'];
   var fillH = op.estado==='P20'?25 : op.estado==='P50'?55 : op.estado==='P100'?100 : 5;
-  var fillColor = op.tipo==='ENTRADA' ? 'rgba(0,153,230,0.25)' : op.estado==='P100' ? 'rgba(0,195,137,0.25)' : 'rgba(245,162,11,0.2)';
-  var sc = {PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',PROXIMO:'proximo',P20:'p20',P50:'p50',P100:'p100'}[op.estado] || (op.tipo==='ENTRADA'?'entrada':'salida');
-  var tagBg = op.tipo==='ENTRADA' ? 'rgba(0,153,230,.2)' : 'rgba(245,162,11,.15)';
-  var tagC = op.tipo==='ENTRADA' ? '#0099e6' : '#f5a20b';
-  var isSel = mvState.active && mvState.opId===op.id;
+  var fillColor = op.tipo==='ENTRADA' ? 'rgba(0,153,230,0.25)' : op.estado==='P100'||op.estado==='BUFFER_POST' ? 'rgba(0,195,137,0.2)' : 'rgba(245,162,11,0.2)';
+  var isPost = op.estado==='BUFFER_POST';
+  var sc = {PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',PROXIMO:'proximo',P20:'p20',P50:'p50',P100:'p100',BUFFER_POST:'buffer-post'}[op.estado] || (op.tipo==='ENTRADA'?'entrada':'salida');
+  var tagBg = isPost ? 'rgba(0,195,137,.15)' : op.tipo==='ENTRADA' ? 'rgba(0,153,230,.2)' : 'rgba(245,162,11,.15)';
+  var tagC = isPost ? '#00C389' : op.tipo==='ENTRADA' ? '#0099e6' : '#f5a20b';
+  var isSel = drag.active && drag.opId===op.id;
   var selCls = isSel ? ' selected' : '';
   var daCls = isDA ? ' dest-av' : '';
   var contNum = op.contenedor.substring(0,4) + '...' + op.contenedor.slice(-4);
   var cliShort = (op.cliente || '').substring(0,6).toUpperCase();
   var ht = isBuf ? 90 : 148;
-  var boxCls = isBuf ? ('bbox ' + op.tipo.toLowerCase() + selCls) : ('cbox ' + sc + selCls + daCls);
+  var boxCls = isBuf ? ('bbox ' + (isPost?'buffer-post':op.tipo.toLowerCase()) + selCls) : ('cbox ' + sc + selCls + daCls);
   var clickFn = isBuf ? "onRampTap('" + op.bodega + "','buf','" + op.id + "')" : "onRampTap('" + op.bodega + "','" + (op.rampa||'') + "','" + op.id + "')";
-  var h = '<div class="' + boxCls + '" style="height:' + ht + 'px;" onclick="' + clickFn + '">';
+  var dataAttrs = ' data-op-id="'+op.id+'" data-drop="'+(isBuf?'buf':'ramp')+'" data-bodega="'+op.bodega+'" data-rampa="'+(op.rampa||'')+'"';
+  var h = '<div class="' + boxCls + '"' + dataAttrs + ' style="height:' + ht + 'px;" onclick="' + clickFn + '">';
   h += '<div class="cfill" style="height:'+fillH+'%;background:'+fillColor+';"></div>';
   h += '<div class="ccont">';
   h += '<div class="ctag" style="background:'+tagBg+';color:'+tagC+';">'+s.s+'</div>';
-  h += '<div class="cvert">';
-  h += '<div class="cnum-v" style="color:'+s.c+';text-shadow:0 0 8px '+s.g+';">'+contNum+'</div>';
-  h += '<div class="ccli-v">'+cliShort+'</div>';
-  h += '</div></div></div>';
+  h += '<div class="cvert"><div class="ctext-v" style="color:'+s.c+';text-shadow:0 0 6px '+s.g+';">'+contNum+' '+cliShort+'</div></div>';
+  h += '</div></div>';
   return h;
 }
 
@@ -692,7 +768,7 @@ function openDetail(opId) {
   h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;">';
   h += '<div><div class="op-big-r">' + (op.rampa||'COLA') + '</div>';
   h += '<div class="op-big-c" style="color:'+s.c+';">' + op.cliente + '</div>';
-  h += '<div class="op-big-n">' + op.contenedor + ' ' + (op.tipoContenedor||'') + ' &middot; ' + op.tipo + '</div></div>';
+  h += '<div class="op-big-n">' + op.contenedor + ' ' + (op.tipoContenedor||'') + ' &middot; ' + op.tipo + (op.sello?' &middot; Sello: <strong>'+op.sello+'</strong>':'') + '</div></div>';
   h += '<div style="font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;color:'+s.c+';background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:4px 8px;border-radius:5px;box-shadow:0 0 10px '+s.g+';">'+s.l+'</div>';
   h += '</div>';
   if(pct > 0) {
@@ -783,7 +859,37 @@ function updEstado(opId, newSt) {
   ops[idx].actualizadoEn = new Date().toISOString();
   saveOps(ops); refresh();
   showToast((ST[newSt]||{}).l||newSt, true);
-  if(newSt==='P100') { setTimeout(function(){ openDestinoMod(opId); }, 500); }
+  if(newSt==='P100') { setTimeout(function(){ openSealMod(opId); }, 500); }
+}
+var sealOpId = null;
+function openSealMod(opId) {
+  sealOpId = opId;
+  var op = getOps().filter(function(o){ return o.id===opId; })[0]; if(!op) return;
+  document.getElementById('mtitle').textContent = 'Sello — ' + op.contenedor;
+  var h = '<div class="abox suc">100% '+(op.tipo==='ENTRADA'?'descargado':'cargado')+'</div>';
+  h += '<div class="fg"><div class="flbl">Numero de sello (opcional)</div>';
+  h += '<input type="text" class="fin" id="seal-input" placeholder="Ej: SEAL123456" autocomplete="off" autocapitalize="characters"></div>';
+  h += '<button class="btn-p btn-green" onclick="saveSealAndContinue()">';
+  h += 'CONTINUAR — SELECCIONAR DESTINO</button>';
+  document.getElementById('mbody').innerHTML = h;
+  var si = document.getElementById('seal-input');
+  if(si) si.addEventListener('input', function(){ this.value=this.value.toUpperCase(); });
+  openMod();
+}
+function saveSealAndContinue() {
+  var opId = sealOpId; if(!opId) return;
+  var sealInput = document.getElementById('seal-input');
+  var seal = sealInput ? sealInput.value.trim() : '';
+  if(seal) {
+    var ops = getOps(); var idx=-1;
+    for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
+    if(idx>=0) {
+      ops[idx].sello = seal;
+      ops[idx].log.push({ev:'Sello registrado: '+seal, ts:new Date().toISOString()});
+      saveOps(ops); refresh();
+    }
+  }
+  openDestinoMod(opId);
 }
 
 function setDest(opId, destSt) {
@@ -1099,6 +1205,33 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('mov').addEventListener('click', function(e){ if(e.target===this) closeMod(); });
   document.getElementById('mvcancel').addEventListener('click', cancelMove);
   document.getElementById('gfInput').addEventListener('change', addGF);
+
+  // Drag system - event delegation on dock area
+  var dockArea = document.getElementById('dockArea');
+  dockArea.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('[data-op-id]');
+    if(el && el.dataset.opId) { startDragTimer(el, el.dataset.opId, e.touches[0]); }
+  }, {passive:true});
+  dockArea.addEventListener('touchmove', function(e) {
+    if(drag.active) { e.preventDefault(); moveDrag(e.touches[0]); }
+    else {
+      var dx = Math.abs(e.touches[0].clientX - drag.startX);
+      var dy = Math.abs(e.touches[0].clientY - drag.startY);
+      if(dx > 10 || dy > 10) clearDragTimer();
+    }
+  }, {passive:false});
+  dockArea.addEventListener('touchend', function(e) {
+    if(drag.active) { endDrag(e.changedTouches[0]); }
+    else clearDragTimer();
+  }, {passive:true});
+  dockArea.addEventListener('touchcancel', function() {
+    clearDragTimer();
+    if(drag.ghost) { drag.ghost.remove(); drag.ghost=null; }
+    if(drag.sourceEl) { drag.sourceEl.style.opacity=''; drag.sourceEl=null; }
+    drag.active=false; drag.opId=null;
+    document.getElementById('mvbanner').classList.remove('on');
+    renderDockView();
+  }, {passive:true});
 
   var tabs = ['CLP','MSL','AMBAS'];
   tabs.forEach(function(t) {
