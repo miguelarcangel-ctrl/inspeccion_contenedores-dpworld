@@ -176,6 +176,15 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .bbox.selected{border-color:#fff!important;box-shadow:0 0 16px rgba(255,255,255,.4)!important;animation:nwhite-fast .6s ease-in-out infinite!important}
 .no-buf{padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.15);text-align:center;text-transform:uppercase}
 .scroll-hint{font-size:8px;color:rgba(255,255,255,.15);text-align:right;padding:2px 4px;font-style:italic}
+.user-btn{width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:left;color:#fff;}
+.user-btn:active{transform:scale(.98);opacity:.9;}
+.sup-btn{border-color:rgba(0,195,137,.4);background:rgba(0,195,137,.08);}
+.sup-btn:hover,.sup-btn:active{background:rgba(0,195,137,.18);border-color:var(--green);box-shadow:0 0 14px rgba(0,195,137,.3);}
+.cli-btn{border-color:rgba(62,60,144,.5);background:rgba(62,60,144,.1);}
+.cli-btn:hover,.cli-btn:active{background:rgba(62,60,144,.22);border-color:var(--primary);box-shadow:0 0 12px rgba(62,60,144,.3);}
+.ubtn-label{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;flex:1;}
+.ubtn-sub{font-size:10px;color:var(--t3);letter-spacing:.5px;}
+.ubtn-divider{font-size:9px;font-weight:700;color:var(--t4);letter-spacing:2px;text-transform:uppercase;text-align:center;padding:4px 0;}
 
 /* ── POST SECTION ── */
 .psect{padding:8px 12px 0}
@@ -397,29 +406,20 @@ input[type=file]{display:none}
     <div class="lg-sub">Control de Rampas · Colón</div>
   </div>
   <div class="lg-card">
-    <div class="lg-title">ACCESO AL SISTEMA</div>
-    <div class="role-row">
-      <button type="button" class="role-btn active" id="rbsup">
-        <span class="role-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-        SUPERVISOR
+    <div class="lg-title">SELECCIONA TU PERFIL</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+      <button type="button" class="user-btn sup-btn" id="btnSup">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="ubtn-label">SUPERVISOR</span>
+        <span class="ubtn-sub">Acceso completo</span>
       </button>
-      <button type="button" class="role-btn" id="rbcli">
-        <span class="role-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-        CLIENTE
+      <div class="ubtn-divider">CLIENTES</div>
+      <button type="button" class="user-btn cli-btn" id="btnCernac" data-client="CERNAC">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span class="ubtn-label">CERNAC</span>
+        <span class="ubtn-sub">Vista de operaciones</span>
       </button>
     </div>
-    <div id="lerr" class="lg-err"></div>
-    <div id="fsup">
-      <div class="fg"><div class="flbl">Contrasena</div>
-      <input type="password" class="fin" id="fpwd" placeholder="1234"
-        autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
-    </div>
-    <div id="fcli" style="display:none">
-      <div class="fg"><div class="flbl">Empresa</div>
-      <input type="text" class="fin" id="femp" placeholder="CERNAC, ALICORP..."
-        autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"></div>
-    </div>
-    <button type="button" class="btn-lg" id="btnIngresar">INGRESAR</button>
   </div>
 </div>
 </div>
@@ -582,27 +582,7 @@ function setRole(r){
 function doLogin(){
   var err=document.getElementById('lerr');
   if(err) err.style.display='none';
-  if(role==='sup'){
-    var pwd=document.getElementById('fpwd');
-    if(!pwd||pwd.value!==PWD){
-      if(err){err.textContent='Contraseña incorrecta. Use: '+PWD;err.style.display='block';}
-      return false;
-    }
-    user={rol:'sup',nombre:'Supervisor'};
-    goTo('vdash');
-    renderDash();
-  } else {
-    var femp=document.getElementById('femp');
-    var e=femp?femp.value.trim().toUpperCase():'';
-    if(!e){
-      if(err){err.textContent='Ingresa el nombre de tu empresa';err.style.display='block';}
-      return false;
-    }
-    user={rol:'cli',nombre:e};
-    goTo('vcli');
-    renderCli();
-    cliRef=setInterval(renderCli,30000);
-  }
+  // Login handled via profile buttons
   return false;
 }
 function doLogout(){
@@ -1231,6 +1211,4 @@ function openCliDetail(opId){
         </div>
       </div>
       ${pct>0?`<div class="bprogbar"><div class="bprogfill" style="width:${pct}%;background:${bc};box-shadow:0 0 8px ${bc}66;"></div></div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--t3);">${pct}% ${op.tipo==='ENTRADA'?'descargado':'cargado'}</div>`:''}
-    </div>
-    <div sty
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:
