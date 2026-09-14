@@ -3,473 +3,290 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Control de Rampas — DP World Panamá</title>
+<title>Control de Rampas — DP World</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
 :root{
-  --bg:#0d0b28; --surf:#16143d; --card:#1e1c50; --raised:#252368;
-  --b0:rgba(255,255,255,.05); --b1:rgba(255,255,255,.1); --b2:rgba(255,255,255,.18); --b3:rgba(255,255,255,.28);
-  --t:#fff; --t2:rgba(255,255,255,.6); --t3:rgba(255,255,255,.3); --t4:rgba(255,255,255,.12);
-  --primary:#3E3C90; --primary-dk:#2D2B6B;
-  --green:#00C389; --gg:rgba(0,195,137,.5); --gd:#00a372;
-  --blue:#0099e6; --bg2:rgba(0,153,230,.5);
-  --amber:#f5a20b; --ag:rgba(245,162,11,.4);
-  --red:#E8003D; --rg:rgba(232,0,61,.5);
+  --primary:#3E3C90;--pk:#2D2B6B;
+  --green:#00C389;--gd:#00a372;--gg:rgba(0,195,137,.5);
+  --red:#E8003D;--rg:rgba(232,0,61,.45);
+  --blue:#0099e6;--bg2:rgba(0,153,230,.45);
+  --amber:#f5a20b;--ag:rgba(245,162,11,.4);
   --orange:#ff6830;
-  --r:10px; --r2:6px;
+  --bg:#0d0b28;--surf:#16143d;--card:#1e1c50;--raised:#252368;
+  --b0:rgba(255,255,255,.05);--b1:rgba(255,255,255,.1);--b2:rgba(255,255,255,.18);
+  --t:#fff;--t2:rgba(255,255,255,.6);--t3:rgba(255,255,255,.3);--t4:rgba(255,255,255,.12);
+  --r:10px;--r2:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden}
-.view{display:none}.view.active{display:block}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
 
-/* ── ICONS ── */
-.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+/* HEADER */
+.hdr{background:linear-gradient(90deg,var(--pk) 0%,var(--primary) 100%);border-bottom:1px solid var(--b1);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 20px rgba(0,0,0,.4)}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.hdr-logo{width:28px;height:28px;flex-shrink:0}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1}
+.hdr-sub{font-size:9px;color:var(--green);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
 
-/* ── LOGIN ── */
-.lgbg{min-height:100vh;background:radial-gradient(ellipse at 30% 20%,rgba(0,195,137,.1) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(62,60,144,.2) 0%,transparent 60%),linear-gradient(160deg,#0d0b28 0%,#16143d 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
-.lg-hero{text-align:center;margin-bottom:30px}
-.globe-ring{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;background:rgba(0,195,137,.07);border:1.5px solid rgba(0,195,137,.2);display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(0,195,137,.12)}
-.lg-brand{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:2px}
-.lg-sub{font-size:10px;color:var(--green);letter-spacing:3px;text-transform:uppercase;font-weight:700;margin-top:5px}
-.lg-card{background:rgba(17,16,58,.9);border:1px solid var(--b2);border-radius:16px;padding:26px 22px;width:100%;max-width:360px;backdrop-filter:blur(10px);box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.lg-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--t2);margin-bottom:16px;text-align:center;letter-spacing:.5px}
-.role-row{display:flex;gap:8px;margin-bottom:18px}
-.role-btn{flex:1;padding:12px 6px;border-radius:8px;border:1.5px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.5px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-.role-btn.active{border-color:var(--green);color:var(--green);background:rgba(0,195,137,.08);box-shadow:0 0 12px rgba(0,195,137,.2)}
-.role-ic{display:block;margin-bottom:4px}
-.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.flbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
-.fin{border:1.5px solid var(--b1);border-radius:7px;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--t);background:rgba(255,255,255,.04);width:100%;transition:border-color .2s}
-.fin:focus{outline:none;border-color:var(--green);background:rgba(0,195,137,.04)}
-.btn-lg{width:100%;background:var(--green);color:#0d0b28;border:none;border-radius:8px;padding:14px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .2s;margin-top:8px;box-shadow:0 4px 20px rgba(0,195,137,.4);touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-.btn-lg:hover{box-shadow:0 6px 28px rgba(0,195,137,.4);transform:translateY(-1px)}
-.lg-err{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:#ff8888;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:10px;display:none}
-
-/* ── APP HEADER ── */
-.ahdr{background:linear-gradient(90deg,var(--primary-dk) 0%,var(--primary) 100%);border-bottom:1px solid var(--b1);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 20px rgba(0,0,0,.4)}
-.ahdr-l{display:flex;align-items:center;gap:10px}
-.ahdr-logo{width:28px;height:28px;flex-shrink:0}
-.ahdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1}
-.ahdr-sub{font-size:9px;color:var(--green);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
-.ahdr-r{display:flex;align-items:center;gap:7px}
-.upill{background:rgba(0,195,137,.12);border:1px solid rgba(0,195,137,.25);color:var(--green);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px}
-.btn-out{background:var(--b0);border:1px solid var(--b1);color:var(--t3);padding:5px 9px;border-radius:6px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s}
-.btn-out:hover{color:var(--t);border-color:var(--b2)}
-
-/* ── STATS ── */
+/* STATS */
 .stats{display:flex;background:rgba(13,10,46,.8);border-bottom:1px solid var(--b0)}
 .sbox{flex:1;padding:8px 4px;text-align:center;border-right:1px solid var(--b0)}
 .sbox:last-child{border-right:none}
 .sn{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;line-height:1}
-.sn.sl{color:rgba(255,255,255,.2)} .sn.en{color:var(--blue)} .sn.sa{color:var(--amber)} .sn.ok{color:var(--green)} .sn.bf{color:var(--orange)}
+.sn.sl{color:rgba(255,255,255,.25)}.sn.en{color:var(--blue)}.sn.sa{color:var(--amber)}.sn.ok{color:var(--green)}.sn.bf{color:var(--orange)}
 .sl2{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t4);margin-top:1px}
 
-/* ── TABS ── */
-.btabs{display:flex;padding:8px 14px 6px;gap:6px;background:var(--bg)}
-.btab{flex:1;padding:8px 4px;border-radius:6px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.3px}
-.btab.active{border-color:var(--primary);background:rgba(62,60,144,.2);color:#fff;box-shadow:0 0 10px rgba(62,60,144,.3)}
+/* TABS */
+.tabs{display:flex;padding:8px 12px 6px;gap:6px;background:var(--bg)}
+.tab{flex:1;padding:8px 4px;border-radius:6px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t3);cursor:pointer;transition:all .2s;text-align:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.tab.active{border-color:var(--primary);background:rgba(62,60,144,.2);color:#fff;box-shadow:0 0 10px rgba(62,60,144,.3)}
 
-/* ── DOCK SCENE ── */
-.dock-wrap{padding:0 12px 10px;position:relative}
-.dock-scene{position:relative}
+/* MOVE BANNER */
+.mvbanner{background:rgba(0,195,137,.1);border:1px solid rgba(0,195,137,.3);border-radius:8px;padding:8px 12px;margin:0 12px 6px;display:none;align-items:center;justify-content:space-between}
+.mvbanner.on{display:flex}
+.mvbanner-t{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--green)}
+.mvbanner-x{background:rgba(232,0,61,.15);border:1px solid rgba(232,0,61,.3);color:#ff8888;padding:5px 12px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation}
 
-/* Move mode overlay banner */
-.move-banner{background:linear-gradient(90deg,rgba(0,195,137,.15) 0%,rgba(0,195,137,.08) 100%);border:1px solid rgba(0,195,137,.3);border-radius:8px;padding:8px 12px;margin:0 12px 8px;display:none;align-items:center;justify-content:space-between}
-.move-banner.active{display:flex}
-.move-banner-txt{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px}
-.move-banner-cancel{background:rgba(255,68,68,.15);border:1px solid rgba(255,68,68,.3);color:#ff8888;padding:5px 12px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.3px}
-
-/* Wall */
-.wh-wall{background:linear-gradient(180deg,#151050 0%,#0d0a2e 100%);border-radius:6px 6px 0 0;border:1px solid rgba(255,255,255,.08);border-bottom:3px solid var(--green);display:flex;align-items:flex-end;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+/* DOCK */
+.dock-wrap{padding:0 12px 8px}
+.wh-wall{background:linear-gradient(180deg,#1a1760 0%,#0f0e3a 100%);border-radius:6px 6px 0 0;border:1px solid rgba(255,255,255,.08);border-bottom:3px solid var(--green);display:flex;align-items:flex-end;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .wh-wall::-webkit-scrollbar{display:none}
 .wh-inner{display:flex;padding:6px 10px 0;gap:8px;min-width:max-content}
-.wh-bodlbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2.5px;color:rgba(0,195,137,.35);text-transform:uppercase;padding:0 6px 8px;align-self:flex-start;white-space:nowrap;flex-shrink:0}
+.wh-bl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(0,195,137,.3);text-transform:uppercase;padding:0 6px 8px;align-self:flex-start;white-space:nowrap;flex-shrink:0}
 .rdoor{width:36px;flex-shrink:0;text-align:center}
-.dframe{background:#080520;border:1px solid rgba(255,255,255,.12);border-bottom:none;border-radius:3px 3px 0 0;height:28px;position:relative;display:flex;align-items:center;justify-content:center}
-/* Dock bumpers */
+.dframe{background:#060420;border:1px solid rgba(255,255,255,.12);border-bottom:none;border-radius:3px 3px 0 0;height:28px;position:relative;display:flex;align-items:center;justify-content:center}
 .dframe::before,.dframe::after{content:'';position:absolute;bottom:0;width:5px;height:13px;background:repeating-linear-gradient(0deg,var(--amber) 0px,var(--amber) 4px,#0a0820 4px,#0a0820 7px);border-radius:1px 1px 0 0}
-.dframe::before{left:2px} .dframe::after{right:2px}
-/* Dock seal strip */
+.dframe::before{left:2px}.dframe::after{right:2px}
 .dseal{width:100%;height:3px;background:repeating-linear-gradient(90deg,rgba(0,195,137,.3) 0px,rgba(0,195,137,.3) 2px,transparent 2px,transparent 5px);position:absolute;bottom:0}
 .dnum{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;color:rgba(255,255,255,.35);letter-spacing:.5px}
-
-/* Ramp scroll */
 .rscroll{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:linear-gradient(180deg,#0d0a2e 0%,#0a0820 100%);border-left:1px solid var(--b1);border-right:1px solid var(--b1)}
 .rscroll::-webkit-scrollbar{display:none}
 .rinner{display:flex;padding:6px 10px 4px;gap:8px;min-width:max-content;align-items:flex-end}
 .rslot{width:36px;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
 .rpipe{width:2px;height:10px;background:linear-gradient(180deg,rgba(0,195,137,.4) 0%,rgba(0,195,137,.05) 100%);margin:0 auto 3px}
 
-/* ── CONTAINER BOX ── */
-.cbox{width:36px;height:148px;background:linear-gradient(180deg,#0e0b28 0%,#0a0820 100%);border:2px solid rgba(255,255,255,.12);border-radius:3px;position:relative;overflow:hidden;cursor:pointer;transition:all .25s;flex-shrink:0}
-.cbox:hover{transform:translateY(-2px)}
-/* Corrugation texture */
+/* CONTAINER */
+.cbox{width:36px;height:148px;background:linear-gradient(180deg,#0e0b28 0%,#0a0820 100%);border:2px solid rgba(255,255,255,.12);border-radius:3px;position:relative;overflow:hidden;cursor:pointer;transition:all .25s;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .cbox::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 5px,rgba(255,255,255,.025) 5px,rgba(255,255,255,.025) 6px);pointer-events:none;z-index:2}
-/* Fill level */
 .cfill{position:absolute;bottom:0;left:0;right:0;transition:height .7s cubic-bezier(.4,0,.2,1);z-index:1}
-/* Content layer */
 .ccont{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;padding:4px 2px 2px}
-/* Status tag at top */
 .ctag{font-family:'Barlow Condensed',sans-serif;font-size:7px;font-weight:800;letter-spacing:.5px;padding:1px 3px;border-radius:2px;white-space:nowrap;text-align:center;line-height:1.3;margin-bottom:3px;width:100%}
-/* Vertical text area */
 .cvert{flex:1;display:flex;flex-direction:column;align-items:center;overflow:hidden;width:100%}
-.cnum-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1.5px;white-space:nowrap;line-height:1;text-overflow:ellipsis;overflow:hidden;max-height:80px}
-.ccli-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:600;letter-spacing:.8px;white-space:nowrap;opacity:.55;margin-top:4px;line-height:1;text-overflow:ellipsis;overflow:hidden;max-height:40px}
-
-/* Libre box */
+.cnum-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;letter-spacing:1.5px;white-space:nowrap;line-height:1;overflow:hidden;max-height:80px}
+.ccli-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:600;letter-spacing:.8px;white-space:nowrap;opacity:.55;margin-top:4px;line-height:1;overflow:hidden;max-height:40px}
 .cbox.libre{border:1.5px dashed rgba(255,255,255,.1);background:rgba(255,255,255,.02)}
 .cbox.libre .ccont{justify-content:center}
 .libre-plus{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.15);color:rgba(255,255,255,.2);transition:all .2s}
-.cbox.libre:hover .libre-plus{border-color:var(--green);color:var(--green);box-shadow:0 0 8px rgba(0,195,137,.3)}
+.cbox.libre:hover .libre-plus,.cbox.libre:active .libre-plus{border-color:var(--green);color:var(--green)}
 .libre-lbl{font-family:'Barlow Condensed',sans-serif;font-size:7px;color:rgba(255,255,255,.18);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:4px}
-
-/* State neon borders */
-.cbox.entrada{border-color:var(--blue);box-shadow:0 0 10px rgba(0,153,230,.35),inset 0 0 6px rgba(0,153,230,.06)}
+.cbox.entrada{border-color:var(--blue);box-shadow:0 0 10px rgba(0,153,230,.35)}
 .cbox.salida{border-color:var(--amber);box-shadow:0 0 10px rgba(245,162,11,.35)}
-.cbox.pend-insp{border-color:var(--red);box-shadow:0 0 14px rgba(255,68,68,.5),inset 0 0 8px rgba(255,68,68,.08);animation:nred 1.3s ease-in-out infinite}
-.cbox.inspeccionado{border-color:var(--green);box-shadow:0 0 10px rgba(0,195,137,.35)}
+.cbox.pend-insp{border-color:var(--red);box-shadow:0 0 14px rgba(232,0,61,.5);animation:nred 1.3s ease-in-out infinite}
+.cbox.inspeccionado{border-color:var(--green);box-shadow:0 0 10px var(--gg)}
 .cbox.proximo{border-color:rgba(255,255,255,.4);box-shadow:0 0 10px rgba(255,255,255,.15);animation:nwhite 2s ease-in-out infinite}
 .cbox.p20{border-color:var(--orange);box-shadow:0 0 8px rgba(255,104,48,.35)}
-.cbox.p50{border-color:var(--amber);box-shadow:0 0 12px rgba(245,162,11,.4)}
-.cbox.p100{border-color:var(--green);box-shadow:0 0 14px rgba(0,195,137,.5)}
-.cbox.selected{border-color:#fff!important;box-shadow:0 0 20px rgba(255,255,255,.4)!important;animation:nwhite-fast .6s ease-in-out infinite!important}
-.cbox.dest-available{border-color:var(--green)!important;box-shadow:0 0 14px rgba(0,195,137,.5)!important;animation:npulse-g .8s ease-in-out infinite!important}
-.cbox.libre.dest-available{border-style:solid!important;background:rgba(0,195,137,.06)!important}
-
-@keyframes nred{0%,100%{box-shadow:0 0 10px rgba(255,68,68,.4)}50%{box-shadow:0 0 22px rgba(255,68,68,.7),0 0 40px rgba(255,68,68,.3)}}
+.cbox.p50{border-color:var(--amber);box-shadow:0 0 12px var(--ag)}
+.cbox.p100{border-color:var(--green);box-shadow:0 0 14px var(--gg)}
+.cbox.selected{border-color:#fff!important;box-shadow:0 0 20px rgba(255,255,255,.4)!important;animation:nwf .6s ease-in-out infinite!important}
+.cbox.dest-av{border-color:var(--green)!important;box-shadow:0 0 14px var(--gg)!important;animation:npg .8s ease-in-out infinite!important}
+.cbox.libre.dest-av{border-style:solid!important;background:rgba(0,195,137,.06)!important}
+@keyframes nred{0%,100%{box-shadow:0 0 10px rgba(232,0,61,.4)}50%{box-shadow:0 0 22px rgba(232,0,61,.7),0 0 40px rgba(232,0,61,.3)}}
 @keyframes nwhite{0%,100%{box-shadow:0 0 8px rgba(255,255,255,.1)}50%{box-shadow:0 0 16px rgba(255,255,255,.25)}}
-@keyframes nwhite-fast{0%,100%{box-shadow:0 0 14px rgba(255,255,255,.3)}50%{box-shadow:0 0 28px rgba(255,255,255,.6)}}
-@keyframes npulse-g{0%,100%{box-shadow:0 0 10px rgba(0,195,137,.4)}50%{box-shadow:0 0 22px rgba(0,195,137,.7)}}
+@keyframes nwf{0%,100%{box-shadow:0 0 14px rgba(255,255,255,.3)}50%{box-shadow:0 0 28px rgba(255,255,255,.6)}}
+@keyframes npg{0%,100%{box-shadow:0 0 10px var(--gg)}50%{box-shadow:0 0 22px rgba(0,195,137,.7)}}
 
-/* Chassis / wheels */
+/* CHASSIS */
 .chassis{width:36px;display:flex;justify-content:space-around;padding:0 4px;margin-top:3px}
-.wheel{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#252250,#0c0a28);border:2px solid #1e1c50;box-shadow:inset 0 1px 3px rgba(0,0,0,.6),0 0 4px rgba(0,0,0,.5);position:relative}
+.wheel{width:13px;height:13px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#252250,#0c0a28);border:2px solid #1e1c50;box-shadow:inset 0 1px 3px rgba(0,0,0,.6);position:relative}
 .wheel::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:5px;height:5px;border-radius:50%;background:#302e70;border:1px solid #4040a0}
 
-/* ── DRIVE LANE ── */
-.dlane{background:linear-gradient(90deg,#06041a 0%,#080620 50%,#06041a 100%);border-left:1px solid var(--b1);border-right:1px solid var(--b1);height:26px;display:flex;align-items:center;padding:0 10px;gap:8px;overflow:hidden;position:relative}
-.dlane::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:repeating-linear-gradient(90deg,transparent 0px,transparent 12px,rgba(245,162,11,.15) 12px,rgba(245,162,11,.15) 22px);transform:translateY(-50%)}
-.dlane-lbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.12);position:relative;z-index:1;background:var(--bg);padding:0 4px;white-space:nowrap}
-.dlane.dest-active::before{background:repeating-linear-gradient(90deg,transparent 0px,transparent 10px,rgba(0,195,137,.2) 10px,rgba(0,195,137,.2) 20px);animation:lane-flow .8s linear infinite}
-@keyframes lane-flow{from{background-position:0 0}to{background-position:20px 0}}
-
-/* ── BUFFER ZONE ── */
+/* BUFFER BOX */
+.bbox{width:36px;height:90px;background:linear-gradient(180deg,#0e0b28 0%,#080520 100%);border:2px solid rgba(255,255,255,.1);border-radius:3px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.bbox::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 5px,rgba(255,255,255,.02) 5px,rgba(255,255,255,.02) 6px);pointer-events:none;z-index:2}
+.bbox.libre-b{border:1.5px dashed rgba(255,255,255,.08);background:rgba(255,255,255,.01)}
+.bbox.libre-b.dest-av{border:1.5px solid var(--green)!important;background:rgba(0,195,137,.04)!important;box-shadow:0 0 10px var(--gg)!important;animation:npg .8s ease-in-out infinite!important}
+.bbox.entrada{border-color:var(--blue);box-shadow:0 0 8px rgba(0,153,230,.3)}
+.bbox.salida{border-color:var(--amber);box-shadow:0 0 8px rgba(245,162,11,.3)}
+.bbox.selected{border-color:#fff!important;box-shadow:0 0 16px rgba(255,255,255,.4)!important;animation:nwf .6s ease-in-out infinite!important}
 .bzone{background:linear-gradient(0deg,#050315 0%,#07051e 100%);border-radius:0 0 6px 6px;border:1px solid var(--b1);border-top:none;padding-bottom:8px}
 .bzone-hdr{display:flex;align-items:center;padding:6px 10px 4px;gap:8px}
 .bzone-lbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.2);text-transform:uppercase}
-.bzone-pill{background:rgba(245,162,11,.12);border:1px solid rgba(245,162,11,.25);color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;box-shadow:0 0 6px rgba(245,162,11,.15)}
+.bzone-pill{background:rgba(245,162,11,.12);border:1px solid rgba(245,162,11,.25);color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px}
 .bscroll{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .bscroll::-webkit-scrollbar{display:none}
 .binner{display:flex;padding:0 10px;gap:8px;min-width:max-content;align-items:flex-end}
 .bslot{width:36px;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
 .bpipe{width:2px;height:8px;background:rgba(245,162,11,.15);margin:0 auto 3px}
 .bnum{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;color:rgba(255,255,255,.18);letter-spacing:.5px;margin-top:2px}
-/* Buffer container (shorter) */
-.bbox{width:36px;height:90px;background:linear-gradient(180deg,#0e0b28 0%,#080520 100%);border:2px solid rgba(255,255,255,.1);border-radius:3px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
-.bbox::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0px,transparent 5px,rgba(255,255,255,.02) 5px,rgba(255,255,255,.02) 6px);pointer-events:none;z-index:2}
-.bbox-cont{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;padding:3px 2px 2px}
-.bbox.libre-b{border:1.5px dashed rgba(255,255,255,.08);background:rgba(255,255,255,.01)}
-.bbox.libre-b.dest-available{border:1.5px solid var(--green)!important;background:rgba(0,195,137,.04)!important;box-shadow:0 0 10px rgba(0,195,137,.3)!important;animation:npulse-g .8s ease-in-out infinite!important}
-.bbox.entrada{border-color:var(--blue);box-shadow:0 0 8px rgba(0,153,230,.3)}
-.bbox.salida{border-color:var(--amber);box-shadow:0 0 8px rgba(245,162,11,.3)}
-.bbox.selected{border-color:#fff!important;box-shadow:0 0 16px rgba(255,255,255,.4)!important;animation:nwhite-fast .6s ease-in-out infinite!important}
-.no-buf{padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.15);text-align:center;text-transform:uppercase}
+.no-buf{padding:8px 10px;font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.15);text-align:center;text-transform:uppercase}
+.dlane{background:linear-gradient(90deg,#06041a 0%,#080620 50%,#06041a 100%);border-left:1px solid var(--b1);border-right:1px solid var(--b1);height:26px;display:flex;align-items:center;padding:0 10px;overflow:hidden;position:relative}
+.dlane::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:repeating-linear-gradient(90deg,transparent 0px,transparent 12px,rgba(245,162,11,.15) 12px,rgba(245,162,11,.15) 22px);transform:translateY(-50%)}
+.dlane-lbl{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.12);position:relative;z-index:1;background:var(--bg);padding:0 4px;white-space:nowrap}
 .scroll-hint{font-size:8px;color:rgba(255,255,255,.15);text-align:right;padding:2px 4px;font-style:italic}
-.user-btn{width:100%;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.12);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;text-align:left;color:#fff;}
-.user-btn:active{transform:scale(.98);opacity:.9;}
-.sup-btn{border-color:rgba(0,195,137,.4);background:rgba(0,195,137,.08);}
-.sup-btn:hover,.sup-btn:active{background:rgba(0,195,137,.18);border-color:var(--green);box-shadow:0 0 14px rgba(0,195,137,.3);}
-.cli-btn{border-color:rgba(62,60,144,.5);background:rgba(62,60,144,.1);}
-.cli-btn:hover,.cli-btn:active{background:rgba(62,60,144,.22);border-color:var(--primary);box-shadow:0 0 12px rgba(62,60,144,.3);}
-.ubtn-label{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;flex:1;}
-.ubtn-sub{font-size:10px;color:var(--t3);letter-spacing:.5px;}
-.ubtn-divider{font-size:9px;font-weight:700;color:var(--t4);letter-spacing:2px;text-transform:uppercase;text-align:center;padding:4px 0;}
 
-/* ── POST SECTION ── */
+/* POST-RAMP */
 .psect{padding:8px 12px 0}
 .psect-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .psect-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
 .psect-cnt{background:rgba(0,195,137,.12);border:1px solid rgba(0,195,137,.25);color:var(--green);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
 .pscroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:90px;scrollbar-width:none}
 .pscroll::-webkit-scrollbar{display:none}
-.pcard{width:250px;flex-shrink:0;background:var(--card);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .2s}
-.pcard:hover{border-color:var(--b2);box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.pcard{width:250px;flex-shrink:0;background:var(--card);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .2s;touch-action:manipulation}
+.pcard:hover{border-color:var(--b2)}
 .pcard-hdr{padding:10px 12px 8px;border-bottom:1px solid var(--b0)}
 .pcard-top{display:flex;align-items:flex-start;justify-content:space-between}
 .pcard-num{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--t)}
 .pcard-cli{font-size:10px;color:var(--t3);margin-top:1px}
 .ptipo{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px}
-.pte{background:rgba(0,153,230,.15);color:var(--blue)} .pts{background:rgba(245,162,11,.12);color:var(--amber)}
+.pte{background:rgba(0,153,230,.15);color:var(--blue)}.pts{background:rgba(245,162,11,.12);color:var(--amber)}
 .pstate-row{padding:8px 12px 4px;display:flex;align-items:center;gap:6px}
 .pstate-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .pstate-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700}
-.pipeline{padding:4px 12px 10px;display:flex;align-items:center;overflow:hidden}
-.pip-d{width:18px;height:18px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0;transition:all .3s}
+.pipeline{padding:4px 12px 8px;display:flex;align-items:center;overflow:hidden}
+.pip-d{width:18px;height:18px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0}
 .pip-d.done{background:var(--green);border-color:var(--green);color:var(--bg);box-shadow:0 0 6px var(--gg)}
-.pip-d.cur{border-color:var(--t);color:var(--t);background:rgba(255,255,255,.1);box-shadow:0 0 8px rgba(255,255,255,.2)}
+.pip-d.cur{border-color:var(--t);color:var(--t);background:rgba(255,255,255,.1)}
 .pip-d.fut{border-color:var(--b1);color:var(--t4)}
 .pip-l{width:10px;height:1.5px;flex-shrink:0}
-.pip-l.done{background:var(--green)} .pip-l.fut{background:var(--b0)}
+.pip-l.done{background:var(--green)}.pip-l.fut{background:var(--b0)}
 .pcard-act{padding:0 12px 10px}
 
-/* ── MODAL ── */
-.mov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;}
-.mov.hidden{display:none!important;pointer-events:none!important;visibility:hidden!important;}
-.msheet{background:linear-gradient(180deg,#13113e 0%,#0f0c38 100%);border:1px solid var(--b2);border-bottom:none;border-radius:16px 16px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding-bottom:20px;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end}
+.mov.hidden{display:none!important;pointer-events:none!important;visibility:hidden!important}
+.msheet{background:linear-gradient(180deg,#13113e 0%,#0f0c38 100%);border:1px solid var(--b2);border-bottom:none;border-radius:16px 16px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding-bottom:20px;animation:sup .28s cubic-bezier(.4,0,.2,1)}
+@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .mhandle{width:32px;height:3px;background:var(--b2);border-radius:2px;margin:10px auto 0}
 .mhdr{padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--b0)}
 .mtitle{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--t)}
-.mclose{width:28px;height:28px;border-radius:50%;background:var(--b0);border:1px solid var(--b1);color:var(--t3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
-.mclose:hover{background:var(--b1);color:var(--t)}
+.mclose{width:28px;height:28px;border-radius:50%;background:var(--b0);border:1px solid var(--b1);color:var(--t3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;touch-action:manipulation;font-size:18px;line-height:1}
 .mbody{padding:14px 16px 6px}
 
-/* Modal components */
-.tipo-sel{display:flex;gap:8px;margin-bottom:16px}
-.tipo-btn{flex:1;padding:16px 8px;border-radius:var(--r);border:1.5px solid var(--b1);background:var(--b0);text-align:center;cursor:pointer;transition:all .2s}
-.tipo-icon{width:32px;height:32px;margin:0 auto 6px;color:var(--t3)}
-.tipo-lbl{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--t3)}
-.tipo-sub{font-size:10px;color:var(--t4);margin-top:2px}
-.tipo-btn.ent.act{border-color:var(--blue);background:rgba(0,153,230,.08);box-shadow:0 0 12px rgba(0,153,230,.2)}
-.tipo-btn.ent.act .tipo-lbl{color:var(--blue)} .tipo-btn.ent.act .tipo-icon{color:var(--blue)}
-.tipo-btn.sal.act{border-color:var(--amber);background:rgba(245,162,11,.08);box-shadow:0 0 10px rgba(245,162,11,.2)}
-.tipo-btn.sal.act .tipo-lbl{color:var(--amber)} .tipo-btn.sal.act .tipo-icon{color:var(--amber)}
-
-.abox{border-radius:7px;padding:9px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;font-size:12px;font-weight:600;line-height:1.4}
-.abox.warn{background:rgba(245,162,11,.08);border:1px solid rgba(245,162,11,.25);color:var(--amber)}
-.abox.err{background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.25);color:var(--red)}
-.abox.suc{background:rgba(0,195,137,.08);border:1px solid rgba(0,195,137,.25);color:var(--green)}
-.abox.info{background:rgba(0,153,230,.08);border:1px solid rgba(0,153,230,.25);color:var(--blue)}
-
+/* FORM ELEMENTS */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.flbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.fin{border:1.5px solid var(--b1);border-radius:7px;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--t);background:rgba(255,255,255,.04);width:100%;transition:border-color .2s}
+.fin:focus{outline:none;border-color:var(--green);background:rgba(0,195,137,.04)}
 .ig2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.ig1{grid-template-columns:1fr} .fg2{display:flex;flex-direction:column;gap:4px}
 
+/* TIPO SELECTOR */
+.tipo-sel{display:flex;gap:8px;margin-bottom:14px}
+.tipo-btn{flex:1;padding:14px 8px;border-radius:var(--r);border:1.5px solid var(--b1);background:var(--b0);text-align:center;cursor:pointer;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.tipo-lbl{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--t3);display:block;margin-top:4px}
+.tipo-sub{font-size:10px;color:var(--t4);display:block;margin-top:2px}
+.tipo-btn.ent.act{border-color:var(--blue);background:rgba(0,153,230,.1)}.tipo-btn.ent.act .tipo-lbl{color:var(--blue)}
+.tipo-btn.sal.act{border-color:var(--amber);background:rgba(245,162,11,.1)}.tipo-btn.sal.act .tipo-lbl{color:var(--amber)}
+
+/* ALERTS */
+.abox{border-radius:7px;padding:9px 12px;margin-bottom:10px;font-size:12px;font-weight:600;line-height:1.4;display:flex;align-items:flex-start;gap:8px}
+.abox.warn{background:rgba(245,162,11,.08);border:1px solid rgba(245,162,11,.25);color:var(--amber)}
+.abox.err{background:rgba(232,0,61,.08);border:1px solid rgba(232,0,61,.25);color:#ff6680}
+.abox.suc{background:rgba(0,195,137,.08);border:1px solid rgba(0,195,137,.25);color:var(--green)}
+
+/* PROGRESS */
 .prog-row{display:flex;gap:7px;margin-bottom:12px}
-.pbtn{flex:1;padding:14px 4px;border-radius:var(--r);border:1.5px solid;text-align:center;cursor:pointer;transition:all .2s;font-family:'Barlow Condensed',sans-serif}
-.pbtn .pn{font-size:24px;font-weight:800;line-height:1}
+.pbtn{flex:1;padding:14px 4px;border-radius:var(--r);border:1.5px solid;text-align:center;cursor:pointer;transition:all .2s;font-family:'Barlow Condensed',sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pbtn .pn{font-size:22px;font-weight:800;line-height:1}
 .pbtn .pl{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-top:3px}
-.pbtn.p20{border-color:rgba(255,104,48,.3);background:rgba(255,104,48,.06)}.pbtn.p20.act,.pbtn.p20:hover{background:rgba(255,104,48,.15);border-color:var(--orange);box-shadow:0 0 10px rgba(255,104,48,.3)} .pbtn.p20 .pn{color:var(--orange)}
-.pbtn.p50{border-color:rgba(245,162,11,.3);background:rgba(245,162,11,.06)}.pbtn.p50.act,.pbtn.p50:hover{background:rgba(245,162,11,.15);border-color:var(--amber);box-shadow:0 0 10px rgba(245,162,11,.3)} .pbtn.p50 .pn{color:var(--amber)}
-.pbtn.p100{border-color:rgba(0,195,137,.3);background:rgba(0,195,137,.06)}.pbtn.p100.act,.pbtn.p100:hover{background:rgba(0,195,137,.15);border-color:var(--green);box-shadow:0 0 12px rgba(0,195,137,.3)} .pbtn.p100 .pn{color:var(--green)}
+.pbtn.p20{border-color:rgba(255,104,48,.3);background:rgba(255,104,48,.06)}.pbtn.p20 .pn{color:var(--orange)}.pbtn.p20:active{background:rgba(255,104,48,.18);border-color:var(--orange)}
+.pbtn.p50{border-color:rgba(245,162,11,.3);background:rgba(245,162,11,.06)}.pbtn.p50 .pn{color:var(--amber)}.pbtn.p50:active{background:rgba(245,162,11,.18);border-color:var(--amber)}
+.pbtn.p100{border-color:rgba(0,195,137,.3);background:rgba(0,195,137,.06)}.pbtn.p100 .pn{color:var(--green)}.pbtn.p100:active{background:rgba(0,195,137,.18);border-color:var(--green)}
 
+/* DESTINATION */
 .dest-col{display:flex;flex-direction:column;gap:8px}
-.dbtn{padding:14px 14px;border-radius:var(--r);border:1.5px solid;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s}
-.dbtn.puerto{border-color:rgba(0,195,137,.3);background:rgba(0,195,137,.06)}.dbtn.puerto:hover{background:rgba(0,195,137,.14);box-shadow:0 0 14px rgba(0,195,137,.2)} .dbtn.puerto .dt{color:var(--green)}
-.dbtn.buffer{border-color:rgba(245,162,11,.3);background:rgba(245,162,11,.06)}.dbtn.buffer:hover{background:rgba(245,162,11,.14)} .dbtn.buffer .dt{color:var(--amber)}
-.dbtn.docs{border-color:rgba(255,68,68,.3);background:rgba(255,68,68,.06)}.dbtn.docs:hover{background:rgba(255,68,68,.14)} .dbtn.docs .dt{color:var(--red)}
-.dic{width:28px;height:28px;flex-shrink:0}.dt{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700}.ds{font-size:10px;color:var(--t3);margin-top:1px}
+.dbtn{padding:14px;border-radius:var(--r);border:1.5px solid;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.dbtn.puerto{border-color:rgba(0,195,137,.3);background:rgba(0,195,137,.06)}.dbtn.puerto .dt{color:var(--green)}.dbtn.puerto:active{background:rgba(0,195,137,.18)}
+.dbtn.buffer{border-color:rgba(245,162,11,.3);background:rgba(245,162,11,.06)}.dbtn.buffer .dt{color:var(--amber)}.dbtn.buffer:active{background:rgba(245,162,11,.18)}
+.dbtn.docs{border-color:rgba(232,0,61,.3);background:rgba(232,0,61,.06)}.dbtn.docs .dt{color:#ff6680}.dbtn.docs:active{background:rgba(232,0,61,.18)}
+.dic{width:26px;height:26px;flex-shrink:0}.dt{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;display:block}.ds{font-size:10px;color:var(--t3);margin-top:1px;display:block}
 
-/* Op detail in modal */
+/* OP DETAIL */
 .op-dtop{background:linear-gradient(135deg,#0f0c38 0%,#0a0828 100%);margin:-14px -16px 14px;padding:18px;border-bottom:1px solid var(--b1)}
 .op-big-r{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:#fff;line-height:1}
 .op-big-c{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;margin-top:3px}
 .op-big-n{font-size:11px;color:var(--t3);margin-top:2px}
-.bprogbar{background:rgba(255,255,255,.08);border-radius:5px;height:8px;overflow:hidden;margin:12px 0 4px}
-.bprogfill{height:100%;border-radius:5px;transition:width .6s}
+.bprog{background:rgba(255,255,255,.08);border-radius:5px;height:8px;overflow:hidden;margin:12px 0 4px}
+.bprogf{height:100%;border-radius:5px;transition:width .6s}
 
-/* Inspection form */
+/* INSPECTION */
 .isec{margin-bottom:10px;border-radius:7px;overflow:hidden;border:1px solid var(--b1)}
 .isec-hdr{background:rgba(26,22,80,.8);padding:6px 10px;display:flex;align-items:center;gap:7px}
 .isec-num{background:rgba(0,195,137,.2);color:var(--green);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;flex-shrink:0;border:1px solid rgba(0,195,137,.3)}
-.isec-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--t2);letter-spacing:.3px;text-transform:uppercase}
+.isec-name{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase}
 .iitem{padding:8px 10px;border-bottom:1px solid var(--b0);display:flex;align-items:flex-start;gap:7px}
 .iitem:last-child{border-bottom:none}
 .iitem-id{font-size:9px;font-weight:700;color:var(--t4);width:20px;flex-shrink:0;padding-top:1px}
 .iitem-q{flex:1;font-size:11px;color:var(--t2);line-height:1.35}
 .ibtns{display:flex;gap:4px;flex-shrink:0;align-items:center}
-.ib{width:32px;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;cursor:pointer;color:var(--t3);transition:all .15s}
+.ib{width:32px;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;cursor:pointer;color:var(--t3);transition:all .15s;touch-action:manipulation}
 .ib.si{background:rgba(0,195,137,.15);border-color:var(--green);color:var(--green)}
-.ib.no{background:rgba(255,68,68,.12);border-color:var(--red);color:var(--red)}
-/* Camera per item */
-.icam{width:26px;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t4);transition:all .15s;flex-shrink:0}
-.icam:hover{border-color:var(--green);color:var(--green)}
-.icam.hph{border-color:var(--green);color:var(--green);background:rgba(0,195,137,.1)}
-.iphoto-row{padding:4px 10px 8px 38px;display:none}
-.iphoto-row.vis{display:flex;align-items:center;gap:7px}
-.iphoto-thumb{width:50px;height:50px;border-radius:4px;overflow:hidden;border:1px solid var(--b1);position:relative;flex-shrink:0}
-.iphoto-thumb img{width:100%;height:100%;object-fit:cover}
-.iphoto-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;line-height:1}
-.iph-lbl{font-size:10px;color:var(--green);font-weight:600}
-
-/* Global fotos */
-.gfotos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.ib.no{background:rgba(232,0,61,.12);border-color:var(--red);color:#ff6680}
+.icam{width:26px;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t4);transition:all .15s;flex-shrink:0;touch-action:manipulation}
+.icam:active,.icam.hph{border-color:var(--green);color:var(--green);background:rgba(0,195,137,.1)}
+.iphrow{padding:4px 10px 8px 38px;display:none}
+.iphrow.vis{display:flex;align-items:center;gap:7px}
+.iphthumb{width:50px;height:50px;border-radius:4px;overflow:hidden;border:1px solid var(--b1);position:relative;flex-shrink:0}
+.iphthumb img{width:100%;height:100%;object-fit:cover}
+.iphdel{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px}
+.gfgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
 .gfthumb{aspect-ratio:1;border-radius:4px;overflow:hidden;position:relative;background:var(--b0);border:1px solid var(--b1)}
 .gfthumb img{width:100%;height:100%;object-fit:cover}
-.gfdel{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px}
-.gfadd{border:1.5px dashed var(--b1);border-radius:4px;background:var(--b0);color:var(--t4);padding:8px;font-family:'Barlow',sans-serif;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;transition:all .2s}
-.gfadd:hover{border-color:var(--green);color:var(--green)}
+.gfdel{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.gfadd{border:1.5px dashed var(--b1);border-radius:4px;background:var(--b0);color:var(--t4);padding:10px;font-family:'Barlow',sans-serif;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;transition:all .2s;touch-action:manipulation}
+.gfadd:active{border-color:var(--green);color:var(--green)}
 
-/* Action buttons */
-.btn-p{width:100%;border:none;border-radius:7px;padding:12px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:7px;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:7px}
-.btn-navy{background:linear-gradient(135deg,var(--raised) 0%,var(--surf) 100%);color:var(--t);border:1px solid var(--b2)}
-.btn-navy:hover{border-color:var(--b3)}
-.btn-green{background:linear-gradient(135deg,var(--green) 0%,var(--gd) 100%);color:var(--bg);box-shadow:0 3px 14px rgba(0,195,137,.3)}
-.btn-green:hover{box-shadow:0 4px 20px rgba(0,195,137,.4)}
-.btn-red{background:rgba(255,68,68,.12);color:var(--red);border:1px solid rgba(255,68,68,.3)}
-.btn-red:hover{background:rgba(255,68,68,.2)}
-.btn-amber{background:rgba(245,162,11,.1);color:var(--amber);border:1px solid rgba(245,162,11,.3)}
-.btn-amber:hover{background:rgba(245,162,11,.18)}
-.btn-share{background:rgba(0,153,230,.1);color:var(--blue);border:1px solid rgba(0,153,230,.3)}
-.btn-share:hover{background:rgba(0,153,230,.18)}
-.btn-dang{width:100%;background:rgba(255,68,68,.06);color:rgba(255,100,100,.7);border:1px solid rgba(255,68,68,.15);border-radius:7px;padding:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:7px;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-dang:hover{background:rgba(255,68,68,.12);color:var(--red)}
+/* BUTTONS */
+.btn-p{width:100%;border:none;border-radius:7px;padding:12px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:7px;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;gap:7px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn-green{background:var(--green);color:var(--bg);box-shadow:0 3px 14px var(--gg)}.btn-green:active{background:var(--gd)}
+.btn-navy{background:rgba(255,255,255,.06);color:var(--t);border:1px solid var(--b2)}.btn-navy:active{background:var(--b2)}
+.btn-red{background:rgba(232,0,61,.12);color:#ff6680;border:1px solid rgba(232,0,61,.3)}.btn-red:active{background:rgba(232,0,61,.22)}
+.btn-blue{background:rgba(0,153,230,.1);color:var(--blue);border:1px solid rgba(0,153,230,.3)}.btn-blue:active{background:rgba(0,153,230,.22)}
+.btn-amber{background:rgba(245,162,11,.1);color:var(--amber);border:1px solid rgba(245,162,11,.3)}.btn-amber:active{background:rgba(245,162,11,.22)}
+.btn-dang{width:100%;background:rgba(232,0,61,.06);color:rgba(255,100,100,.7);border:1px solid rgba(232,0,61,.15);border-radius:7px;padding:10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:7px;display:flex;align-items:center;justify-content:center;gap:6px;touch-action:manipulation}
+.btn-dang:active{background:rgba(232,0,61,.12);color:var(--red)}
 
+/* TIMELINE */
 .tl{border-top:1px solid var(--b0);margin-top:12px;padding-top:10px}
 .tl-h{font-size:9px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.tl-it{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.tl-it{display:flex;gap:8px;margin-bottom:8px}
 .tl-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:4px;box-shadow:0 0 4px var(--gg)}
-.tl-txt{font-size:11px;color:var(--t2);line-height:1.3}
-.tl-time{font-size:9px;color:var(--t4)}
+.tl-txt{font-size:11px;color:var(--t2);line-height:1.3}.tl-time{font-size:9px;color:var(--t4)}
 
-/* Post-ramp state selector */
-.psbtnlist{display:flex;flex-direction:column;gap:7px}
-.psbtn{padding:11px 12px;border-radius:7px;border:1px solid;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s}
-.psbtn:hover{transform:translateX(2px)}
-.psbtn-ic{width:18px;height:18px;flex-shrink:0}
-.psbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700}
-.pss{font-size:10px;color:var(--t3);margin-top:1px}
+/* POST STATE SELECT */
+.psblist{display:flex;flex-direction:column;gap:7px}
+.psbtn{padding:11px 12px;border-radius:7px;border:1px solid;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .2s;touch-action:manipulation}
+.psbtn:active{transform:translateX(2px)}
+.psic{width:18px;height:18px;flex-shrink:0}
+.pslbl{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;display:block}
+.pssub{font-size:10px;color:var(--t3);display:block;margin-top:1px}
 
-/* ── CLIENT VIEW ── */
-.chdr{background:linear-gradient(140deg,#0d0a2e 0%,#07051a 100%);border-bottom:1px solid var(--b1);padding:18px 14px 14px}
-.cwelc{font-size:9px;color:rgba(0,195,137,.5);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px}
-.cname{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:#fff;line-height:1}
-.csub{font-size:11px;color:var(--t3);margin-top:3px}
-.cstats{display:flex;background:rgba(13,10,46,.6);border-bottom:1px solid var(--b0)}
-.cstat{flex:1;padding:9px 5px;text-align:center;border-right:1px solid var(--b0)}
-.cstat:last-child{border-right:none}
-.csn{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--t)}
-.csl{font-size:8px;color:var(--t4);text-transform:uppercase;letter-spacing:.8px}
-.live-bar{background:rgba(13,10,46,.4);border-bottom:1px solid var(--b0);padding:5px 14px;display:flex;align-items:center;justify-content:space-between}
-.live-t{font-size:10px;color:var(--t4)}
-.live-b{background:rgba(0,195,137,.1);color:var(--green);border:1px solid rgba(0,195,137,.25);padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:1px;animation:plive 2s ease-in-out infinite}
-@keyframes plive{0%,100%{opacity:1}50%{opacity:.5}}
-
-.cops{padding:10px 12px 80px;display:flex;flex-direction:column;gap:9px}
-.ccard{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden}
-.ccard-hdr{padding:10px 12px 7px;display:flex;align-items:flex-start;justify-content:space-between}
-.ccard-r{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--t)}
-.ccard-b{font-size:9px;color:var(--t4);font-weight:600;letter-spacing:.5px}
-.ccard-n{padding:0 12px 7px;font-family:monospace;font-size:12px;font-weight:600;color:var(--t2)}
-.cpl{padding:6px 12px 10px}
-.cpl-state{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;margin-bottom:6px}
-.cpl-steps{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none;padding-bottom:3px}
-.cpl-steps::-webkit-scrollbar{display:none}
-.cstep{display:flex;align-items:center;flex-shrink:0}
-.csd{width:14px;height:14px;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:800;flex-shrink:0;transition:all .3s}
-.csd.done{background:var(--green);border-color:var(--green);color:var(--bg);box-shadow:0 0 5px var(--gg)}
-.csd.cur{border-color:var(--t);color:var(--t);background:rgba(255,255,255,.08)}
-.csd.fut{border-color:var(--b1);color:var(--t4)}
-.csl2{width:8px;height:1.5px;flex-shrink:0}
-.csl2.done{background:var(--green)} .csl2.fut{background:var(--b0)}
-.ccard-ft{border-top:1px solid var(--b0);padding:6px 12px;display:flex;justify-content:space-between}
-.ccard-tr{font-size:10px;color:var(--t4)} .ccard-ts{font-size:9px;color:var(--t4)}
-.cempty{text-align:center;padding:50px 16px;color:var(--t4)}
-.cempty-ic{width:48px;height:48px;margin:0 auto 12px;opacity:.25}
-.cempty p{font-size:13px}
-.cbtm{position:fixed;bottom:0;left:0;right:0;padding:10px 14px;background:var(--surf);border-top:1px solid var(--b1);z-index:50}
-
-/* ── TOAST ── */
+/* TOAST */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--card);color:var(--t);border:1px solid var(--b2);padding:9px 16px;border-radius:28px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:400;white-space:nowrap;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.ok{background:rgba(0,195,137,.15);border-color:rgba(0,195,137,.4);color:var(--green);box-shadow:0 0 20px rgba(0,195,137,.2)}
+.toast.ok{background:rgba(0,195,137,.15);border-color:rgba(0,195,137,.4);color:var(--green)}
 .toast.warn{background:rgba(245,162,11,.1);border-color:rgba(245,162,11,.3);color:var(--amber)}
 input[type=file]{display:none}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<div class="mov hidden" id="mov" onclick="handleMovClick(event)">
-  <div class="msheet" id="msheet">
+<div class="mov hidden" id="mov">
+  <div class="msheet">
     <div class="mhandle"></div>
-    <div class="mhdr"><div class="mtitle" id="mtitle"></div><button class="mclose" onclick="closeMod()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mhdr">
+      <div class="mtitle" id="mtitle"></div>
+      <button class="mclose" id="mclose">&#215;</button>
+    </div>
     <div class="mbody" id="mbody"></div>
   </div>
 </div>
-<input type="file" id="gfInput" accept="image/*" multiple onchange="addGF(event)">
+<input type="file" id="gfInput" accept="image/*" multiple>
 
-<!-- LOGIN -->
-<div class="view" id="vlogin">
-<div class="lgbg">
-  <div class="lg-hero">
-    <div class="globe-ring">
-      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-        <circle cx="20" cy="20" r="16" stroke="#00C389" stroke-width="1.5" fill="none"/>
-        <ellipse cx="20" cy="20" rx="7" ry="16" stroke="rgba(0,195,137,0.35)" stroke-width="1" fill="none"/>
-        <line x1="5" y1="20" x2="35" y2="20" stroke="rgba(0,195,137,0.2)" stroke-width="1"/>
-        <line x1="8" y1="13" x2="32" y2="13" stroke="rgba(0,195,137,0.12)" stroke-width="1"/>
-        <line x1="8" y1="27" x2="32" y2="27" stroke="rgba(0,195,137,0.12)" stroke-width="1"/>
-        <circle cx="20" cy="20" r="4" fill="rgba(0,195,137,0.15)" stroke="#00C389" stroke-width="1"/>
-      </svg>
-    </div>
-    <div class="lg-brand">DP WORLD</div>
-    <div class="lg-sub">Control de Rampas · Colón</div>
-  </div>
-  <div class="lg-card">
-    <div class="lg-title">SELECCIONA TU PERFIL</div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
-      <button type="button" class="user-btn sup-btn" id="btnSup">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span class="ubtn-label">SUPERVISOR</span>
-        <span class="ubtn-sub">Acceso completo</span>
-      </button>
-      <div class="ubtn-divider">CLIENTES</div>
-      <button type="button" class="user-btn cli-btn" id="btnCernac" data-client="CERNAC">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        <span class="ubtn-label">CERNAC</span>
-        <span class="ubtn-sub">Vista de operaciones</span>
-      </button>
-    </div>
-  </div>
-</div>
-</div>
-
-<!-- DASHBOARD -->
-<div class="view active" id="vdash">
-  <div class="ahdr">
-    <div class="ahdr-l">
-      <div class="ahdr-logo">
-        <svg viewBox="0 0 28 28" fill="none">
-          <circle cx="14" cy="14" r="11" stroke="#00C389" stroke-width="1.5" fill="rgba(0,195,137,0.08)"/>
-          <ellipse cx="14" cy="14" rx="5" ry="11" stroke="rgba(0,195,137,0.25)" stroke-width="1" fill="none"/>
-          <line x1="4" y1="14" x2="24" y2="14" stroke="rgba(0,195,137,0.18)" stroke-width="1"/>
-        </svg>
-      </div>
-      <div><div class="ahdr-title">DP WORLD</div><div class="ahdr-sub">Control de Rampas</div></div>
-    </div>
-    <div class="ahdr-r">
-      <div class="upill" id="upill">SUP</div>
-      <button class="btn-out" onclick="doLogout()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Salir
-      </button>
-    </div>
-  </div>
-  <div class="move-banner" id="moveBanner">
-    <div class="move-banner-txt">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-      Selecciona la rampa o buffer destino
-    </div>
-    <button class="move-banner-cancel" onclick="cancelMove()">Cancelar</button>
-  </div>
-  <div class="stats" id="statStrip"></div>
-  <div class="btabs">
-    <button class="btab active" id="tab-CLP" onclick="setBod('CLP')">CLP</button>
-    <button class="btab" id="tab-MSL" onclick="setBod('MSL')">MSL</button>
-    <button class="btab" id="tab-AMBAS" onclick="setBod('AMBAS')">AMBAS</button>
-  </div>
-  <div id="dockView"></div>
-  <div class="psect">
-    <div class="psect-hdr"><div class="psect-title">Seguimiento post-rampa</div><div class="psect-cnt" id="pcnt">0</div></div>
-    <div class="pscroll" id="pscroll"></div>
-  </div>
-</div>
-
-<!-- CLIENT -->
-<div class="view" id="vcli">
-  <div class="ahdr">
-    <div class="ahdr-l">
-      <div class="ahdr-logo">
+<div id="vdash">
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="hdr-logo">
         <svg viewBox="0 0 28 28" fill="none">
           <circle cx="14" cy="14" r="11" stroke="#00C389" stroke-width="1.5" fill="rgba(0,195,137,0.08)"/>
           <ellipse cx="14" cy="14" rx="5" ry="11" stroke="rgba(0,195,137,0.25)" stroke-width="1" fill="none"/>
@@ -477,79 +294,120 @@ input[type=file]{display:none}
         </svg>
       </div>
       <div>
-        <div class="ahdr-title" id="cname2" style="font-size:14px;"></div>
-        <div class="ahdr-sub">Vista de operaciones · Solo lectura</div>
+        <div class="hdr-title">DP WORLD</div>
+        <div class="hdr-sub">Control de Rampas</div>
       </div>
     </div>
-    <div class="ahdr-r">
-      <div class="live-b" style="margin-right:4px;">● EN VIVO</div>
-      <button class="btn-out" onclick="doLogout()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Salir
-      </button>
-    </div>
   </div>
-  <div class="cstats" id="cstats"></div>
-  <div class="btabs">
-    <button class="btab active" id="ctab-CLP" onclick="setCBod('CLP')">CLP</button>
-    <button class="btab" id="ctab-MSL" onclick="setCBod('MSL')">MSL</button>
-    <button class="btab" id="ctab-AMBAS" onclick="setCBod('AMBAS')">AMBAS</button>
+  <div class="stats" id="stats"></div>
+  <div class="mvbanner" id="mvbanner">
+    <div class="mvbanner-t">Toca la rampa o buffer destino</div>
+    <button class="mvbanner-x" id="mvcancel">Cancelar</button>
   </div>
-  <div id="cliDockView"></div>
+  <div class="tabs">
+    <button class="tab active" id="tab-CLP">CLP</button>
+    <button class="tab" id="tab-MSL">MSL</button>
+    <button class="tab" id="tab-AMBAS">AMBAS</button>
+  </div>
+  <div id="dockArea"></div>
   <div class="psect">
-    <div class="psect-hdr"><div class="psect-title">Mis contenedores en tránsito</div><div class="psect-cnt" id="cliPostCnt">0</div></div>
-    <div class="pscroll" id="cliPostScroll"></div>
+    <div class="psect-hdr">
+      <div class="psect-title">Seguimiento post-rampa</div>
+      <div class="psect-cnt" id="pcnt">0</div>
+    </div>
+    <div class="pscroll" id="pscroll"></div>
   </div>
 </div>
 
 <script>
-// ══ CONFIG ══
-const CFG={CLP:{label:'Colón Logistics Park',rampas:6,buffer:8},MSL:{label:'MSL Bodega',rampas:20,buffer:0}};
-const PWD='1234';
-const ST={
-  ESPERA_RAMPA:{l:'En espera de rampa',s:'ESPERA',c:'#f5a20b',g:'rgba(245,162,11,.4)'},
-  EN_RAMPA:{l:'En rampa',s:'RAMPA',c:'rgba(255,255,255,.4)',g:'rgba(255,255,255,.15)'},
-  PEND_INSP:{l:'Pend. inspección',s:'INSP!',c:'#ff4444',g:'rgba(255,68,68,.5)'},
-  INSPECCIONADO:{l:'Inspeccionado',s:'INSP✓',c:'#00C389',g:'rgba(0,195,137,.5)'},
-  PROXIMO:{l:'Próximo cargue',s:'PRÓX.',c:'rgba(255,255,255,.6)',g:'rgba(255,255,255,.2)'},
-  P20:{l:'20% en proceso',s:'20%',c:'#ff6830',g:'rgba(255,104,48,.4)'},
-  P50:{l:'50% en proceso',s:'50%',c:'#f5a20b',g:'rgba(245,162,11,.4)'},
-  P100:{l:'100% completado',s:'100%',c:'#00C389',g:'rgba(0,195,137,.5)'},
-  BUFFER_POST:{l:'En buffer',s:'BUFF',c:'rgba(255,255,255,.35)',g:'rgba(255,255,255,.1)'},
-  ESPERA_DOCS:{l:'Espera de docs',s:'DOCS',c:'#ff4444',g:'rgba(255,68,68,.4)'},
-  ESPERA_TRANS:{l:'Espera transportista',s:'TRANS',c:'#f5a20b',g:'rgba(245,162,11,.3)'},
-  TRANSITO:{l:'En tránsito a puerto',s:'TRÁNS.',c:'#0099e6',g:'rgba(0,153,230,.4)'},
-  EN_PUERTO:{l:'En puerto',s:'PTO.',c:'rgba(0,195,137,.8)',g:'rgba(0,195,137,.4)'},
-  EIR:{l:'EIR — Finalizado',s:'EIR',c:'#00C389',g:'rgba(0,195,137,.5)'},
+// ═══ CONFIG ═══
+var CFG = {
+  CLP: {label:'Colon Logistics Park', rampas:6, buffer:8},
+  MSL: {label:'MSL Bodega', rampas:20, buffer:0}
 };
-const RS=['ESPERA_RAMPA','EN_RAMPA','PEND_INSP','INSPECCIONADO','PROXIMO','P20','P50','P100'];
-const PL_E=['ESPERA_RAMPA','EN_RAMPA','PROXIMO','P20','P50','P100','BUFFER_POST','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
-const PL_S=['ESPERA_RAMPA','EN_RAMPA','PEND_INSP','INSPECCIONADO','PROXIMO','P20','P50','P100','BUFFER_POST','ESPERA_DOCS','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
-const NEGS=['6.5','7.1','7.2'];
-const AIDS=['1.1','1.2','1.3','2.1','2.2','2.3','3.1','4.1','5.1','5.2','6.1','6.2','6.3','6.4','6.5','7.1','7.2','7.3','7.4','7.5'];
-const CL=[
-  {id:1,n:'EXTERIOR Y BASTIDOR',items:[{id:'1.1',q:'¿Son visibles los soportes superiores externos?'},{id:'1.2',q:'¿Número interno igual al externo?'},{id:'1.3',q:'¿Vigas del bastidor en forma de corchete [?'}]},
-  {id:2,n:'PUERTAS EXT E INT',items:[{id:'2.1',q:'¿Puertas con espacios abiertos en partes interna, superior e inferior?'},{id:'2.2',q:'¿Todos los cerrojos en las mismas condiciones?'},{id:'2.3',q:'¿Mecanismos de cierre sin alteración?'}]},
-  {id:3,n:'TECHO Y CUBIERTA',items:[{id:'3.1',q:'¿Sobresalen los bloques esquineros del techo?'}]},
-  {id:4,n:'LADOS IZQ Y DER',items:[{id:'4.1',q:'¿Son metálicas las paredes?'}]},
-  {id:5,n:'PARED FRONTAL',items:[{id:'5.1',q:'¿Rejillas de ventilación y bloques visibles?'},{id:'5.2',q:'¿Rejillas a la misma distancia fuera y dentro?'}]},
-  {id:6,n:'PISO E INTERIOR',items:[{id:'6.1',q:'¿Piso al nivel del marco de las puertas?'},{id:'6.2',q:'¿Piso nivelado?'},{id:'6.3',q:'¿Proyecciones interiores de bloques elevadores visibles?'},{id:'6.4',q:'¿Bloques esquineros visibles?'},{id:'6.5',q:'¿Paredes y piso mojados? ★'}]},
-  {id:7,n:'ESTRUCTURA COMPLETA',items:[{id:'7.1',q:'¿Señales de pintura fresca? ★'},{id:'7.2',q:'¿Señales de quemadura o soldadura? ★'},{id:'7.3',q:'¿Estructura de todos los lados uniforme?'},{id:'7.4',q:'¿Pintura y textura uniformes?'},{id:'7.5',q:'¿Sonido metálico de vacío al golpear?'}]},
+var ST = {
+  ESPERA_RAMPA: {l:'En espera de rampa',s:'ESPERA',c:'#f5a20b',g:'rgba(245,162,11,.4)'},
+  EN_RAMPA:     {l:'En rampa',s:'RAMPA',c:'rgba(255,255,255,.4)',g:'rgba(255,255,255,.15)'},
+  PEND_INSP:    {l:'Pend. inspeccion',s:'INSP!',c:'#E8003D',g:'rgba(232,0,61,.5)'},
+  INSPECCIONADO:{l:'Inspeccionado',s:'INSP OK',c:'#00C389',g:'rgba(0,195,137,.5)'},
+  PROXIMO:      {l:'Proximo cargue',s:'PROX.',c:'rgba(255,255,255,.6)',g:'rgba(255,255,255,.2)'},
+  P20:          {l:'20% en proceso',s:'20%',c:'#ff6830',g:'rgba(255,104,48,.4)'},
+  P50:          {l:'50% en proceso',s:'50%',c:'#f5a20b',g:'rgba(245,162,11,.4)'},
+  P100:         {l:'100% completado',s:'100%',c:'#00C389',g:'rgba(0,195,137,.5)'},
+  BUFFER_POST:  {l:'En buffer',s:'BUFF',c:'rgba(255,255,255,.35)',g:'rgba(255,255,255,.1)'},
+  ESPERA_DOCS:  {l:'Espera de docs',s:'DOCS',c:'#E8003D',g:'rgba(232,0,61,.4)'},
+  ESPERA_TRANS: {l:'Espera transportista',s:'TRANS',c:'#f5a20b',g:'rgba(245,162,11,.3)'},
+  TRANSITO:     {l:'En transito a puerto',s:'TRANS.',c:'#0099e6',g:'rgba(0,153,230,.4)'},
+  EN_PUERTO:    {l:'En puerto',s:'PTO.',c:'#00C389',g:'rgba(0,195,137,.4)'},
+  EIR:          {l:'EIR - Finalizado',s:'EIR',c:'#00C389',g:'rgba(0,195,137,.5)'}
+};
+var RS = ['ESPERA_RAMPA','EN_RAMPA','PEND_INSP','INSPECCIONADO','PROXIMO','P20','P50','P100'];
+var PL_E = ['ESPERA_RAMPA','EN_RAMPA','PROXIMO','P20','P50','P100','BUFFER_POST','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
+var PL_S = ['ESPERA_RAMPA','EN_RAMPA','PEND_INSP','INSPECCIONADO','PROXIMO','P20','P50','P100','BUFFER_POST','ESPERA_DOCS','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
+var NEGS = ['6.5','7.1','7.2'];
+var AIDS = ['1.1','1.2','1.3','2.1','2.2','2.3','3.1','4.1','5.1','5.2','6.1','6.2','6.3','6.4','6.5','7.1','7.2','7.3','7.4','7.5'];
+var CL = [
+  {id:1,n:'EXTERIOR Y BASTIDOR',items:[
+    {id:'1.1',q:'Son visibles los soportes superiores externos?'},
+    {id:'1.2',q:'Numero interno igual al externo?'},
+    {id:'1.3',q:'Vigas del bastidor en forma de corchete?'}
+  ]},
+  {id:2,n:'PUERTAS EXT E INT',items:[
+    {id:'2.1',q:'Puertas con espacios abiertos arriba, abajo e interior?'},
+    {id:'2.2',q:'Todos los cerrojos en las mismas condiciones?'},
+    {id:'2.3',q:'Mecanismos de cierre sin alteracion?'}
+  ]},
+  {id:3,n:'TECHO Y CUBIERTA',items:[{id:'3.1',q:'Sobresalen los bloques esquineros del techo?'}]},
+  {id:4,n:'LADOS IZQ Y DER',items:[{id:'4.1',q:'Son metalicas las paredes del contenedor?'}]},
+  {id:5,n:'PARED FRONTAL',items:[
+    {id:'5.1',q:'Rejillas de ventilacion y bloques visibles?'},
+    {id:'5.2',q:'Rejillas a la misma distancia fuera y dentro?'}
+  ]},
+  {id:6,n:'PISO E INTERIOR',items:[
+    {id:'6.1',q:'Piso al nivel del marco de las puertas?'},
+    {id:'6.2',q:'Piso nivelado en terminos generales?'},
+    {id:'6.3',q:'Proyecciones interiores de bloques elevadores visibles?'},
+    {id:'6.4',q:'Bloques esquineros visibles?'},
+    {id:'6.5',q:'Paredes y piso mojados? (NEGATIVO = apto)'}
+  ]},
+  {id:7,n:'ESTRUCTURA COMPLETA',items:[
+    {id:'7.1',q:'Senales de pintura fresca? (NEGATIVO = apto)'},
+    {id:'7.2',q:'Senales de quemadura o soldadura? (NEGATIVO = apto)'},
+    {id:'7.3',q:'Estructura de todos los lados uniforme?'},
+    {id:'7.4',q:'Pintura y textura uniformes en todos los lados?'},
+    {id:'7.5',q:'Sonido metalico de vacio al golpear?'}
+  ]}
 ];
 
-let user=null,bod='CLP',moveState={active:false,opId:null},inspA={},inspIP={},inspGP=[],cliRef=null;
+// ═══ STATE ═══
+var bod = 'CLP';
+var mvState = {active:false, opId:null};
+var inspA = {}, inspIP = {}, inspGP = [];
 
-// ══ STORAGE ══
-function getOps(){try{return JSON.parse(localStorage.getItem('dpw_r2')||'[]');}catch(e){return[];}}
-function saveOps(ops){localStorage.setItem('dpw_r2',JSON.stringify(ops));}
-function getRampOp(b,r){return getOps().find(o=>o.bodega===b&&o.rampa===r&&RS.includes(o.estado)&&o.estado!=='ESPERA_RAMPA');}
-function getBufOps(b){return getOps().filter(o=>o.bodega===b&&o.estado==='ESPERA_RAMPA');}
-function getPostOps(){return getOps().filter(o=>!RS.includes(o.estado)&&o.estado!=='ESPERA_RAMPA'&&o.estado!=='EIR');}
+// ═══ STORAGE ═══
+function getOps() {
+  try { return JSON.parse(localStorage.getItem('dpw_ops') || '[]'); } catch(e) { return []; }
+}
+function saveOps(ops) {
+  try { localStorage.setItem('dpw_ops', JSON.stringify(ops)); } catch(e) {}
+}
+function getRampOp(b, r) {
+  var ops = getOps();
+  for(var i=0; i<ops.length; i++) {
+    var o = ops[i];
+    if(o.bodega===b && o.rampa===r && RS.indexOf(o.estado)>=0 && o.estado!=='ESPERA_RAMPA') return o;
+  }
+  return null;
+}
+function getPostOps() {
+  return getOps().filter(function(o){ return RS.indexOf(o.estado)<0 && o.estado!=='ESPERA_RAMPA' && o.estado!=='EIR'; });
+}
 
-// ══ DEMO DATA ══
-function loadDemo(){
-  if(getOps().length>0)return;
-  const n=new Date().toISOString(),lg=(ev)=>({ev,ts:n});
+// ═══ DEMO DATA ═══
+function loadDemo() {
+  if(getOps().length > 0) return;
+  var n = new Date().toISOString();
+  function lg(ev){ return {ev:ev, ts:n}; }
   saveOps([
     {id:'d1',bodega:'CLP',rampa:'R1',tipo:'SALIDA',contenedor:'MSCU1234567',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'P50',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('Inspeccionada'),lg('20%'),lg('50%')],creadoEn:n,actualizadoEn:n},
     {id:'d2',bodega:'CLP',rampa:'R2',tipo:'ENTRADA',contenedor:'CMAU9876543',tipoContenedor:'20FT',cliente:'ALICORP',transportista:'',estado:'P20',inspeccionCompleta:true,inspeccion:null,log:[lg('Asignada'),lg('20%')],creadoEn:n,actualizadoEn:n},
@@ -559,656 +417,699 @@ function loadDemo(){
     {id:'d6',bodega:'CLP',rampa:null,tipo:'SALIDA',contenedor:'HLXU1234000',tipoContenedor:'20FT',cliente:'ALICORP',transportista:'Intertrans',estado:'ESPERA_RAMPA',inspeccionCompleta:false,inspeccion:null,log:[lg('En cola')],creadoEn:n,actualizadoEn:n},
     {id:'d7',bodega:'MSL',rampa:'R1',tipo:'SALIDA',contenedor:'OOLU3344556',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'P100',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('100%')],creadoEn:n,actualizadoEn:n},
     {id:'d8',bodega:'MSL',rampa:'R3',tipo:'ENTRADA',contenedor:'MSCU0011223',tipoContenedor:'20FT',cliente:'VIMA CARIBE',transportista:'',estado:'EN_RAMPA',inspeccionCompleta:true,inspeccion:null,log:[lg('Asignada')],creadoEn:n,actualizadoEn:n},
-    {id:'pr1',bodega:'CLP',rampa:null,tipo:'SALIDA',contenedor:'CMAU0000111',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'TRANSITO',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'M. Charris'},log:[lg('Asignada'),lg('100%'),lg('En tránsito')],creadoEn:n,actualizadoEn:n},
-    {id:'pr2',bodega:'MSL',rampa:null,tipo:'SALIDA',contenedor:'MSDU9990001',tipoContenedor:'40FT',cliente:'ALICORP',transportista:'Intertrans',estado:'ESPERA_DOCS',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('100%'),lg('Docs pendientes')],creadoEn:n,actualizadoEn:n},
+    {id:'pr1',bodega:'CLP',rampa:null,tipo:'SALIDA',contenedor:'CMAU0000111',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'TRANSITO',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'M. Charris'},log:[lg('Asignada'),lg('100%'),lg('En transito')],creadoEn:n,actualizadoEn:n},
+    {id:'pr2',bodega:'MSL',rampa:null,tipo:'SALIDA',contenedor:'MSDU9990001',tipoContenedor:'40FT',cliente:'ALICORP',transportista:'Intertrans',estado:'ESPERA_DOCS',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('100%'),lg('Docs pendientes')],creadoEn:n,actualizadoEn:n}
   ]);
 }
 
-// ══ LOGIN ══
-let role='sup';
-function setRole(r){
-  role=r;
-  ['sup','cli'].forEach(function(x){
-    var el=document.getElementById('rb'+x);
-    if(el) el.classList.toggle('active',x===r);
-  });
-  var fsup=document.getElementById('fsup');
-  var fcli=document.getElementById('fcli');
-  if(fsup) fsup.style.display=r==='sup'?'block':'none';
-  if(fcli) fcli.style.display=r==='cli'?'block':'none';
-  var lerr=document.getElementById('lerr');
-  if(lerr) lerr.style.display='none';
-}
-function doLogin(){
-  var err=document.getElementById('lerr');
-  if(err) err.style.display='none';
-  // Login handled via profile buttons
-  return false;
-}
-function doLogout(){
-  user=null;
-  cancelMove();
-  closeMod();
-  if(cliRef){clearInterval(cliRef);cliRef=null;}
-  goTo('vlogin');
-}
-function goTo(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
-function setBod(b){bod=b;['CLP','MSL','AMBAS'].forEach(x=>document.getElementById('tab-'+x)?.classList.toggle('active',x===b));renderDockView();}
+// ═══ RENDER ═══
+function refresh() { renderStats(); renderDockView(); renderPost(); }
 
-// ══ MOVE MODE ══
-function startMove(opId){moveState={active:true,opId};closeMod();document.getElementById('moveBanner').classList.add('active');renderDockView();}
-function cancelMove(){moveState={active:false,opId:null};document.getElementById('moveBanner').classList.remove('active');renderDockView();}
-function handleRampTap(b,r){
-  if(moveState.active){openMoveToRamp(moveState.opId,b,r);}
-  else{const op=getRampOp(b,r);op?openDetail(op.id):openAssign(b,r);}
-}
-function handleBufTap(b,pos,opId){
-  if(moveState.active&&!opId){openMoveToBuf(moveState.opId,b,pos);}
-  else if(opId){openDetail(opId);}
-  else{openAssignBuf(b,pos);}
-}
-function openMoveToRamp(opId,b,r){
-  const op=getOps().find(o=>o.id===opId);if(!op)return;
-  mtitle.textContent=`Mover a ${r} — ${b}`;
-  mbody.innerHTML=`
-    <div class="abox info">Mover <strong>${op.contenedor}</strong> de ${op.rampa||'buffer'} a <strong>${r}</strong></div>
-    <button class="btn-p btn-green" onclick="execMove('${opId}','rampa','${b}','${r}')">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-      Confirmar traslado
-    </button>
-    <button class="btn-p btn-navy" style="margin-top:4px;" onclick="cancelMove();closeMod()">Cancelar</button>`;
-  openMod();
-}
-function openMoveToBuf(opId,b,pos){
-  const op=getOps().find(o=>o.id===opId);if(!op)return;
-  mtitle.textContent=`Mover a Buffer B${pos}`;
-  mbody.innerHTML=`
-    <div class="abox info">Mover <strong>${op.contenedor}</strong> a buffer posición <strong>B${pos}</strong></div>
-    <div class="abox warn" style="margin-top:0;">¿El cargue/descargue está completado?</div>
-    <button class="btn-p btn-green" onclick="execMove('${opId}','buffer-done','${b}','${pos}')">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-      Sí — completado, mover a buffer
-    </button>
-    <button class="btn-p btn-amber" style="margin-top:4px;" onclick="execMove('${opId}','buffer-move','${b}','${pos}')">
-      Solo reubicar (sin completar)
-    </button>
-    <button class="btn-p btn-navy" style="margin-top:4px;" onclick="cancelMove();closeMod()">Cancelar</button>`;
-  openMod();
-}
-function execMove(opId,type,b,dest){
-  const ops=getOps();const idx=ops.findIndex(o=>o.id===opId);if(idx<0)return;
-  if(type==='rampa'){
-    ops[idx].rampa=dest;ops[idx].bodega=b;
-    ops[idx].estado=ops[idx].tipo==='SALIDA'&&!ops[idx].inspeccionCompleta?'PEND_INSP':'EN_RAMPA';
-    ops[idx].log.push({ev:`Movido a ${dest} — ${b}`,ts:new Date().toISOString()});
-  }else if(type==='buffer-done'){
-    ops[idx].estado='P100';ops[idx].rampa=null;
-    ops[idx].log.push({ev:`100% completado — movido a buffer B${dest}`,ts:new Date().toISOString()});
-    setTimeout(()=>openDestinoMod(opId),600);
-  }else{
-    ops[idx].rampa=null;ops[idx].estado='ESPERA_RAMPA';
-    ops[idx].log.push({ev:`Reubicado a buffer B${dest}`,ts:new Date().toISOString()});
-  }
-  ops[idx].actualizadoEn=new Date().toISOString();
-  saveOps(ops);cancelMove();closeMod();refresh();
-  toast('Contenedor movido',true);
-}
-
-// ══ DASHBOARD ══
-function renderDash(){document.getElementById('upill').textContent='SUPERVISOR';renderStats();renderDockView();renderPost();}
-function renderStats(){
-  const ops=getOps();let lib=0,en=0,sa=0,bf=0;
-  ['CLP','MSL'].forEach(b=>{for(let r=1;r<=CFG[b].rampas;r++){const op=getRampOp(b,'R'+r);if(!op)lib++;else if(op.tipo==='ENTRADA')en++;else sa++;}});
-  bf=ops.filter(o=>o.estado==='ESPERA_RAMPA').length;
-  document.getElementById('statStrip').innerHTML=`
-    <div class="sbox"><div class="sn sl">${lib}</div><div class="sl2">Libres</div></div>
-    <div class="sbox"><div class="sn en">${en}</div><div class="sl2">Entrada</div></div>
-    <div class="sbox"><div class="sn sa">${sa}</div><div class="sl2">Salida</div></div>
-    <div class="sbox"><div class="sn bf">${bf}</div><div class="sl2">Buffer</div></div>
-    <div class="sbox"><div class="sn ok">${getPostOps().length}</div><div class="sl2">Tránsito</div></div>`;
-}
-
-// ══ DOCK VIEW ══
-function renderDockView(){
-  const bods=bod==='AMBAS'?['CLP','MSL']:[bod];
-  let html='';
-  bods.forEach(b=>{
-    if(bod==='AMBAS')html+=`<div style="margin:8px 12px 4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(0,195,137,.3);text-transform:uppercase;">${CFG[b].label} — ${b}</div>`;
-    html+=renderDock(b);
-  });
-  document.getElementById('dockView').innerHTML=html;
-  // Sync drive lane highlight
-  document.querySelectorAll('.dlane').forEach(el=>el.classList.toggle('dest-active',moveState.active));
-}
-
-function renderDock(b){
-  const ops=getOps();const R=CFG[b].rampas;const BN=CFG[b].buffer;
-  // Wall doors
-  let doors=`<div class="wh-bodlbl">${b}</div>`;
-  for(let r=1;r<=R;r++){doors+=`<div class="rdoor"><div class="dframe"><div class="dseal"></div><div class="dnum">R${r}</div></div></div>`;}
-  // Ramp slots
-  let rslots='';
-  for(let r=1;r<=R;r++){
-    const op=getRampOp(b,'R'+r);
-    const isDestAvail=moveState.active&&!op;
-    rslots+=`<div class="rslot"><div class="rpipe"></div>${op?buildCBox(op,isDestAvail,false):buildFreeBox(b,'R'+r,isDestAvail)}<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>`;
-  }
-  // Buffer zone
-  let bufHtml='';
-  if(BN>0){
-    const bops=ops.filter(o=>o.bodega===b&&o.estado==='ESPERA_RAMPA');
-    let bslots='';
-    for(let i=1;i<=BN;i++){
-      const bop=bops[i-1]||null;
-      const isDA=moveState.active&&!bop;
-      bslots+=`<div class="bslot"><div class="bpipe"></div>${bop?buildBBox(bop,false):buildFreeBBox(b,i,isDA)}<div class="bnum">B${i}</div></div>`;
+function renderStats() {
+  var ops = getOps(); var lib=0, en=0, sa=0, bf=0;
+  var bods = ['CLP','MSL'];
+  for(var bi=0; bi<bods.length; bi++) {
+    var b = bods[bi];
+    for(var r=1; r<=CFG[b].rampas; r++) {
+      var op = getRampOp(b,'R'+r);
+      if(!op) lib++; else if(op.tipo==='ENTRADA') en++; else sa++;
     }
-    const bc=bops.length;
-    bufHtml=`<div class="bzone"><div class="bzone-hdr"><div class="bzone-lbl">Buffer de espera</div>${bc>0?`<div class="bzone-pill">${bc} en cola</div>`:''}</div><div class="bscroll"><div class="binner">${bslots}</div></div></div>`;
-  }else{bufHtml=`<div class="bzone"><div class="no-buf">MSL — sin zona buffer</div></div>`;}
-  return `<div class="dock-wrap"><div class="dock-scene">
-    <div class="wh-wall"><div class="wh-inner">${doors}</div></div>
-    <div class="rscroll"><div class="rinner">${rslots}</div></div>
-    <div class="dlane"><div class="dlane-lbl">ZONA DE MANIOBRA</div></div>
-    ${bufHtml}
-  </div>${R>4?'<div class="scroll-hint">← deslizar para ver más →</div>':''}</div>`;
-}
-
-function buildCBox(op,isDestAvail,isBuf){
-  const s=ST[op.estado];
-  const isSelected=moveState.active&&moveState.opId===op.id;
-  const fillH=op.estado==='P20'?25:op.estado==='P50'?55:op.estado==='P100'?100:5;
-  const fillColor=op.tipo==='ENTRADA'?'rgba(0,153,230,0.25)':op.estado==='P100'?'rgba(0,195,137,0.25)':'rgba(245,162,11,0.2)';
-  const sc={EN_RAMPA:'',PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',PROXIMO:'proximo',P20:'p20',P50:'p50',P100:'p100'}[op.estado]||(op.tipo==='ENTRADA'?'entrada':'salida');
-  const tagBg=op.tipo==='ENTRADA'?'rgba(0,153,230,.2)':'rgba(245,162,11,.15)';
-  const tagC=op.tipo==='ENTRADA'?'#0099e6':'#f5a20b';
-  const boxClass=isBuf?'bbox':'cbox';
-  const ht=isBuf?'90':'148';
-  const selCls=isSelected?' selected':'';
-  var clickFn=isBuf?("handleBufTap('"+op.bodega+"',0,'"+op.id+"')"):"handleRampTap('"+op.bodega+"','"+( op.rampa||'')+"')";
-  const contNum=op.contenedor.substring(0,4)+'···'+op.contenedor.slice(-4);
-  const cliShort=op.cliente.substring(0,6).toUpperCase();
-  if(isBuf){
-    return `<div class="${boxClass} ${op.tipo.toLowerCase()}${selCls}" onclick="${clickFn}">
-      <div class="cfill" style="height:${fillH}%;background:${fillColor};"></div>
-      <div class="bbox-cont" style="position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;padding:3px 2px;">
-        <div class="ctag" style="background:${tagBg};color:${tagC};font-size:6px;">${s.s}</div>
-        <div class="cvert" style="flex:1;overflow:hidden;width:100%;display:flex;flex-direction:column;align-items:center;">
-          <div class="cnum-v" style="color:${s.c};text-shadow:0 0 6px ${s.g};max-height:55px;font-size:8px;">${contNum}</div>
-          <div class="ccli-v" style="color:rgba(255,255,255,.4);max-height:25px;font-size:7px;">${cliShort}</div>
-        </div>
-      </div>
-    </div>`;
   }
-  return `<div class="cbox ${sc}${selCls}" onclick="${clickFn}" style="height:${ht}px;">
-    <div class="cfill" style="height:${fillH}%;background:${fillColor};"></div>
-    <div class="ccont">
-      <div class="ctag" style="background:${tagBg};color:${tagC};">${s.s}</div>
-      <div class="cvert">
-        <div class="cnum-v" style="color:${s.c};text-shadow:0 0 8px ${s.g};">${contNum}</div>
-        <div class="ccli-v">${cliShort}</div>
-      </div>
-    </div>
-  </div>`;
+  bf = ops.filter(function(o){ return o.estado==='ESPERA_RAMPA'; }).length;
+  var h = '<div class="sbox"><div class="sn sl">'+lib+'</div><div class="sl2">Libres</div></div>';
+  h += '<div class="sbox"><div class="sn en">'+en+'</div><div class="sl2">Entrada</div></div>';
+  h += '<div class="sbox"><div class="sn sa">'+sa+'</div><div class="sl2">Salida</div></div>';
+  h += '<div class="sbox"><div class="sn bf">'+bf+'</div><div class="sl2">Buffer</div></div>';
+  h += '<div class="sbox"><div class="sn ok">'+getPostOps().length+'</div><div class="sl2">Transito</div></div>';
+  document.getElementById('stats').innerHTML = h;
 }
 
-function buildBBox(op,isSel){return buildCBox(op,false,true);}
-
-function buildFreeBox(b,r,isDA){
-  const da=isDA?' dest-available':'';
-  const fn=`handleRampTap('${b}','${r}')`;
-  return `<div class="cbox libre${da}" onclick="${fn}">
-    <div class="ccont"><div class="libre-plus"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="libre-lbl">Libre</div></div>
-  </div>`;
+function renderDockView() {
+  var bods = bod==='AMBAS' ? ['CLP','MSL'] : [bod];
+  var h = '';
+  for(var i=0; i<bods.length; i++) {
+    if(bod==='AMBAS') {
+      h += '<div style="margin:8px 12px 4px;font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(0,195,137,.3);text-transform:uppercase;">' + CFG[bods[i]].label + ' \u2014 ' + bods[i] + '</div>';
+    }
+    h += renderDock(bods[i]);
+  }
+  document.getElementById('dockArea').innerHTML = h;
+  document.querySelectorAll('.dlane').forEach(function(el) {
+    el.classList.toggle('dest-active', mvState.active);
+  });
 }
 
-function buildFreeBBox(b,pos,isDA){
-  const da=isDA?' dest-available':'';
-  const fn=`handleBufTap('${b}','${pos}',null)`;
-  return `<div class="bbox libre-b${da}" onclick="${fn}" style="display:flex;align-items:center;justify-content:center;">
-    ${isDA?`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00C389" stroke-width="2.5" style="opacity:.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`:''}
-  </div>`;
+function renderDock(b) {
+  var ops = getOps();
+  var R = CFG[b].rampas;
+  var BN = CFG[b].buffer;
+
+  // Wall doors
+  var doors = '<div class="wh-bl">' + b + '</div>';
+  for(var r=1; r<=R; r++) {
+    doors += '<div class="rdoor"><div class="dframe"><div class="dseal"></div><div class="dnum">R'+r+'</div></div></div>';
+  }
+
+  // Ramp slots
+  var rslots = '';
+  for(var r=1; r<=R; r++) {
+    var op = getRampOp(b,'R'+r);
+    var isDA = mvState.active && !op;
+    var box = op ? buildCBox(op, false) : buildFreeBox(b, 'R'+r, isDA);
+    rslots += '<div class="rslot"><div class="rpipe"></div>' + box + '<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>';
+  }
+
+  // Buffer
+  var bufHtml = '';
+  if(BN > 0) {
+    var bops = ops.filter(function(o){ return o.bodega===b && o.estado==='ESPERA_RAMPA'; });
+    var bslots = '';
+    for(var i=1; i<=BN; i++) {
+      var bop = bops[i-1] || null;
+      var isDA2 = mvState.active && !bop;
+      var bbox = bop ? buildCBox(bop, false, true) : buildFreeBBox(b, i, isDA2);
+      bslots += '<div class="bslot"><div class="bpipe"></div>' + bbox + '<div class="bnum">B'+i+'</div></div>';
+    }
+    var pill = bops.length > 0 ? '<div class="bzone-pill">'+bops.length+' en cola</div>' : '';
+    bufHtml = '<div class="bzone"><div class="bzone-hdr"><div class="bzone-lbl">Buffer de espera</div>' + pill + '</div><div class="bscroll"><div class="binner">' + bslots + '</div></div></div>';
+  } else {
+    bufHtml = '<div class="bzone"><div class="no-buf">MSL sin zona buffer</div></div>';
+  }
+
+  var hint = R > 4 ? '<div class="scroll-hint">&#8592; deslizar &#8594;</div>' : '';
+  return '<div class="dock-wrap"><div class="dock-scene"><div class="wh-wall"><div class="wh-inner">' + doors + '</div></div><div class="rscroll"><div class="rinner">' + rslots + '</div></div><div class="dlane"><div class="dlane-lbl">ZONA DE MANIOBRA</div></div>' + bufHtml + '</div>' + hint + '</div>';
 }
 
-// ══ ASSIGN MODAL ══
-let aData={b:null,r:null,tipo:'ENTRADA'};
-function openAssign(b,r){
-  aData={b,r,tipo:'ENTRADA'};
-  document.getElementById('mtitle').textContent=`${r} — ${b}`;
-  document.getElementById('mbody').innerHTML=`
-    <div class="tipo-sel">
-      <div class="tipo-btn ent act" id="tbent" onclick="setTipo('ENTRADA')">
-        <div class="tipo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
-        <div class="tipo-lbl">ENTRADA</div><div class="tipo-sub">Descarga de mercancía</div>
-      </div>
-      <div class="tipo-btn sal" id="tbsal" onclick="setTipo('SALIDA')">
-        <div class="tipo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 20h.01M7 20v-4"/><path d="M12 20V10"/><path d="M17 20V4"/><path d="M22 20h.01"/></svg></div>
-        <div class="tipo-lbl">SALIDA</div><div class="tipo-sub">Carga / exportación</div>
-      </div>
-    </div>
-    <div id="iwarn" class="abox warn" style="display:none;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Salida requiere inspección SL-02-007 antes del cargue.</div>
-    <div class="ig2">
-      <div class="fg2"><div class="flbl">N° Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU1234567" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="fg2"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">—</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div>
-    </div>
-    <div class="ig2 ig1"><div class="fg2"><div class="flbl">Cliente</div><input type="text" class="fin" id="acli" placeholder="CERNAC, ALICORP..." oninput="this.value=this.value.toUpperCase()"></div></div>
-    <div class="ig2 ig1" style="margin-top:-2px;"><div class="fg2"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div></div>
-    <button class="btn-p btn-green" onclick="confirmAssign()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>ASIGNAR ${r}</button>`;
+function buildCBox(op, isDA, isBuf) {
+  var s = ST[op.estado] || ST['EN_RAMPA'];
+  var fillH = op.estado==='P20'?25 : op.estado==='P50'?55 : op.estado==='P100'?100 : 5;
+  var fillColor = op.tipo==='ENTRADA' ? 'rgba(0,153,230,0.25)' : op.estado==='P100' ? 'rgba(0,195,137,0.25)' : 'rgba(245,162,11,0.2)';
+  var sc = {PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',PROXIMO:'proximo',P20:'p20',P50:'p50',P100:'p100'}[op.estado] || (op.tipo==='ENTRADA'?'entrada':'salida');
+  var tagBg = op.tipo==='ENTRADA' ? 'rgba(0,153,230,.2)' : 'rgba(245,162,11,.15)';
+  var tagC = op.tipo==='ENTRADA' ? '#0099e6' : '#f5a20b';
+  var isSel = mvState.active && mvState.opId===op.id;
+  var selCls = isSel ? ' selected' : '';
+  var daCls = isDA ? ' dest-av' : '';
+  var contNum = op.contenedor.substring(0,4) + '...' + op.contenedor.slice(-4);
+  var cliShort = (op.cliente || '').substring(0,6).toUpperCase();
+  var ht = isBuf ? 90 : 148;
+  var boxCls = isBuf ? ('bbox ' + op.tipo.toLowerCase() + selCls) : ('cbox ' + sc + selCls + daCls);
+  var clickFn = isBuf ? "onRampTap('" + op.bodega + "','buf','" + op.id + "')" : "onRampTap('" + op.bodega + "','" + (op.rampa||'') + "','" + op.id + "')";
+  var h = '<div class="' + boxCls + '" style="height:' + ht + 'px;" onclick="' + clickFn + '">';
+  h += '<div class="cfill" style="height:'+fillH+'%;background:'+fillColor+';"></div>';
+  h += '<div class="ccont">';
+  h += '<div class="ctag" style="background:'+tagBg+';color:'+tagC+';">'+s.s+'</div>';
+  h += '<div class="cvert">';
+  h += '<div class="cnum-v" style="color:'+s.c+';text-shadow:0 0 8px '+s.g+';">'+contNum+'</div>';
+  h += '<div class="ccli-v">'+cliShort+'</div>';
+  h += '</div></div></div>';
+  return h;
+}
+
+function buildFreeBox(b, r, isDA) {
+  var daCls = isDA ? ' dest-av' : '';
+  return '<div class="cbox libre' + daCls + '" onclick="onRampTap(\'' + b + '\',\'' + r + '\',\'\')">' +
+    '<div class="ccont"><div class="libre-plus">' +
+    '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+    '</div><div class="libre-lbl">Libre</div></div></div>';
+}
+
+function buildFreeBBox(b, pos, isDA) {
+  var daCls = isDA ? ' dest-av' : '';
+  return '<div class="bbox libre-b' + daCls + '" onclick="onBufTap(\'' + b + '\',' + pos + ',\'\')"></div>';
+}
+
+// ═══ TAP HANDLERS ═══
+function onRampTap(b, r, opId) {
+  if(mvState.active) {
+    if(r === 'buf') { openMoveToBuf(mvState.opId, b, 0); }
+    else if(!opId) { openMoveToRamp(mvState.opId, b, r); }
+    return;
+  }
+  if(opId) { openDetail(opId); }
+  else if(r !== 'buf') { openAssign(b, r); }
+}
+function onBufTap(b, pos, opId) {
+  if(mvState.active && !opId) { openMoveToBuf(mvState.opId, b, pos); return; }
+  if(opId) { openDetail(opId); }
+  else { openAssignBuf(b, pos); }
+}
+
+// ═══ MOVE MODE ═══
+function startMove(opId) {
+  mvState = {active:true, opId:opId};
+  closeMod();
+  document.getElementById('mvbanner').classList.add('on');
+  renderDockView();
+}
+function cancelMove() {
+  mvState = {active:false, opId:null};
+  document.getElementById('mvbanner').classList.remove('on');
+  renderDockView();
+}
+function openMoveToRamp(opId, b, r) {
+  var op = getOps().filter(function(o){ return o.id===opId; })[0];
+  if(!op) return;
+  document.getElementById('mtitle').textContent = 'Mover a ' + r + ' \u2014 ' + b;
+  var h = '<div class="abox warn">Mover ' + op.contenedor + ' a rampa ' + r + '</div>';
+  h += '<button class="btn-p btn-green" onclick="execMove(\''+opId+'\',\'rampa\',\''+b+'\',\''+r+'\')">';
+  h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Confirmar traslado</button>';
+  h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="cancelMove();closeMod()">Cancelar</button>';
+  document.getElementById('mbody').innerHTML = h;
   openMod();
 }
-function openAssignBuf(b,pos){
-  aData={b,r:null,tipo:'ENTRADA',bufPos:pos};
-  document.getElementById('mtitle').textContent=`Buffer B${pos} — ${b}`;
-  document.getElementById('mbody').innerHTML=`
-    <div class="abox info">Registrar contenedor en cola de espera — Buffer B${pos}</div>
-    <div class="tipo-sel">
-      <div class="tipo-btn ent act" id="tbent" onclick="setTipo('ENTRADA')"><div class="tipo-icon" style="color:var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div class="tipo-lbl">ENTRADA</div></div>
-      <div class="tipo-btn sal" id="tbsal" onclick="setTipo('SALIDA')"><div class="tipo-icon" style="color:var(--amber);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32"><path d="M2 20h.01M7 20v-4"/><path d="M12 20V10"/><path d="M17 20V4"/></svg></div><div class="tipo-lbl">SALIDA</div></div>
-    </div>
-    <div class="ig2"><div class="fg2"><div class="flbl">N° Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU1234567" oninput="this.value=this.value.toUpperCase()"></div><div class="fg2"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">—</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>
-    <div class="ig2 ig1"><div class="fg2"><div class="flbl">Cliente</div><input type="text" class="fin" id="acli" placeholder="CERNAC..." oninput="this.value=this.value.toUpperCase()"></div></div>
-    <div class="ig2 ig1" style="margin-top:-2px;"><div class="fg2"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div></div>
-    <button class="btn-p btn-amber" onclick="confirmAssignBuf(${pos})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>AGREGAR A COLA</button>`;
+function openMoveToBuf(opId, b, pos) {
+  var op = getOps().filter(function(o){ return o.id===opId; })[0];
+  if(!op) return;
+  document.getElementById('mtitle').textContent = 'Mover a buffer';
+  var h = '<div class="abox warn">Mover ' + op.contenedor + ' al buffer</div>';
+  h += '<div class="abox warn">El cargue/descargue esta completado?</div>';
+  h += '<button class="btn-p btn-green" onclick="execMove(\''+opId+'\',\'buf-done\',\''+b+'\',\''+pos+'\')">';
+  h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Si - completado, mover a buffer</button>';
+  h += '<button class="btn-p btn-amber" style="margin-top:4px;" onclick="execMove(\''+opId+'\',\'buf-move\',\''+b+'\',\''+pos+'\')">Solo reubicar</button>';
+  h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="cancelMove();closeMod()">Cancelar</button>';
+  document.getElementById('mbody').innerHTML = h;
   openMod();
 }
-function setTipo(t){
-  aData.tipo=t;
-  document.getElementById('tbent')?.classList.toggle('act',t==='ENTRADA');
-  document.getElementById('tbsal')?.classList.toggle('act',t==='SALIDA');
-  const iw=document.getElementById('iwarn');if(iw)iw.style.display=t==='SALIDA'?'flex':'none';
-}
-function confirmAssign(){
-  const cont=document.getElementById('acont').value.trim().toUpperCase();
-  const cli=document.getElementById('acli').value.trim().toUpperCase();
-  if(!cont){toast('Ingresa el N° de contenedor');return;} if(!cli){toast('Ingresa el cliente');return;}
-  const op={id:Date.now().toString(),bodega:aData.b,rampa:aData.r,tipo:aData.tipo,contenedor:cont,tipoContenedor:document.getElementById('atc').value,cliente:cli,transportista:document.getElementById('attr').value.trim(),estado:aData.tipo==='SALIDA'?'PEND_INSP':'EN_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,log:[{ev:'Rampa asignada — '+aData.tipo,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
-  const ops=getOps();ops.push(op);saveOps(ops);closeMod();refresh();toast(`${aData.r} asignada — ${cli}`,true);
-  if(aData.tipo==='SALIDA')setTimeout(()=>openInsp(op.id),400);
-}
-function confirmAssignBuf(pos){
-  const cont=document.getElementById('acont').value.trim().toUpperCase();
-  const cli=document.getElementById('acli').value.trim().toUpperCase();
-  if(!cont||!cli){toast('Completa los campos requeridos');return;}
-  const op={id:Date.now().toString(),bodega:aData.b,rampa:null,tipo:aData.tipo,contenedor:cont,tipoContenedor:document.getElementById('atc').value,cliente:cli,transportista:document.getElementById('attr').value.trim(),estado:'ESPERA_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,log:[{ev:'Agregado a buffer B'+pos,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
-  const ops=getOps();ops.push(op);saveOps(ops);closeMod();refresh();toast('Agregado a cola',true);
+function execMove(opId, type, b, dest) {
+  var ops = getOps();
+  var idx = -1;
+  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
+  if(idx < 0) return;
+  if(type==='rampa') {
+    ops[idx].rampa = dest; ops[idx].bodega = b;
+    ops[idx].estado = (ops[idx].tipo==='SALIDA' && !ops[idx].inspeccionCompleta) ? 'PEND_INSP' : 'EN_RAMPA';
+    ops[idx].log.push({ev:'Movido a '+dest+' \u2014 '+b, ts:new Date().toISOString()});
+  } else if(type==='buf-done') {
+    ops[idx].estado = 'P100'; ops[idx].rampa = null;
+    ops[idx].log.push({ev:'100% completado, movido a buffer', ts:new Date().toISOString()});
+  } else {
+    ops[idx].rampa = null; ops[idx].estado = 'ESPERA_RAMPA';
+    ops[idx].log.push({ev:'Reubicado a buffer', ts:new Date().toISOString()});
+  }
+  ops[idx].actualizadoEn = new Date().toISOString();
+  saveOps(ops); cancelMove(); closeMod(); refresh();
+  showToast('Contenedor movido', true);
+  if(type==='buf-done') { setTimeout(function(){ openDestinoMod(opId); }, 500); }
 }
 
-// ══ DETAIL MODAL ══
-function openDetail(opId){
-  const op=getOps().find(o=>o.id===opId);if(!op)return;
-  const s=ST[op.estado];const pct=op.estado==='P20'?20:op.estado==='P50'?50:op.estado==='P100'?100:0;
-  const bc=op.tipo==='ENTRADA'?'#0099e6':op.estado==='P100'?'#00C389':'#f5a20b';
-  const ni=op.tipo==='SALIDA'&&!op.inspeccionCompleta;
-  const ir=RS.includes(op.estado)&&op.estado!=='ESPERA_RAMPA';
-  const sp=ir&&op.inspeccionCompleta&&op.estado!=='P100';
-  const sd=op.estado==='P100'&&ir;
-  const logH=(op.log||[]).slice(-4).reverse().map(l=>`<div class="tl-it"><div class="tl-dot"></div><div><div class="tl-txt">${l.ev}</div><div class="tl-time">${fmtT(l.ts)}</div></div></div>`).join('');
-  document.getElementById('mtitle').textContent=op.rampa?`${op.rampa} — ${op.bodega}`:op.bodega+' — Cola';
-  document.getElementById('mbody').innerHTML=`
-    <div class="op-dtop">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div><div class="op-big-r">${op.rampa||'COLA'}</div><div class="op-big-c" style="color:${s.c};">${op.cliente}</div><div class="op-big-n">${op.contenedor} ${op.tipoContenedor||''} · ${op.tipo}</div></div>
-        <div style="text-align:right;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:${s.c};background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:4px 8px;border-radius:5px;box-shadow:0 0 10px ${s.g};">${s.l}</div><div style="font-size:9px;color:var(--t4);margin-top:3px;">${op.bodega}</div></div>
-      </div>
-      ${pct>0?`<div class="bprogbar"><div class="bprogfill" style="width:${pct}%;background:${bc};box-shadow:0 0 8px ${bc}66;"></div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--t3);">${pct}% ${op.tipo==='ENTRADA'?'descargado':'cargado'}</div>`:''}
-    </div>
-    ${ni?`<div class="abox err"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Inspección SL-02-007 pendiente — sin ella el cargue no puede iniciar.</div>
-    <button class="btn-p btn-red" style="margin:0 0 10px;" onclick="closeMod();setTimeout(()=>openInsp('${op.id}'),200)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>INICIAR INSPECCIÓN</button>`
-    :op.tipo==='SALIDA'&&op.inspeccionCompleta?`<div class="abox suc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>Inspección OK — ${op.inspeccion?.result==='apto'?'APTO':'NO APTO'} · ${op.inspeccion?.inspector||'—'}</div>`:''}
-    ${sp?`<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;">ACTUALIZAR PROGRESO</div>
-    <div class="prog-row">
-      <div class="pbtn p20 ${op.estado==='P20'?'act':''}" onclick="updEstado('${op.id}','P20');closeMod()"><div class="pn">20%</div><div class="pl">Iniciando</div></div>
-      <div class="pbtn p50 ${op.estado==='P50'?'act':''}" onclick="updEstado('${op.id}','P50');closeMod()"><div class="pn">50%</div><div class="pl">Mitad</div></div>
-      <div class="pbtn p100" onclick="updEstado('${op.id}','P100');closeMod()"><div class="pn">100%</div><div class="pl">Completo</div></div>
-    </div>`:''} 
-    ${sd?`<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;">DESTINO FINAL</div>
-    <div class="dest-col">
-      <div class="dbtn puerto" onclick="setDest('${op.id}','TRANSITO')"><div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#00C389" stroke-width="1.5"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div><div><div class="dt">PUERTO</div><div class="ds">Enviar a puerto de salida</div></div></div>
-      <div class="dbtn buffer" onclick="setDest('${op.id}','BUFFER_POST')"><div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#f5a20b" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div><div class="dt">BUFFER</div><div class="ds">Zona de espera post-carga</div></div></div>
-      <div class="dbtn docs" onclick="setDest('${op.id}','ESPERA_DOCS')"><div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="dt">DOCS PENDIENTES</div><div class="ds">Falta documentación</div></div></div>
-    </div>`:''}
-    ${op.estado==='EN_RAMPA'&&op.inspeccionCompleta?`<button class="btn-p btn-navy" style="margin:0 0 8px;" onclick="updEstado('${op.id}','PROXIMO');closeMod()">Marcar Próximo Cargue/Descargue</button>`:''}
-    ${op.estado==='ESPERA_RAMPA'?`<button class="btn-p btn-amber" style="margin:0 0 8px;" onclick="closeMod();setTimeout(()=>openMoveToAssign('${op.id}'),200)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/></svg>Asignar a Rampa</button>`:''}
-    ${ir?`<button class="btn-p btn-navy" style="margin:0 0 4px;" onclick="startMove('${op.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/></svg>Mover contenedor</button>`:''}
-    <div class="tl"><div class="tl-h">Actividad</div>${logH||'<div style="font-size:11px;color:var(--t4);">Sin actividad registrada</div>'}</div>
-    <button class="btn-dang" onclick="liberarRampa('${op.id}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Liberar rampa</button>`;
+// ═══ ASSIGN ═══
+var aData = {b:null, r:null, tipo:'ENTRADA'};
+function openAssign(b, r) {
+  aData = {b:b, r:r, tipo:'ENTRADA'};
+  document.getElementById('mtitle').textContent = r + ' \u2014 ' + b;
+  var h = '<div class="tipo-sel">';
+  h += '<div class="tipo-btn ent act" id="tbent" onclick="setTipo(\'ENTRADA\')">';
+  h += '<svg width="28" height="22" viewBox="0 0 24 24" fill="none" stroke="#0099e6" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+  h += '<span class="tipo-lbl">ENTRADA</span><span class="tipo-sub">Descarga</span></div>';
+  h += '<div class="tipo-btn sal" id="tbsal" onclick="setTipo(\'SALIDA\')">';
+  h += '<svg width="28" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a20b" stroke-width="1.5"><path d="M2 20h.01M7 20v-4"/><path d="M12 20V10"/><path d="M17 20V4"/><path d="M22 20h.01"/></svg>';
+  h += '<span class="tipo-lbl">SALIDA</span><span class="tipo-sub">Carga/Exportacion</span></div>';
+  h += '</div>';
+  h += '<div id="iwarn" class="abox warn" style="display:none;">Salida requiere inspeccion SL-02-007 antes del cargue.</div>';
+  h += '<div class="ig2"><div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU1234567" oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
+  h += '<div class="fg"><div class="flbl">Cliente</div><input type="text" class="fin" id="acli" placeholder="CERNAC..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg" style="margin-top:4px;"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
+  h += '<button class="btn-p btn-green" onclick="confirmAssign()">ASIGNAR '+r+'</button>';
+  document.getElementById('mbody').innerHTML = h;
+  openMod();
+}
+function openAssignBuf(b, pos) {
+  aData = {b:b, r:null, tipo:'ENTRADA', bufPos:pos};
+  document.getElementById('mtitle').textContent = 'Buffer B' + pos + ' \u2014 ' + b;
+  var h = '<div class="abox warn">Registrar contenedor en cola de espera</div>';
+  h += '<div class="tipo-sel"><div class="tipo-btn ent act" id="tbent" onclick="setTipo(\'ENTRADA\')"><span class="tipo-lbl">ENTRADA</span></div>';
+  h += '<div class="tipo-btn sal" id="tbsal" onclick="setTipo(\'SALIDA\')"><span class="tipo-lbl">SALIDA</span></div></div>';
+  h += '<div class="ig2"><div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
+  h += '<div class="fg"><div class="flbl">Cliente</div><input type="text" class="fin" id="acli" placeholder="CERNAC..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg" style="margin-top:4px;"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
+  h += '<button class="btn-p btn-amber" onclick="confirmAssignBuf('+pos+')">AGREGAR A COLA</button>';
+  document.getElementById('mbody').innerHTML = h;
+  openMod();
+}
+function setTipo(t) {
+  aData.tipo = t;
+  var te = document.getElementById('tbent'); var ts = document.getElementById('tbsal');
+  if(te) { te.className = 'tipo-btn ent' + (t==='ENTRADA'?' act':''); }
+  if(ts) { ts.className = 'tipo-btn sal' + (t==='SALIDA'?' act':''); }
+  var iw = document.getElementById('iwarn'); if(iw) iw.style.display = t==='SALIDA'?'flex':'none';
+}
+function confirmAssign() {
+  var cont = (document.getElementById('acont')||{}).value; if(cont) cont = cont.trim().toUpperCase();
+  var cli = (document.getElementById('acli')||{}).value; if(cli) cli = cli.trim().toUpperCase();
+  if(!cont) { showToast('Ingresa el N de contenedor'); return; }
+  if(!cli) { showToast('Ingresa el cliente'); return; }
+  var op = {id:Date.now().toString(), bodega:aData.b, rampa:aData.r, tipo:aData.tipo, contenedor:cont, tipoContenedor:(document.getElementById('atc')||{}).value||'', cliente:cli, transportista:((document.getElementById('attr')||{}).value||'').trim(), estado:aData.tipo==='SALIDA'?'PEND_INSP':'EN_RAMPA', inspeccionCompleta:aData.tipo==='ENTRADA', inspeccion:null, log:[{ev:'Rampa asignada \u2014 '+aData.tipo, ts:new Date().toISOString()}], creadoEn:new Date().toISOString(), actualizadoEn:new Date().toISOString()};
+  var ops = getOps(); ops.push(op); saveOps(ops); closeMod(); refresh();
+  showToast(aData.r + ' asignada \u2014 ' + cli, true);
+  if(aData.tipo==='SALIDA') { setTimeout(function(){ openInsp(op.id); }, 400); }
+}
+function confirmAssignBuf(pos) {
+  var cont = (document.getElementById('acont')||{}).value; if(cont) cont = cont.trim().toUpperCase();
+  var cli = (document.getElementById('acli')||{}).value; if(cli) cli = cli.trim().toUpperCase();
+  if(!cont || !cli) { showToast('Completa los campos'); return; }
+  var op = {id:Date.now().toString(), bodega:aData.b, rampa:null, tipo:aData.tipo, contenedor:cont, tipoContenedor:(document.getElementById('atc')||{}).value||'', cliente:cli, transportista:((document.getElementById('attr')||{}).value||'').trim(), estado:'ESPERA_RAMPA', inspeccionCompleta:aData.tipo==='ENTRADA', inspeccion:null, log:[{ev:'Cola buffer B'+pos, ts:new Date().toISOString()}], creadoEn:new Date().toISOString(), actualizadoEn:new Date().toISOString()};
+  var ops = getOps(); ops.push(op); saveOps(ops); closeMod(); refresh();
+  showToast('En cola B' + pos, true);
+}
+
+// ═══ DETAIL MODAL ═══
+function openDetail(opId) {
+  var ops = getOps();
+  var op = null; for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { op=ops[i]; break; } }
+  if(!op) return;
+  var s = ST[op.estado] || ST['EN_RAMPA'];
+  var pct = op.estado==='P20'?20 : op.estado==='P50'?50 : op.estado==='P100'?100 : 0;
+  var bc = op.tipo==='ENTRADA' ? '#0099e6' : op.estado==='P100' ? '#00C389' : '#f5a20b';
+  var ni = op.tipo==='SALIDA' && !op.inspeccionCompleta;
+  var ir = RS.indexOf(op.estado)>=0 && op.estado!=='ESPERA_RAMPA';
+  var sp = ir && op.inspeccionCompleta && op.estado!=='P100';
+  var sd = op.estado==='P100' && ir;
+  document.getElementById('mtitle').textContent = (op.rampa || 'COLA') + ' \u2014 ' + op.bodega;
+  var h = '<div class="op-dtop">';
+  h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;">';
+  h += '<div><div class="op-big-r">' + (op.rampa||'COLA') + '</div>';
+  h += '<div class="op-big-c" style="color:'+s.c+';">' + op.cliente + '</div>';
+  h += '<div class="op-big-n">' + op.contenedor + ' ' + (op.tipoContenedor||'') + ' &middot; ' + op.tipo + '</div></div>';
+  h += '<div style="font-family:Barlow Condensed,sans-serif;font-size:12px;font-weight:700;color:'+s.c+';background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:4px 8px;border-radius:5px;box-shadow:0 0 10px '+s.g+';">'+s.l+'</div>';
+  h += '</div>';
+  if(pct > 0) {
+    h += '<div class="bprog"><div class="bprogf" style="width:'+pct+'%;background:'+bc+';box-shadow:0 0 8px '+bc+'66;"></div></div>';
+    h += '<div style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--t3);">'+pct+'% '+(op.tipo==='ENTRADA'?'descargado':'cargado')+'</div>';
+  }
+  h += '</div>';
+  if(ni) {
+    h += '<div class="abox err">Inspeccion SL-02-007 pendiente \u2014 el cargue no puede iniciar.</div>';
+    h += '<button class="btn-p btn-red" onclick="closeMod();setTimeout(function(){openInsp(\''+opId+'\')},200)">INICIAR INSPECCION</button>';
+  } else if(op.tipo==='SALIDA' && op.inspeccionCompleta && op.inspeccion) {
+    h += '<div class="abox suc">Inspeccion OK \u2014 ' + (op.inspeccion.result==='apto'?'APTO':'NO APTO') + ' &middot; ' + (op.inspeccion.inspector||'') + '</div>';
+  }
+  if(sp) {
+    h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">ACTUALIZAR PROGRESO</div>';
+    h += '<div class="prog-row">';
+    h += '<div class="pbtn p20" onclick="updEstado(\''+opId+'\',\'P20\');closeMod()"><div class="pn">20%</div><div class="pl">Iniciando</div></div>';
+    h += '<div class="pbtn p50" onclick="updEstado(\''+opId+'\',\'P50\');closeMod()"><div class="pn">50%</div><div class="pl">Mitad</div></div>';
+    h += '<div class="pbtn p100" onclick="updEstado(\''+opId+'\',\'P100\');closeMod()"><div class="pn">100%</div><div class="pl">Completo</div></div>';
+    h += '</div>';
+  }
+  if(sd) {
+    h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">DESTINO FINAL</div>';
+    h += buildDestButtons(opId);
+  }
+  if(op.estado==='EN_RAMPA' && op.inspeccionCompleta) {
+    h += '<button class="btn-p btn-navy" onclick="updEstado(\''+opId+'\',\'PROXIMO\');closeMod()">Marcar Proximo Cargue/Descargue</button>';
+  }
+  if(op.estado==='ESPERA_RAMPA') {
+    h += '<button class="btn-p btn-amber" onclick="closeMod();setTimeout(function(){openMoveAssign(\''+opId+'\')},200)">Asignar a Rampa</button>';
+  }
+  if(ir) {
+    h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="startMove(\''+opId+'\')">Mover contenedor</button>';
+  }
+  var log = op.log || [];
+  h += '<div class="tl"><div class="tl-h">Actividad</div>';
+  var recent = log.slice(-4).reverse();
+  for(var i=0; i<recent.length; i++) {
+    h += '<div class="tl-it"><div class="tl-dot"></div><div><div class="tl-txt">'+recent[i].ev+'</div><div class="tl-time">'+fmtT(recent[i].ts)+'</div></div></div>';
+  }
+  if(!recent.length) h += '<div style="font-size:11px;color:var(--t4);">Sin actividad</div>';
+  h += '</div>';
+  h += '<button class="btn-dang" onclick="liberarRampa(\''+opId+'\')">Liberar rampa</button>';
+  document.getElementById('mbody').innerHTML = h;
   openMod();
 }
 
-function openMoveToAssign(opId){
-  const op=getOps().find(o=>o.id===opId);if(!op)return;
-  const b=op.bodega;const libres=[];
-  for(let r=1;r<=CFG[b].rampas;r++){if(!getRampOp(b,'R'+r))libres.push('R'+r);}
-  if(!libres.length){toast('No hay rampas libres en '+b);return;}
-  document.getElementById('mtitle').textContent='Seleccionar rampa — '+b;
-  document.getElementById('mbody').innerHTML=`
-    <div class="abox info">Selecciona la rampa donde posicionar el contenedor</div>
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;">
-      ${libres.map(r=>`<button class="btn-p btn-green" style="width:auto;flex:1;min-width:55px;padding:14px 6px;font-size:18px;margin:0;" onclick="execMove('${opId}','rampa','${b}','${r}')">${r}</button>`).join('')}
-    </div>`;
+function buildDestButtons(opId) {
+  var h = '<div class="dest-col">';
+  h += '<div class="dbtn puerto" onclick="setDest(\''+opId+'\',\'TRANSITO\')">';
+  h += '<div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#00C389" stroke-width="1.5"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div>';
+  h += '<div><span class="dt">PUERTO</span><span class="ds">Enviar a puerto de salida</span></div></div>';
+  h += '<div class="dbtn buffer" onclick="setDest(\''+opId+'\',\'BUFFER_POST\')">';
+  h += '<div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#f5a20b" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>';
+  h += '<div><span class="dt">BUFFER</span><span class="ds">Zona de espera</span></div></div>';
+  h += '<div class="dbtn docs" onclick="setDest(\''+opId+'\',\'ESPERA_DOCS\')">';
+  h += '<div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6680" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>';
+  h += '<div><span class="dt">DOCS PENDIENTES</span><span class="ds">Falta documentacion</span></div></div>';
+  h += '</div>';
+  return h;
+}
+
+function openMoveAssign(opId) {
+  var op = getOps().filter(function(o){ return o.id===opId; })[0];
+  if(!op) return;
+  var b = op.bodega;
+  var libres = [];
+  for(var r=1; r<=CFG[b].rampas; r++) { if(!getRampOp(b,'R'+r)) libres.push('R'+r); }
+  if(!libres.length) { showToast('No hay rampas libres en '+b); return; }
+  document.getElementById('mtitle').textContent = 'Seleccionar rampa \u2014 ' + b;
+  var h = '<div class="abox warn">Selecciona donde posicionar el contenedor</div>';
+  h += '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;">';
+  for(var i=0; i<libres.length; i++) {
+    h += '<button class="btn-p btn-green" style="width:auto;flex:1;min-width:55px;padding:14px 6px;font-size:18px;margin:0;" onclick="execMove(\''+opId+'\',\'rampa\',\''+b+'\',\''+libres[i]+'\')">'+libres[i]+'</button>';
+  }
+  h += '</div>';
+  document.getElementById('mbody').innerHTML = h;
   openMod();
 }
 
-// ══ INSPECTION MODAL WITH PHOTOS ══
-function openInsp(opId){
-  inspA={};inspIP={};inspGP=[];
-  const op=getOps().find(o=>o.id===opId);if(!op)return;
-  document.getElementById('mtitle').textContent=`Inspección — ${op.contenedor}`;
-  const clHtml=CL.map(sec=>`
-    <div class="isec">
-      <div class="isec-hdr"><div class="isec-num">${sec.id}</div><div class="isec-name">${sec.n}</div></div>
-      ${sec.items.map(it=>`
-        <div class="iitem" id="irow-${it.id}">
-          <div class="iitem-id">${it.id}</div>
-          <div class="iitem-q">${it.q}</div>
-          <div class="ibtns">
-            <button class="ib" id="ib-si-${it.id}" onclick="setIA('${opId}','${it.id}','SI')">SÍ</button>
-            <button class="ib" id="ib-no-${it.id}" onclick="setIA('${opId}','${it.id}','NO')">NO</button>
-            <button class="icam" id="icam-${it.id}" onclick="triggerItemCam('${opId}','${it.id}')" title="Agregar foto">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="iphoto-row" id="iph-${it.id}">
-          <div class="iphoto-thumb"><img id="iphimg-${it.id}" src="" alt=""><button class="iphoto-del" onclick="delItemPh('${it.id}')">×</button></div>
-          <div class="iph-lbl">Foto registrada</div>
-        </div>
-      `).join('')}
-    </div>
-  `).join('');
-  document.getElementById('mbody').innerHTML=`
-    <div class="abox warn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>★ Puntos 6.5, 7.1 y 7.2 son NEGATIVOS — respuesta APTO = NO</div>
-    <div class="ig2"><div class="fg2"><div class="flbl">Inspector</div><input type="text" class="fin" id="ii-insp" placeholder="Nombre del verificador"></div><div class="fg2"><div class="flbl">Tipo contenedor</div><select class="fin" id="ii-tc"><option value="">—</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>
-    ${clHtml}
-    <div class="fg2" style="margin:10px 0;"><div class="flbl">Fotos generales</div>
-      <div class="gfotos-grid" id="gfgrid"></div>
-      <button class="gfadd" onclick="document.getElementById('gfInput').click()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Agregar fotos generales</button>
-    </div>
-    <div class="fg2" style="margin-bottom:12px;"><div class="flbl">Comentarios</div><textarea class="fin" id="ii-com" placeholder="Observaciones..." style="min-height:55px;resize:none;"></textarea></div>
-    <button class="btn-p btn-green" onclick="saveInsp('${opId}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>GUARDAR INSPECCIÓN</button>
-    <button class="btn-p btn-share" onclick="saveAndShareInsp('${opId}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>GUARDAR Y COMPARTIR PDF</button>`;
+// ═══ STATE UPDATES ═══
+function updEstado(opId, newSt) {
+  var ops = getOps(); var idx=-1;
+  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
+  if(idx<0) return;
+  ops[idx].estado = newSt;
+  ops[idx].log.push({ev:'Estado: '+(ST[newSt]||{}).l, ts:new Date().toISOString()});
+  ops[idx].actualizadoEn = new Date().toISOString();
+  saveOps(ops); refresh();
+  showToast((ST[newSt]||{}).l||newSt, true);
+  if(newSt==='P100') { setTimeout(function(){ openDestinoMod(opId); }, 500); }
+}
+
+function setDest(opId, destSt) {
+  var ops = getOps(); var idx=-1;
+  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
+  if(idx<0) return;
+  ops[idx].estado = destSt; ops[idx].rampa = null;
+  ops[idx].log.push({ev:'Destino: '+(ST[destSt]||{}).l, ts:new Date().toISOString()});
+  ops[idx].actualizadoEn = new Date().toISOString();
+  saveOps(ops); closeMod(); refresh();
+  showToast((ST[destSt]||{}).l+' \u2014 rampa liberada', true);
+}
+
+function openDestinoMod(opId) {
+  var op = getOps().filter(function(o){ return o.id===opId; })[0];
+  if(!op) return;
+  document.getElementById('mtitle').textContent = 'Destino \u2014 ' + op.contenedor;
+  var h = '<div style="font-size:12px;color:var(--t3);margin-bottom:12px;">100% '+(op.tipo==='ENTRADA'?'descargado':'cargado')+' \u2014 Cual es el destino?</div>';
+  h += buildDestButtons(opId);
+  document.getElementById('mbody').innerHTML = h;
   openMod();
 }
 
-function setIA(opId,itemId,val){
-  inspA[itemId]=val;
-  const si=document.getElementById('ib-si-'+itemId);const no=document.getElementById('ib-no-'+itemId);
-  if(si){si.className='ib'+(val==='SI'?' si':'');} if(no){no.className='ib'+(val==='NO'?' no':'');}
+function liberarRampa(opId) {
+  var ops = getOps(); var idx=-1;
+  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
+  if(idx<0) return;
+  ops[idx].estado = 'EIR'; ops[idx].rampa = null;
+  ops[idx].log.push({ev:'Rampa liberada', ts:new Date().toISOString()});
+  saveOps(ops); closeMod(); refresh(); showToast('Rampa liberada');
 }
-function triggerItemCam(opId,itemId){
-  const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';
-  inp.onchange=(e)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{inspIP[itemId]=ev.target.result;updItemPh(itemId);};r.readAsDataURL(f);};
+
+// ═══ POST-RAMP ═══
+function buildPipeSteps(steps, ci) {
+  var h = '';
+  for(var i=0; i<steps.length; i++) {
+    var cls = i<ci ? 'done' : i===ci ? 'cur' : 'fut';
+    var inner = i<ci ? '&#10003;' : i===ci ? '&#9679;' : '';
+    h += '<div class="cstep"><div class="pip-d ' + cls + '">' + inner + '</div>';
+    if(i < steps.length-1) { h += '<div class="pip-l ' + (i<ci?'done':'fut') + '"></div>'; }
+    h += '</div>';
+  }
+  return h;
+}
+
+function renderPost() {
+  var ops = getPostOps();
+  document.getElementById('pcnt').textContent = ops.length;
+  if(!ops.length) {
+    document.getElementById('pscroll').innerHTML = '<div style="color:var(--t4);font-size:11px;padding:16px;">Sin operaciones en seguimiento</div>';
+    return;
+  }
+  var h = '';
+  for(var i=0; i<ops.length; i++) {
+    var op = ops[i];
+    var postSts = op.tipo==='SALIDA' ? ['P100','BUFFER_POST','ESPERA_DOCS','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'] : ['P100','BUFFER_POST','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
+    var ci = postSts.indexOf(op.estado);
+    var s = ST[op.estado] || {l:'',c:'#fff',g:'rgba(255,255,255,.1)'};
+    var stH = buildPipeSteps(postSts, ci);
+    h += '<div class="pcard" onclick="openPostMod(\''+op.id+'\')">';
+    h += '<div class="pcard-hdr"><div class="pcard-top">';
+    h += '<div><div class="pcard-num">'+op.contenedor+'</div><div class="pcard-cli">'+op.cliente+' &middot; '+op.bodega+'</div></div>';
+    h += '<div class="ptipo '+(op.tipo==='ENTRADA'?'pte':'pts')+'">'+op.tipo+'</div>';
+    h += '</div></div>';
+    h += '<div class="pstate-row"><div class="pstate-dot" style="background:'+s.c+';box-shadow:0 0 5px '+s.g+';"></div><div class="pstate-lbl" style="color:'+s.c+';">'+s.l+'</div></div>';
+    h += '<div class="pipeline">'+stH+'</div>';
+    h += '<div class="pcard-act"><button class="btn-p btn-navy" style="margin:0;font-size:12px;padding:7px;" onclick="event.stopPropagation();openPostMod(\''+op.id+'\')">Actualizar estado</button></div>';
+    h += '</div>';
+  }
+  document.getElementById('pscroll').innerHTML = h;
+}
+
+function openPostMod(opId) {
+  var ops = getOps();
+  var op = null; for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { op=ops[i]; break; } }
+  if(!op) return;
+  var s = ST[op.estado] || {l:'',c:'#fff',g:'rgba(255,255,255,.1)'};
+  var postSts = op.tipo==='SALIDA' ? ['BUFFER_POST','ESPERA_DOCS','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'] : ['BUFFER_POST','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
+  var ci = postSts.indexOf(op.estado);
+  document.getElementById('mtitle').textContent = op.contenedor;
+  var h = '<div style="background:rgba(255,255,255,.04);border:1px solid '+s.c+'44;border-radius:8px;padding:11px 13px;margin-bottom:13px;">';
+  h += '<div style="font-family:Barlow Condensed,sans-serif;font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">'+op.cliente+' &middot; '+op.bodega+'</div>';
+  h += '<div style="font-family:Barlow Condensed,sans-serif;font-size:17px;font-weight:800;color:'+s.c+';text-shadow:0 0 10px '+s.g+';">'+s.l+'</div>';
+  h += '</div>';
+  h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;">AVANZAR ESTADO</div>';
+  h += '<div class="psblist">';
+  for(var i=(ci>=0?ci:0); i<postSts.length; i++) {
+    var st = postSts[i]; var ss = ST[st] || {l:st,c:'#fff',g:'rgba(255,255,255,.1)'};
+    var isNext = i===ci || (ci<0 && i===0);
+    h += '<div class="psbtn" style="border-color:'+ss.c+(isNext?'':44)+';background:'+(isNext?ss.g.replace('.4','.08').replace('.5','.08'):'rgba(255,255,255,.02)')+'" onclick="updEstado(\''+opId+'\',\''+st+'\')">';
+    h += '<div class="psic"><svg viewBox="0 0 24 24" fill="none" stroke="'+ss.c+'" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg></div>';
+    h += '<div><span class="pslbl" style="color:'+ss.c+';">'+ss.l+'</span>'+(isNext?'<span class="pssub">Siguiente paso</span>':'')+'</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  document.getElementById('mbody').innerHTML = h;
+  openMod();
+}
+
+// ═══ INSPECTION ═══
+function openInsp(opId) {
+  inspA = {}; inspIP = {}; inspGP = [];
+  var ops = getOps(); var op = null;
+  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { op=ops[i]; break; } }
+  if(!op) return;
+  document.getElementById('mtitle').textContent = 'Inspeccion \u2014 ' + op.contenedor;
+  var h = '<div class="abox warn">Puntos 6.5, 7.1 y 7.2: respuesta APTO = NO</div>';
+  h += '<div class="ig2"><div class="fg"><div class="flbl">Inspector</div><input type="text" class="fin" id="ii-insp" placeholder="Nombre del verificador"></div>';
+  h += '<div class="fg"><div class="flbl">Tipo cont.</div><select class="fin" id="ii-tc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
+  for(var si=0; si<CL.length; si++) {
+    var sec = CL[si];
+    h += '<div class="isec"><div class="isec-hdr"><div class="isec-num">'+sec.id+'</div><div class="isec-name">'+sec.n+'</div></div>';
+    for(var ii=0; ii<sec.items.length; ii++) {
+      var it = sec.items[ii];
+      h += '<div class="iitem"><div class="iitem-id">'+it.id+'</div><div class="iitem-q">'+it.q+'</div>';
+      h += '<div class="ibtns">';
+      h += '<button class="ib" id="ib-si-'+it.id+'" onclick="setIA(\''+opId+'\',\''+it.id+'\',\'SI\')">SI</button>';
+      h += '<button class="ib" id="ib-no-'+it.id+'" onclick="setIA(\''+opId+'\',\''+it.id+'\',\'NO\')">NO</button>';
+      h += '<button class="icam" id="icam-'+it.id+'" onclick="triggerCam(\''+opId+'\',\''+it.id+'\')">';
+      h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+      h += '</button></div></div>';
+      h += '<div class="iphrow" id="iph-'+it.id+'"><div class="iphthumb"><img id="iphimg-'+it.id+'" src="" alt=""><button class="iphdel" onclick="delIPh(\''+it.id+'\')">x</button></div><div style="font-size:10px;color:var(--green);font-weight:600;">Foto OK</div></div>';
+    }
+    h += '</div>';
+  }
+  h += '<div class="fg" style="margin-top:10px;"><div class="flbl">Fotos generales</div>';
+  h += '<div class="gfgrid" id="gfgrid"></div>';
+  h += '<button class="gfadd" onclick="document.getElementById(\'gfInput\').click()">+ Agregar fotos</button></div>';
+  h += '<div class="fg" style="margin:8px 0;"><div class="flbl">Comentarios</div><textarea class="fin" id="ii-com" placeholder="Observaciones..." style="min-height:55px;resize:none;"></textarea></div>';
+  h += '<button class="btn-p btn-green" onclick="saveInsp(\''+opId+'\',false)">GUARDAR INSPECCION</button>';
+  h += '<button class="btn-p btn-blue" style="margin-top:4px;" onclick="saveInsp(\''+opId+'\',true)">GUARDAR Y COMPARTIR PDF</button>';
+  document.getElementById('mbody').innerHTML = h;
+  openMod();
+}
+
+function setIA(opId, itemId, val) {
+  inspA[itemId] = val;
+  var si = document.getElementById('ib-si-'+itemId);
+  var no = document.getElementById('ib-no-'+itemId);
+  if(si) si.className = 'ib' + (val==='SI'?' si':'');
+  if(no) no.className = 'ib' + (val==='NO'?' no':'');
+}
+
+function triggerCam(opId, itemId) {
+  var inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+  inp.onchange = function(e) {
+    var f = e.target.files[0]; if(!f) return;
+    var rd = new FileReader();
+    rd.onload = function(ev) { inspIP[itemId]=ev.target.result; updIPh(itemId); };
+    rd.readAsDataURL(f);
+  };
   inp.click();
 }
-function updItemPh(itemId){
-  const src=inspIP[itemId];const cam=document.getElementById('icam-'+itemId);const row=document.getElementById('iph-'+itemId);const img=document.getElementById('iphimg-'+itemId);
-  if(!cam)return;
-  if(src){cam.classList.add('hph');if(row)row.classList.add('vis');if(img)img.src=src;}
-  else{cam.classList.remove('hph');if(row)row.classList.remove('vis');if(img)img.src='';}
-}
-function delItemPh(itemId){delete inspIP[itemId];updItemPh(itemId);}
-function addGF(e){
-  const files=Array.from(e.target.files);const promises=files.map(f=>new Promise(res=>{const r=new FileReader();r.onload=ev=>res(ev.target.result);r.readAsDataURL(f);}));
-  Promise.all(promises).then(res=>{inspGP=[...inspGP,...res];renderGFGrid();e.target.value='';});
-}
-function renderGFGrid(){
-  const g=document.getElementById('gfgrid');if(!g)return;
-  g.innerHTML=inspGP.map((src,i)=>`<div class="gfthumb"><img src="${src}"><button class="gfdel" onclick="delGF(${i})">×</button></div>`).join('');
-}
-function delGF(i){inspGP.splice(i,1);renderGFGrid();}
 
-function saveInsp(opId,doShare=false){
-  const inspector=document.getElementById('ii-insp')?.value.trim()||'';
-  const tc=document.getElementById('ii-tc')?.value||'';
-  const com=document.getElementById('ii-com')?.value.trim()||'';
-  let fail=false;AIDS.forEach(id=>{const v=inspA[id];if(!v)return;if(NEGS.includes(id)&&v==='SI')fail=true;if(!NEGS.includes(id)&&v==='NO')fail=true;});
-  const answered=Object.keys(inspA).length;
-  const result=answered===AIDS.length?(fail?'no-apto':'apto'):'parcial';
-  const insp={answers:{...inspA},result,inspector,tipoContenedor:tc,comentarios:com,fecha:new Date().toISOString(),itemFotos:{...inspIP},globalFotos:[...inspGP]};
-  const ops=getOps();const idx=ops.findIndex(o=>o.id===opId);if(idx<0)return null;
-  ops[idx].inspeccion=insp;ops[idx].inspeccionCompleta=true;ops[idx].estado='INSPECCIONADO';if(tc)ops[idx].tipoContenedor=tc;
-  ops[idx].log.push({ev:`Inspección: ${result==='apto'?'APTO':result==='no-apto'?'NO APTO':'PARCIAL'} · ${inspector||'—'}`,ts:new Date().toISOString()});
-  ops[idx].actualizadoEn=new Date().toISOString();
-  saveOps(ops);inspA={};
-  if(!doShare){closeMod();refresh();toast(result==='apto'?'Inspección APTO — listo para cargue':'Inspección NO APTO',result!=='no-apto');}
-  return ops[idx];
+function updIPh(itemId) {
+  var src = inspIP[itemId];
+  var cam = document.getElementById('icam-'+itemId);
+  var row = document.getElementById('iph-'+itemId);
+  var img = document.getElementById('iphimg-'+itemId);
+  if(!cam) return;
+  if(src) { cam.classList.add('hph'); if(row) row.classList.add('vis'); if(img) img.src=src; }
+  else { cam.classList.remove('hph'); if(row) row.classList.remove('vis'); if(img) img.src=''; }
 }
+function delIPh(itemId) { delete inspIP[itemId]; updIPh(itemId); }
 
-async function saveAndShareInsp(opId){
-  const op=saveInsp(opId,true);if(!op)return;
-  closeMod();refresh();toast('Generando PDF…');
-  await new Promise(r=>setTimeout(r,200));
-  try{
-    const blob=await buildInspPDF(op);
-    const fname=`Inspeccion_${op.contenedor}_${op.bodega}.pdf`;
-    if(navigator.share&&navigator.canShare){
-      const file=new File([blob],fname,{type:'application/pdf'});
-      if(navigator.canShare({files:[file]})){await navigator.share({title:`Inspección ${op.contenedor} — DP World`,files:[file]});toast('PDF compartido',true);return;}
-    }
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;a.click();URL.revokeObjectURL(url);
-    toast('PDF descargado',true);
-  }catch(e){if(e.name!=='AbortError')toast('Error al compartir');}
-}
-
-async function buildInspPDF(op){
-  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const W=210,M=14;let y=0;
-  const navy=[26,16,96],green=[0,195,137],white=[255,255,255],gray=[90,96,117],lg=[240,241,245],red=[229,57,53];
-  doc.setFillColor(...navy);doc.rect(0,0,W,30,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(...white);doc.text('DP WORLD PANAMÁ',M,11);
-  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...green);doc.text('FORMULARIO DE INSPECCIÓN DE CONTENEDORES — SL-02-007',M,17);
-  doc.setTextColor(180,180,200);doc.setFontSize(7);doc.text(`Generado: ${new Date().toLocaleString('es-PA')} · Rampa ${op.rampa||'—'} · ${op.bodega}`,M,23);
-  const insp=op.inspeccion;const bc=insp?.result==='apto'?green:insp?.result==='no-apto'?red:[200,150,0];
-  doc.setFillColor(...bc);doc.roundedRect(W-M-34,8,34,14,3,3,'F');doc.setTextColor(...navy);doc.setFont('helvetica','bold');doc.setFontSize(10);
-  doc.text(insp?.result==='apto'?'APTO':insp?.result==='no-apto'?'NO APTO':'PARCIAL',W-M-17,17,{align:'center'});
-  y=36;
-  // Info grid
-  doc.setFillColor(...lg);doc.rect(M,y,W-M*2,6,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...navy);doc.text('INFORMACIÓN GENERAL',M+2,y+4);y+=8;
-  const fi=[['Contenedor',op.contenedor],['Tipo',op.tipoContenedor],['Cliente',op.cliente],['Bodega',op.bodega+' — '+CFG[op.bodega].label],['Inspector',insp?.inspector||'—'],['Fecha',new Date(insp?.fecha||'').toLocaleString('es-PA')]];
-  const cw=(W-M*2)/2,rh=8;
-  fi.forEach(([l,v],i)=>{const col=i%2,row=Math.floor(i/2),x=M+col*cw,fy=y+row*rh;if(row%2===0){doc.setFillColor(250,250,252);doc.rect(x,fy,cw,rh,'F');}doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(...gray);doc.text(l+':',x+2,fy+3);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...navy);doc.text(v||'—',x+2,fy+7);});
-  y+=Math.ceil(fi.length/2)*rh+5;
-  function chkPg(n=10){if(y+n>277){doc.addPage();y=14;}}
-  CL.forEach(sec=>{
-    chkPg(12);doc.setFillColor(...navy);doc.rect(M,y,W-M*2,6,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...white);doc.text(`${sec.id}. ${sec.n}`,M+3,y+4.3);y+=8;
-    sec.items.forEach((it,idx)=>{
-      const ans=insp?.answers?.[it.id];const iPh=insp?.itemFotos?.[it.id];chkPg(8+(iPh?22:0));
-      const bg=idx%2===0?[249,249,252]:[255,255,255];doc.setFillColor(...bg);doc.rect(M,y,W-M*2,7,'F');
-      const isN=NEGS.includes(it.id);const lines=doc.splitTextToSize(it.id+'. '+it.q,W-M*2-28);
-      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(45,49,72);doc.text(lines,M+2,y+4.2);
-      if(ans){const ok=(!isN&&ans==='SI')||(isN&&ans==='NO');doc.setFillColor(...(ok?[232,250,244]:[253,236,234]));doc.roundedRect(W-M-18,y+1.5,16,4,1,1,'F');doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor(...(ok?[0,163,114]:red));doc.text(ans==='SI'?'SÍ':'NO',W-M-10,y+4.2,{align:'center'});}
-      y+=7+(lines.length>1?(lines.length-1)*3.5:0);
-      if(iPh){try{doc.setFillColor(...lg);doc.rect(M,y,W-M*2,21,'F');doc.addImage(iPh,'JPEG',M+2,y+1,26,19,undefined,'MEDIUM');doc.setFont('helvetica','italic');doc.setFontSize(6);doc.setTextColor(...gray);doc.text(`Foto ítem ${it.id}`,M+30,y+6);y+=23;}catch(e){y+=3;}}
-    });y+=3;
+function addGF(e) {
+  var files = Array.prototype.slice.call(e.target.files);
+  var promises = files.map(function(f) {
+    return new Promise(function(res) {
+      var r = new FileReader(); r.onload = function(ev) { res(ev.target.result); }; r.readAsDataURL(f);
+    });
   });
-  if(insp?.comentarios){chkPg(14);doc.setFillColor(...lg);doc.rect(M,y,W-M*2,5,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...navy);doc.text('COMENTARIOS',M+2,y+3.5);y+=7;doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(45,49,72);const cl=doc.splitTextToSize(insp.comentarios,W-M*2-4);doc.text(cl,M+2,y+3.5);y+=cl.length*4.5+5;}
-  if(insp?.globalFotos?.length>0){doc.addPage();y=14;doc.setFillColor(...lg);doc.rect(M,y,W-M*2,5,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...navy);doc.text(`FOTOS GENERALES (${insp.globalFotos.length})`,M+2,y+3.5);y+=9;const cols=3,iw=(W-M*2-8)/cols,ih=iw*.75;insp.globalFotos.forEach((src,i)=>{const col=i%cols,row=Math.floor(i/cols);if(col===0&&row>0&&y+ih+5>277){doc.addPage();y=14;}const x=M+col*(iw+4),fy=y+row*(ih+5);try{doc.addImage(src,'JPEG',x,fy,iw,ih,undefined,'MEDIUM');}catch(e){}});}
-  const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFillColor(...navy);doc.rect(0,287,W,10,'F');doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(180,180,200);doc.text('DP World Panamá · DAL Colón Logistics Park · SL-02-007 R004',M,293);doc.text(`Pág. ${p}/${pages}`,W-M,293,{align:'right'});}
-  doc.setPage(pages);const sy=Math.min(y+16,260);doc.setDrawColor(...gray);doc.setLineWidth(.3);doc.line(M,sy,M+55,sy);doc.line(W/2,sy,W/2+55,sy);doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...gray);doc.text('Firma del Inspector',M,sy+4);doc.text('Firma del Supervisor',W/2,sy+4);doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...navy);doc.text(insp?.inspector||'______________________',M,sy+9);
-  return doc.output('blob');
+  Promise.all(promises).then(function(res) { inspGP = inspGP.concat(res); renderGFGrid(); e.target.value=''; });
 }
-
-// ══ STATE UPDATE & DESTINATION ══
-function updEstado(opId,newSt){
-  const ops=getOps();const idx=ops.findIndex(o=>o.id===opId);if(idx<0)return;
-  ops[idx].estado=newSt;ops[idx].log.push({ev:`Estado: ${ST[newSt].l}`,ts:new Date().toISOString()});ops[idx].actualizadoEn=new Date().toISOString();
-  saveOps(ops);refresh();toast(`${ST[newSt].l}`,true);
-  if(newSt==='P100')setTimeout(()=>openDestinoMod(opId),500);
-}
-function setDest(opId,destSt){
-  const ops=getOps();const idx=ops.findIndex(o=>o.id===opId);if(idx<0)return;
-  ops[idx].estado=destSt;ops[idx].rampa=null;ops[idx].log.push({ev:`Destino: ${ST[destSt].l}`,ts:new Date().toISOString()});ops[idx].actualizadoEn=new Date().toISOString();
-  saveOps(ops);closeMod();refresh();toast(`${ST[destSt].l} — rampa liberada`,true);
-}
-function openDestinoMod(opId){
-  const op=getOps().find(o=>o.id===opId);if(!op)return;
-  document.getElementById('mtitle').textContent=`Destino — ${op.contenedor}`;
-  document.getElementById('mbody').innerHTML=`<div style="font-size:12px;color:var(--t3);margin-bottom:12px;">100% ${op.tipo==='ENTRADA'?'descargado':'cargado'} — ¿Cuál es el destino?</div>
-  <div class="dest-col">
-    <div class="dbtn puerto" onclick="setDest('${opId}','TRANSITO')"><div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#00C389" stroke-width="1.5"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div><div><div class="dt">PUERTO</div><div class="ds">Enviar a puerto de salida</div></div></div>
-    <div class="dbtn buffer" onclick="setDest('${opId}','BUFFER_POST')"><div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#f5a20b" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div><div class="dt">BUFFER</div><div class="ds">Zona de espera</div></div></div>
-    <div class="dbtn docs" onclick="setDest('${opId}','ESPERA_DOCS')"><div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="dt">DOCS PENDIENTES</div><div class="ds">Falta documentación</div></div></div>
-  </div>`;openMod();
-}
-function liberarRampa(opId){
-  const ops=getOps();const idx=ops.findIndex(o=>o.id===opId);if(idx<0)return;
-  ops[idx].estado='EIR';ops[idx].rampa=null;ops[idx].log.push({ev:'Rampa liberada',ts:new Date().toISOString()});saveOps(ops);closeMod();refresh();toast('Rampa liberada');
-}
-
-// ══ POST-RAMP ══
-function renderPost(){
-  const ops=getPostOps();document.getElementById('pcnt').textContent=ops.length;
-  if(!ops.length){document.getElementById('pscroll').innerHTML=`<div style="color:var(--t4);font-size:11px;padding:16px;">Sin operaciones en seguimiento</div>`;return;}
-  document.getElementById('pscroll').innerHTML=ops.map(op=>{
-    const postSts=op.tipo==='SALIDA'?['P100','BUFFER_POST','ESPERA_DOCS','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR']:['P100','BUFFER_POST','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
-    const ci=postSts.indexOf(op.estado);const s=ST[op.estado];
-    const stepsH=postSts.map((st,i)=>{const cls=i<ci?'done':i===ci?'cur':'fut';const lc=i<postSts.length-1?(i<ci?'done':'fut'):'';return`<div class="cstep"><div class="pip-d ${cls}">${i<ci?'✓':i===ci?'●':''}</div>${i<postSts.length-1?`<div class="pip-l ${lc}"></div>`:''}</div>`;}).join('');
-    return `<div class="pcard" onclick="openPostMod('${op.id}')">
-      <div class="pcard-hdr"><div class="pcard-top"><div><div class="pcard-num">${op.contenedor}</div><div class="pcard-cli">${op.cliente} · ${op.bodega}</div></div><div class="ptipo ${op.tipo==='ENTRADA'?'pte':'pts'}">${op.tipo}</div></div></div>
-      <div class="pstate-row"><div class="pstate-dot" style="background:${s.c};box-shadow:0 0 5px ${s.g};"></div><div class="pstate-lbl" style="color:${s.c};">${s.l}</div></div>
-      <div class="pipeline">${stepsH}</div>
-      <div class="pcard-act"><button class="btn-p btn-navy" style="margin:0;font-size:12px;padding:7px;" onclick="event.stopPropagation();openPostMod('${op.id}')">Actualizar estado</button></div>
-    </div>`;
-  }).join('');
-}
-
-function openPostMod(opId){
-  const op=getOps().find(o=>o.id===opId);if(!op)return;const s=ST[op.estado];
-  const postSts=op.tipo==='SALIDA'?['BUFFER_POST','ESPERA_DOCS','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR']:['BUFFER_POST','ESPERA_TRANS','TRANSITO','EN_PUERTO','EIR'];
-  const ci=postSts.indexOf(op.estado);
-  document.getElementById('mtitle').textContent=op.contenedor;
-  const ics={BUFFER_POST:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',ESPERA_DOCS:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',ESPERA_TRANS:'<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',TRANSITO:'<rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',EN_PUERTO:'<circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/>',EIR:'<polyline points="20 6 9 17 4 12"/>'};
-  document.getElementById('mbody').innerHTML=`
-    <div style="background:rgba(255,255,255,.04);border:1px solid ${s.c}44;border-radius:8px;padding:11px 13px;margin-bottom:13px;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">${op.cliente} · ${op.bodega}</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:${s.c};text-shadow:0 0 10px ${s.g};">${s.l}</div>
-    </div>
-    <div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;">AVANZAR ESTADO</div>
-    <div class="psbtnlist">
-    ${postSts.filter((_,i)=>i>ci-1).map((st,i)=>{const ss=ST[st];const isN=i===0;return`<div class="psbtn" style="border-color:${ss.c}${isN?'':44};background:${isN?ss.g.replace('.4','.08').replace('.5','.08'):'rgba(255,255,255,.02)'};" onclick="updEstado('${op.id}','${st}');closeMod()"><div class="psbtn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="${ss.c}" stroke-width="1.5">${ics[st]||''}</svg></div><div><div class="psbl" style="color:${ss.c};">${ss.l}</div>${isN?'<div class="pss">Siguiente paso →</div>':''}</div></div>`;}).join('')}
-    </div>`;
-  openMod();
-}
-
-// ══ CLIENT VIEW ══
-function renderCli(){
-  const e=user.nombre;
-  document.getElementById('cname2').textContent=e;
-  const allOps=getOps();
-  const myOps=allOps.filter(o=>o.cliente===e&&o.estado!=='EIR');
-  const myAct=myOps.filter(o=>RS.includes(o.estado)&&o.estado!=='ESPERA_RAMPA');
-  document.getElementById('cstats').innerHTML=`
-    <div class="cstat"><div class="csn">${myOps.length}</div><div class="csl">Total</div></div>
-    <div class="cstat"><div class="csn" style="color:var(--blue)">${myAct.filter(o=>o.tipo==='ENTRADA').length}</div><div class="csl">Entrada</div></div>
-    <div class="cstat"><div class="csn" style="color:var(--amber)">${myAct.filter(o=>o.tipo==='SALIDA').length}</div><div class="csl">Salida</div></div>
-    <div class="cstat"><div class="csn" style="color:var(--green)">${getPostOps().filter(o=>o.cliente===e).length}</div><div class="csl">Tránsito</div></div>`;
-  renderCliDockView();
-  renderCliPost();
-}
-
-let cBod='CLP';
-function setCBod(b){
-  cBod=b;
-  ['CLP','MSL','AMBAS'].forEach(x=>document.getElementById('ctab-'+x)?.classList.toggle('active',x===b));
-  renderCliDockView();
-}
-
-function renderCliDockView(){
-  const bods=cBod==='AMBAS'?['CLP','MSL']:[cBod];
-  let html='';
-  bods.forEach(b=>{
-    if(cBod==='AMBAS')html+=`<div style="margin:8px 12px 4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(0,195,137,.3);text-transform:uppercase;">${CFG[b].label} — ${b}</div>`;
-    html+=renderCliDock(b);
-  });
-  document.getElementById('cliDockView').innerHTML=html;
-}
-
-function renderCliDock(b){
-  const ops=getOps();const R=CFG[b].rampas;const BN=CFG[b].buffer;
-  const myName=user.nombre;
-  let doors=`<div class="wh-bodlbl">${b}</div>`;
-  for(let r=1;r<=R;r++){doors+=`<div class="rdoor"><div class="dframe"><div class="dseal"></div><div class="dnum">R${r}</div></div></div>`;}
-  let rslots='';
-  for(let r=1;r<=R;r++){
-    const op=getRampOp(b,'R'+r);
-    const isMine=op&&op.cliente===myName;
-    const clickFn=op&&isMine?`openCliDetail('${op.id}')`:'';
-    const dimmed=op&&!isMine;
-    rslots+=`<div class="rslot"><div class="rpipe"></div>${op?buildCliCBox(op,isMine,dimmed,clickFn):buildCliLibreBox()}<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>`;
+function renderGFGrid() {
+  var g = document.getElementById('gfgrid'); if(!g) return;
+  var h = '';
+  for(var i=0; i<inspGP.length; i++) {
+    h += '<div class="gfthumb"><img src="'+inspGP[i]+'"><button class="gfdel" onclick="delGF('+i+')">x</button></div>';
   }
-  let bufHtml='';
-  if(BN>0){
-    const bops=ops.filter(o=>o.bodega===b&&o.estado==='ESPERA_RAMPA');
-    let bslots='';
-    for(let i=1;i<=BN;i++){
-      const bop=bops[i-1]||null;const isMine=bop&&bop.cliente===myName;const dimmed=bop&&!isMine;
-      const clickFn=bop&&isMine?`openCliDetail('${bop.id}')`:'';
-      bslots+=`<div class="bslot"><div class="bpipe"></div>${bop?buildCliCBox(bop,isMine,dimmed,clickFn,true):buildCliLibreBBox()}<div class="bnum">B${i}</div></div>`;
+  g.innerHTML = h;
+}
+function delGF(i) { inspGP.splice(i,1); renderGFGrid(); }
+
+function saveInsp(opId, doShare) {
+  var inspector = (document.getElementById('ii-insp')||{}).value || '';
+  var tc = (document.getElementById('ii-tc')||{}).value || '';
+  var com = (document.getElementById('ii-com')||{}).value || '';
+  var fail = false;
+  for(var i=0; i<AIDS.length; i++) {
+    var id = AIDS[i]; var v = inspA[id]; if(!v) continue;
+    if(NEGS.indexOf(id)>=0 && v==='SI') fail=true;
+    if(NEGS.indexOf(id)<0 && v==='NO') fail=true;
+  }
+  var answered = Object.keys(inspA).length;
+  var result = answered===AIDS.length ? (fail?'no-apto':'apto') : 'parcial';
+  var insp = {answers:{}, result:result, inspector:inspector, tipoContenedor:tc, comentarios:com, fecha:new Date().toISOString(), itemFotos:{}, globalFotos:inspGP.slice()};
+  for(var k in inspA) insp.answers[k] = inspA[k];
+  for(var k in inspIP) insp.itemFotos[k] = inspIP[k];
+  var ops = getOps(); var idx=-1;
+  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
+  if(idx<0) return null;
+  ops[idx].inspeccion = insp; ops[idx].inspeccionCompleta = true; ops[idx].estado = 'INSPECCIONADO';
+  if(tc) ops[idx].tipoContenedor = tc;
+  ops[idx].log.push({ev:'Inspeccion: '+(result==='apto'?'APTO':result==='no-apto'?'NO APTO':'PARCIAL')+' - '+(inspector||'--'), ts:new Date().toISOString()});
+  ops[idx].actualizadoEn = new Date().toISOString();
+  saveOps(ops); inspA = {};
+  var op = ops[idx];
+  if(!doShare) {
+    closeMod(); refresh();
+    showToast(result==='apto'?'Inspeccion APTO - listo para cargue':'Inspeccion NO APTO', result!=='no-apto');
+    return op;
+  }
+  closeMod(); refresh();
+  showToast('Generando PDF...');
+  buildAndSharePDF(op);
+  return op;
+}
+
+async function buildAndSharePDF(op) {
+  try {
+    var jsPDF = window.jspdf && window.jspdf.jsPDF;
+    if(!jsPDF) { showToast('PDF no disponible'); return; }
+    var doc = new jsPDF({unit:'mm', format:'a4'});
+    var W=210, M=14, y=0;
+    var navy=[26,16,96], green=[0,195,137], white=[255,255,255], gray=[90,96,117], lg=[240,241,245], red=[232,0,61];
+    doc.setFillColor.apply(doc,navy); doc.rect(0,0,W,30,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor.apply(doc,white);
+    doc.text('DP WORLD PANAMA', M, 11);
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc,green);
+    doc.text('FORMULARIO DE INSPECCION DE CONTENEDORES - SL-02-007', M, 17);
+    doc.setTextColor(180,180,200); doc.setFontSize(7);
+    doc.text('Generado: '+new Date().toLocaleString('es-PA')+' - '+op.bodega, M, 23);
+    var insp = op.inspeccion;
+    var bc = insp&&insp.result==='apto' ? green : insp&&insp.result==='no-apto' ? red : [200,150,0];
+    doc.setFillColor.apply(doc,bc); doc.roundedRect(W-M-34,8,34,14,3,3,'F');
+    doc.setTextColor.apply(doc,navy); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.text(insp&&insp.result==='apto'?'APTO':insp&&insp.result==='no-apto'?'NO APTO':'PARCIAL', W-M-17, 17, {align:'center'});
+    y=36;
+    doc.setFillColor.apply(doc,lg); doc.rect(M,y,W-M*2,6,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor.apply(doc,navy);
+    doc.text('INFORMACION GENERAL', M+2, y+4); y+=8;
+    var fi=[['Contenedor',op.contenedor],['Tipo',op.tipoContenedor],['Cliente',op.cliente],['Bodega',op.bodega],['Inspector',insp&&insp.inspector||'--'],['Fecha',new Date((insp&&insp.fecha)||'').toLocaleString('es-PA')]];
+    var cw=(W-M*2)/2, rh=8;
+    for(var i=0; i<fi.length; i++) {
+      var col=i%2, row=Math.floor(i/2), x=M+col*cw, fy=y+row*rh;
+      if(row%2===0){doc.setFillColor(250,250,252);doc.rect(x,fy,cw,rh,'F');}
+      doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor.apply(doc,gray);doc.text(fi[i][0]+':', x+2, fy+3);
+      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor.apply(doc,navy);doc.text(fi[i][1]||'--', x+2, fy+7);
     }
-    bufHtml=`<div class="bzone"><div class="bzone-hdr"><div class="bzone-lbl">Buffer de espera</div></div><div class="bscroll"><div class="binner">${bslots}</div></div></div>`;
-  }else{bufHtml=`<div class="bzone"><div class="no-buf">MSL — sin zona buffer</div></div>`;}
-  return `<div class="dock-wrap"><div class="dock-scene">
-    <div class="wh-wall"><div class="wh-inner">${doors}</div></div>
-    <div class="rscroll"><div class="rinner">${rslots}</div></div>
-    <div class="dlane"><div class="dlane-lbl">ZONA DE MANIOBRA</div></div>
-    ${bufHtml}
-  </div>${R>4?'<div class="scroll-hint">← deslizar para ver más →</div>':''}</div>`;
+    y += Math.ceil(fi.length/2)*rh+5;
+    function chkPg(n){ if(y+n>277){doc.addPage();y=14;} }
+    for(var si=0; si<CL.length; si++) {
+      var sec = CL[si];
+      chkPg(12); doc.setFillColor.apply(doc,navy); doc.rect(M,y,W-M*2,6,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor.apply(doc,white);
+      doc.text(sec.id+'. '+sec.n, M+3, y+4.3); y+=8;
+      for(var ii=0; ii<sec.items.length; ii++) {
+        var it = sec.items[ii];
+        var ans = insp&&insp.answers&&insp.answers[it.id];
+        var iPh = insp&&insp.itemFotos&&insp.itemFotos[it.id];
+        chkPg(8+(iPh?22:0));
+        var bg=ii%2===0?[249,249,252]:[255,255,255]; doc.setFillColor.apply(doc,bg); doc.rect(M,y,W-M*2,7,'F');
+        var isN=NEGS.indexOf(it.id)>=0;
+        var lines=doc.splitTextToSize(it.id+'. '+it.q, W-M*2-28);
+        doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(45,49,72);doc.text(lines,M+2,y+4.2);
+        if(ans){var ok=(!isN&&ans==='SI')||(isN&&ans==='NO');doc.setFillColor.apply(doc,ok?[232,250,244]:[253,236,234]);doc.roundedRect(W-M-18,y+1.5,16,4,1,1,'F');doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor.apply(doc,ok?[0,163,114]:red);doc.text(ans==='SI'?'SI':'NO',W-M-10,y+4.2,{align:'center'});}
+        y+=7+(lines.length>1?(lines.length-1)*3.5:0);
+        if(iPh){try{doc.setFillColor.apply(doc,lg);doc.rect(M,y,W-M*2,21,'F');doc.addImage(iPh,'JPEG',M+2,y+1,26,19,undefined,'MEDIUM');y+=23;}catch(e){y+=3;}}
+      }
+      y+=3;
+    }
+    if(insp&&insp.comentarios){chkPg(14);doc.setFillColor.apply(doc,lg);doc.rect(M,y,W-M*2,5,'F');doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor.apply(doc,navy);doc.text('COMENTARIOS',M+2,y+3.5);y+=7;doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(45,49,72);var cl=doc.splitTextToSize(insp.comentarios,W-M*2-4);doc.text(cl,M+2,y+3.5);y+=cl.length*4.5+5;}
+    if(insp&&insp.globalFotos&&insp.globalFotos.length>0){doc.addPage();y=14;var cols=3,iw=(W-M*2-8)/cols,ih=iw*.75;for(var gi=0;gi<insp.globalFotos.length;gi++){var gcol=gi%cols,grow=Math.floor(gi/cols);if(gcol===0&&grow>0&&y+ih+5>277){doc.addPage();y=14;}var gx=M+gcol*(iw+4),gfy=y+grow*(ih+5);try{doc.addImage(insp.globalFotos[gi],'JPEG',gx,gfy,iw,ih,undefined,'MEDIUM');}catch(e){}}}
+    var pages=doc.getNumberOfPages();
+    for(var p=1;p<=pages;p++){doc.setPage(p);doc.setFillColor.apply(doc,navy);doc.rect(0,287,W,10,'F');doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(180,180,200);doc.text('DP World Panama - DAL Colon - SL-02-007',M,293);doc.text('Pag.'+p+'/'+pages,W-M,293,{align:'right'});}
+    var blob = doc.output('blob');
+    var fname = 'Inspeccion_'+op.contenedor+'_'+op.bodega+'.pdf';
+    if(navigator.share && navigator.canShare) {
+      var file = new File([blob], fname, {type:'application/pdf'});
+      if(navigator.canShare({files:[file]})) {
+        await navigator.share({title:'Inspeccion '+op.contenedor, files:[file]});
+        showToast('PDF compartido', true); return;
+      }
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download=fname; a.click();
+    URL.revokeObjectURL(url); showToast('PDF descargado', true);
+  } catch(e) { showToast('Error generando PDF'); }
 }
 
-function buildCliCBox(op,isMine,dimmed,clickFn,isBuf=false){
-  const s=ST[op.estado];
-  const fillH=op.estado==='P20'?25:op.estado==='P50'?55:op.estado==='P100'?100:5;
-  const fillColor=op.tipo==='ENTRADA'?'rgba(0,153,230,0.25)':op.estado==='P100'?'rgba(0,195,137,0.25)':'rgba(245,162,11,0.2)';
-  const sc={PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',PROXIMO:'proximo',P20:'p20',P50:'p50',P100:'p100'}[op.estado]||(op.tipo==='ENTRADA'?'entrada':'salida');
-  const tagBg=op.tipo==='ENTRADA'?'rgba(0,153,230,.2)':'rgba(245,162,11,.15)';
-  const tagC=op.tipo==='ENTRADA'?'#0099e6':'#f5a20b';
-  const ht=isBuf?90:148;
-  const dimStyle=dimmed?'opacity:0.15;filter:grayscale(0.7);cursor:default;':'cursor:pointer;';
-  const clickAttr=clickFn&&isMine?`onclick="${clickFn}"`:'';
-  const contNum=op.contenedor.substring(0,4)+'···'+op.contenedor.slice(-4);
-  const cliShort=op.cliente.substring(0,6).toUpperCase();
-  const boxCls=isBuf?('bbox '+op.tipo.toLowerCase()):('cbox '+sc);
-  return `<div class="${boxCls}" style="height:${ht}px;${dimStyle}" ${clickAttr}>
-    <div class="cfill" style="height:${fillH}%;background:${fillColor};"></div>
-    <div class="ccont">
-      <div class="ctag" style="background:${tagBg};color:${tagC};">${s.s}</div>
-      <div class="cvert">
-        <div class="cnum-v" style="color:${s.c};text-shadow:0 0 8px ${isMine?s.g:'transparent'};font-size:${isBuf?8:9}px;">${contNum}</div>
-        <div class="ccli-v">${cliShort}</div>
-      </div>
-    </div>
-  </div>`;
+// ═══ MODAL & HELPERS ═══
+function openMod() { document.getElementById('mov').classList.remove('hidden'); }
+function closeMod() { document.getElementById('mov').classList.add('hidden'); }
+function showToast(msg, ok) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (ok?' ok':'');
+  setTimeout(function(){ t.className='toast'; }, 2600);
+}
+function fmtT(iso) {
+  if(!iso) return '';
+  try { var d=new Date(iso); return d.toLocaleString('es-PA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); } catch(e) { return ''; }
 }
 
-function buildCliLibreBox(){
-  return `<div class="cbox libre" style="cursor:default;"><div class="ccont"><div class="libre-plus" style="pointer-events:none;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="libre-lbl">Libre</div></div></div>`;
-}
-function buildCliLibreBBox(){
-  return `<div class="bbox libre-b" style="cursor:default;"></div>`;
-}
+// ═══ INIT ═══
+document.addEventListener('DOMContentLoaded', function() {
+  loadDemo();
+  refresh();
 
-// ── CLIENT READ-ONLY DETAIL ──
-function openCliDetail(opId){
-  const op=getOps().find(o=>o.id===opId);if(!op||op.cliente!==user.nombre)return;
-  const s=ST[op.estado];
-  const pl=op.tipo==='SALIDA'?PL_S:PL_E;const ci=pl.indexOf(op.estado);
-  const pct=op.estado==='P20'?20:op.estado==='P50'?50:op.estado==='P100'?100:0;
-  const bc=op.tipo==='ENTRADA'?'#0099e6':op.estado==='P100'?'#00C389':'#f5a20b';
-  // Pipeline visual
-  const stH=pl.map((st,i)=>{const c=i<ci?'done':i===ci?'cur':'fut';return`<div class="cstep"><div class="pip-d ${c}">${i<ci?'✓':i===ci?'●':''}</div>${i<pl.length-1?`<div class="pip-l ${i<ci?'done':'fut'}"></div>`:''}</div>`;}).join('');
-  const logH=(op.log||[]).slice(-5).reverse().map(l=>`<div class="tl-it"><div class="tl-dot"></div><div><div class="tl-txt">${l.ev}</div><div class="tl-time">${fmtT(l.ts)}</div></div></div>`).join('');
-  document.getElementById('mtitle').textContent=op.contenedor;
-  document.getElementById('mbody').innerHTML=`
-    <div class="op-dtop">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-        <div>
-          <div class="op-big-r">${op.rampa||'COLA'}</div>
-          <div class="op-big-c" style="color:${s.c};">${op.cliente}</div>
-          <div class="op-big-n">${op.contenedor} ${op.tipoContenedor||''} · ${op.tipo} · ${op.bodega}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:${s.c};background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:4px 8px;border-radius:5px;box-shadow:0 0 10px ${s.g};">${s.l}</div>
-          ${op.transportista?`<div style="font-size:10px;color:var(--t4);margin-top:4px;">${op.transportista}</div>`:''}
-        </div>
-      </div>
-      ${pct>0?`<div class="bprogbar"><div class="bprogfill" style="width:${pct}%;background:${bc};box-shadow:0 0 8px ${bc}66;"></div></div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:
+  document.getElementById('mclose').addEventListener('click', closeMod);
+  document.getElementById('mov').addEventListener('click', function(e){ if(e.target===this) closeMod(); });
+  document.getElementById('mvcancel').addEventListener('click', cancelMove);
+  document.getElementById('gfInput').addEventListener('change', addGF);
+
+  var tabs = ['CLP','MSL','AMBAS'];
+  tabs.forEach(function(t) {
+    var el = document.getElementById('tab-'+t);
+    if(el) el.addEventListener('click', function() {
+      bod = t;
+      tabs.forEach(function(x){ var e=document.getElementById('tab-'+x); if(e) e.classList.toggle('active',x===t); });
+      renderDockView();
+    });
+  });
+});
+</script>
+</body>
+</html>
