@@ -1116,6 +1116,8 @@ function openDetail(opId) {
     if(isSup)h += '<button class="btn-p btn-red" onclick="closeMod();setTimeout(function(){openInsp(\''+opId+'\')},200)">INICIAR INSPECCION</button>';
   } else if(op.tipo==='SALIDA' && op.inspeccionCompleta && op.inspeccion) {
     h += '<div class="abox suc">Inspeccion OK \u2014 ' + (op.inspeccion.result==='apto'?'APTO':'NO APTO') + ' &middot; ' + (op.inspeccion.inspector||'') + '</div>';
+    h += '<button class="btn-p btn-blue" style="margin-top:0;margin-bottom:6px;" onclick="buildAndSharePDF(getOps().find(function(o){return o.id===\''+opId+'\'}))">';
+    h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF inspecci\u00f3n</button>';
   }
   if(sp&&isSup) {
     h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">ACTUALIZAR PROGRESO</div>';
