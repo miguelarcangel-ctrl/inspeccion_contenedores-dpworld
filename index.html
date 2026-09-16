@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -797,10 +797,10 @@ function getPostOps(){
     return RS.indexOf(o.estado)<0&&o.estado!=='ESPERA_RAMPA'&&o.estado!=='BUFFER_POST'&&o.estado!=='EIR';
   });
 }
-function buildClienteOptions(){
+function buildClienteOptions(sel){
   var active=_clientesCache.filter(function(c){return c.activo;});
   var opts='<option value="">Seleccionar cliente...</option>';
-  for(var i=0;i<active.length;i++)opts+='<option value="'+active[i].nombre+'">'+active[i].nombre+'</option>';
+  for(var i=0;i<active.length;i++)opts+='<option value="'+active[i].nombre+'"'+(sel&&active[i].nombre===sel?' selected':'')+'>'+active[i].nombre+'</option>';
   if(!active.length)opts='<option value="">Sin clientes registrados</option>';
   return opts;
 }
@@ -1041,19 +1041,33 @@ function openAssign(b, r) {
   openMod();
 }
 function openAssignBuf(b, pos) {
-  if(!requireSup('⚠ Solo supervisores pueden asignar buffer')) return;
-  aData = {b:b, r:null, tipo:'ENTRADA', bufPos:pos};
+  if(!requireSup('\u26a0 Solo supervisores pueden asignar buffer')) return;
+  aData = {b:b, r:null, tipo:'ENTRADA', bufPos:pos, bufEstado:'ESPERA_RAMPA'};
   document.getElementById('mtitle').textContent = 'Buffer B' + pos + ' \u2014 ' + b;
-  var h = '<div class="abox warn">Registrar contenedor en cola de espera</div>';
+  var h = '<div style="display:flex;gap:7px;margin-bottom:12px;">';
+  h += '<div id="bst-cola" class="pbtn" style="flex:1;cursor:pointer;border-color:rgba(245,162,11,.5);background:rgba(245,162,11,.1);" onclick="setBufEstado(\'ESPERA_RAMPA\')">';
+  h += '<div class="pn" style="font-size:15px;color:#f5a20b;">EN COLA</div><div class="pl">Espera rampa</div></div>';
+  h += '<div id="bst-carg" class="pbtn" style="flex:1;cursor:pointer;" onclick="setBufEstado(\'BUFFER_POST\')">';
+  h += '<div class="pn" style="font-size:15px;color:rgba(0,195,137,.4);">YA CARGADO</div><div class="pl">Equipo listo</div></div>';
+  h += '</div>';
   h += '<div class="tipo-sel"><div class="tipo-btn ent act" id="tbent" onclick="setTipo(\'ENTRADA\')"><span class="tipo-lbl">ENTRADA</span></div>';
   h += '<div class="tipo-btn sal" id="tbsal" onclick="setTipo(\'SALIDA\')"><span class="tipo-lbl">SALIDA</span></div></div>';
   h += '<div class="ig2"><div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU..." oninput="this.value=this.value.toUpperCase()"></div>';
   h += '<div class="fg"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
   h += '<div class="fg"><div class="flbl">Cliente</div><select class="fin" id="acli">'+buildClienteOptions()+'</select></div>';
-  h += '<div class="fg" style="margin-top:4px;"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
-  h += '<button class="btn-p btn-amber" onclick="confirmAssignBuf('+pos+')">AGREGAR A COLA</button>';
+  h += '<div class="fg"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
+  h += '<div class="fg"><div class="flbl">Sello (opcional)</div><input type="text" class="fin" id="abuf-sello" placeholder="SEAL123..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<button class="btn-p btn-amber" onclick="confirmAssignBuf('+pos+')">REGISTRAR EN BUFFER</button>';
   document.getElementById('mbody').innerHTML = h;
   openMod();
+}
+function setBufEstado(est){
+  aData.bufEstado=est;
+  var cola=document.getElementById('bst-cola');
+  var carg=document.getElementById('bst-carg');
+  if(cola){cola.style.borderColor=est==='ESPERA_RAMPA'?'rgba(245,162,11,.5)':'rgba(255,255,255,.08)';cola.style.background=est==='ESPERA_RAMPA'?'rgba(245,162,11,.1)':'rgba(255,255,255,.02)';}
+  if(carg){carg.style.borderColor=est==='BUFFER_POST'?'rgba(0,195,137,.5)':'rgba(255,255,255,.08)';carg.style.background=est==='BUFFER_POST'?'rgba(0,195,137,.08)':'rgba(255,255,255,.02)';}
+  var pn=carg?carg.querySelector('.pn'):null;if(pn)pn.style.color=est==='BUFFER_POST'?'var(--green)':'rgba(0,195,137,.4)';
 }
 function setTipo(t) {
   aData.tipo = t;
@@ -1079,10 +1093,12 @@ function confirmAssignBuf(pos){
   var cli=(document.getElementById('acli')||{}).value||'';
   if(!cont||!cli){showToast('Completa los campos');return;}
   var cliObj=_clientesCache.find(function(c){return c.nombre===cli;});
-  var op={id:Date.now().toString(),bodega:aData.b,rampa:null,tipo:aData.tipo,contenedor:cont,tipoContenedor:(document.getElementById('atc')||{}).value||'',cliente:cli,clienteId:cliObj?cliObj.id:null,transportista:((document.getElementById('attr')||{}).value||'').trim(),estado:'ESPERA_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,log:[{ev:'Cola buffer B'+pos,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
+  var sello=((document.getElementById('abuf-sello')||{}).value||'').trim().toUpperCase()||null;
+  var est=aData.bufEstado||'ESPERA_RAMPA';
+  var op={id:Date.now().toString(),bodega:aData.b,rampa:null,tipo:aData.tipo,contenedor:cont,tipoContenedor:(document.getElementById('atc')||{}).value||'',cliente:cli,clienteId:cliObj?cliObj.id:null,transportista:((document.getElementById('attr')||{}).value||'').trim(),estado:est,inspeccionCompleta:est==='BUFFER_POST'||aData.tipo==='ENTRADA',inspeccion:null,sello:sello,log:[{ev:(est==='BUFFER_POST'?'Buffer cargado':'Cola buffer')+' B'+pos,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
   saveOp(op);closeMod();refresh();
-  showToast('En cola B'+pos,true);
-  logBit('Buffer asignado: B'+pos+' \u2014 '+cont,op.id,{cliente:cli});
+  showToast(est==='BUFFER_POST'?'Cargado en B'+pos:'En cola B'+pos,true);
+  logBit('Buffer asignado: B'+pos+' \u2014 '+cont,op.id,{cliente:cli,estado:est});
 }
 
 // ═══ DETAIL MODAL ═══
@@ -1148,6 +1164,7 @@ function openDetail(opId) {
   }
   if(!recent.length) h += '<div style="font-size:11px;color:var(--t4);">Sin actividad</div>';
   h += '</div>';
+  if(isSup)h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="openEditOp(\'' + opId + '\')">Editar datos</button>';
   if(isSup)h += '<button class="btn-dang" onclick="liberarRampa(\''+opId+'\')">Liberar rampa</button>';
   document.getElementById('mbody').innerHTML = h;
   openMod();
@@ -1168,6 +1185,45 @@ function buildDestButtons(opId) {
   return h;
 }
 
+
+function openEditOp(opId){
+  var op=getOps().find(function(o){return o.id===opId;});
+  if(!op)return;
+  document.getElementById('mtitle').textContent='Editar contenedor';
+  var cliOpts=buildClienteOptions(op.cliente);
+  var h='<div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="eo-cont" value="'+escHtml(op.contenedor)+'" oninput="this.value=this.value.toUpperCase()"></div>';
+  h+='<div class="fg"><div class="flbl">Tipo Contenedor</div><select class="fin" id="eo-tc"><option value="">-</option>';
+  ['20FT','40FT','45FT'].forEach(function(t){h+='<option'+(op.tipoContenedor===t?' selected':'')+'>'+t+'</option>';});
+  h+='</select></div>';
+  h+='<div class="fg"><div class="flbl">Cliente</div><select class="fin" id="eo-cli">'+cliOpts+'</select></div>';
+  h+='<div class="fg"><div class="flbl">Transportista</div><input type="text" class="fin" id="eo-tr" value="'+escHtml(op.transportista||'')+'"></div>';
+  h+='<div class="fg"><div class="flbl">Sello</div><input type="text" class="fin" id="eo-sello" value="'+escHtml(op.sello||'')+'" oninput="this.value=this.value.toUpperCase()" placeholder="SEAL123..."></div>';
+  h+='<button class="btn-p btn-green" onclick="saveEditOp(\'' + opId + '\')">GUARDAR CAMBIOS</button>';
+  document.getElementById('mbody').innerHTML=h;
+  openMod();
+}
+function saveEditOp(opId){
+  var op=getOps().find(function(o){return o.id===opId;});
+  if(!op)return;
+  var cont=(document.getElementById('eo-cont')||{}).value||'';
+  var tc=(document.getElementById('eo-tc')||{}).value||'';
+  var cli=(document.getElementById('eo-cli')||{}).value||'';
+  var tr=(document.getElementById('eo-tr')||{}).value||'';
+  var sello=((document.getElementById('eo-sello')||{}).value||'').trim().toUpperCase()||null;
+  if(!cont||!cli){showToast('Contenedor y cliente son requeridos');return;}
+  var cliObj=_clientesCache.find(function(c){return c.nombre===cli;});
+  op.contenedor=cont.trim().toUpperCase();
+  op.tipoContenedor=tc;
+  op.cliente=cli;
+  op.clienteId=cliObj?cliObj.id:null;
+  op.transportista=tr.trim();
+  op.sello=sello;
+  op.log=(op.log||[]).concat([{ev:'Datos editados',ts:new Date().toISOString()}]);
+  op.actualizadoEn=new Date().toISOString();
+  saveOp(op);closeMod();refresh();
+  showToast('Datos actualizados',true);
+  logBit('Datos editados: '+opId,opId,{contenedor:cont,cliente:cli,sello:sello});
+}
 function openMoveAssign(opId) {
   var op = getOps().filter(function(o){ return o.id===opId; })[0];
   if(!op) return;
