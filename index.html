@@ -274,9 +274,56 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .toast.ok{background:rgba(0,195,137,.15);border-color:rgba(0,195,137,.4);color:var(--green)}
 .toast.warn{background:rgba(245,162,11,.1);border-color:rgba(245,162,11,.3);color:var(--amber)}
 input[type=file]{display:none}
+
+/* ── LOGIN ── */
+#vlogin{position:fixed;inset:0;background:linear-gradient(135deg,#07051c 0%,var(--pk) 50%,#1a1760 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:999}
+.lg-logo{text-align:center;margin-bottom:32px}
+.lg-brand{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:#fff;letter-spacing:3px;line-height:1}
+.lg-sub{font-size:10px;color:var(--green);font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-top:6px}
+.lg-ref{font-size:10px;color:rgba(255,255,255,.3);margin-top:8px;letter-spacing:1px}
+.lg-card{background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:14px;padding:28px 22px;width:100%;max-width:340px;backdrop-filter:blur(20px)}
+.lg-card-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+.lg-card-sub{font-size:12px;color:var(--t3);margin-bottom:22px}
+.lg-err{background:rgba(232,0,61,.1);border:1px solid rgba(232,0,61,.3);color:#ff6680;font-size:12px;font-weight:600;padding:9px 12px;border-radius:7px;margin-bottom:14px;display:none}
+.lg-err.show{display:block}
+.lg-fg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.lg-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.lg-in{border:1.5px solid var(--b1);border-radius:7px;padding:11px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:#fff;background:rgba(255,255,255,.05);width:100%;transition:border-color .2s}
+.lg-in:focus{outline:none;border-color:var(--green);background:rgba(0,195,137,.05)}
+.lg-in::placeholder{color:var(--t4)}
+.lg-btn{width:100%;background:var(--green);color:var(--bg);border:none;border-radius:7px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;margin-top:6px}
+.lg-btn:hover{background:var(--gd)}
+.hdr-user{display:flex;align-items:center;gap:8px}
+.hdr-role{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(0,195,137,.15);color:var(--green);border:1px solid rgba(0,195,137,.25)}
+.hdr-logout{background:var(--b0);border:1px solid var(--b1);color:var(--t3);padding:5px 10px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.hdr-logout:hover{background:var(--b2);color:#fff}
 </style>
 </head>
 <body>
+
+<!-- ════ LOGIN ════ -->
+<div id="vlogin">
+  <div class="lg-logo">
+    <div class="lg-brand">DP WORLD</div>
+    <div class="lg-sub">Control de Rampas</div>
+    <div class="lg-ref">SL-02-007 · DAL Colón Logistics Park</div>
+  </div>
+  <div class="lg-card">
+    <div class="lg-card-title">Iniciar Sesión</div>
+    <div class="lg-card-sub">Ingresa tus credenciales para continuar</div>
+    <div class="lg-err" id="lg-err">Usuario o contraseña incorrectos</div>
+    <div class="lg-fg">
+      <div class="lg-lbl">Usuario</div>
+      <input type="text" class="lg-in" id="lg-user" placeholder="Ingresa tu usuario" autocomplete="username">
+    </div>
+    <div class="lg-fg">
+      <div class="lg-lbl">Contraseña</div>
+      <input type="password" class="lg-in" id="lg-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="lg-btn" onclick="doLogin()">INGRESAR</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="mov hidden" id="mov">
   <div class="msheet">
@@ -290,7 +337,7 @@ input[type=file]{display:none}
 </div>
 <input type="file" id="gfInput" accept="image/*" multiple>
 
-<div id="vdash">
+<div id="vdash" style="display:none">
   <div class="hdr">
     <div class="hdr-l">
       <div class="hdr-logo">
@@ -304,6 +351,10 @@ input[type=file]{display:none}
         <div class="hdr-title">DP WORLD</div>
         <div class="hdr-sub">Control de Rampas</div>
       </div>
+    </div>
+    <div class="hdr-user">
+      <span class="hdr-role" id="hdr-role"></span>
+      <button class="hdr-logout" onclick="doLogout()">SALIR</button>
     </div>
   </div>
   <div class="stats" id="stats"></div>
@@ -327,6 +378,45 @@ input[type=file]{display:none}
 </div>
 
 <script>
+// ═══ AUTH ═══
+var USERS = {
+  'supervisor': {password:'dpw2025',    role:'supervisor', label:'Supervisor'},
+  'cliente':    {password:'cliente2025',role:'cliente',    label:'Cliente'}
+};
+var userRole = null;
+
+function doLogin() {
+  var user  = (document.getElementById('lg-user').value||'').trim().toLowerCase();
+  var pass  = document.getElementById('lg-pass').value;
+  var errEl = document.getElementById('lg-err');
+  var match = USERS[user];
+  if(!match || match.password !== pass) {
+    errEl.classList.add('show');
+    document.getElementById('lg-pass').value = '';
+    return;
+  }
+  errEl.classList.remove('show');
+  userRole = match.role;
+  document.getElementById('hdr-role').textContent = match.label;
+  document.getElementById('vlogin').style.display = 'none';
+  document.getElementById('vdash').style.display  = '';
+  refresh();
+}
+
+function doLogout() {
+  userRole = null;
+  document.getElementById('lg-user').value = '';
+  document.getElementById('lg-pass').value = '';
+  document.getElementById('lg-err').classList.remove('show');
+  document.getElementById('vdash').style.display  = 'none';
+  document.getElementById('vlogin').style.display = '';
+}
+
+function requireSup(msg) {
+  if(userRole !== 'supervisor') { showToast(msg || '⚠ Solo supervisores', false, true); return false; }
+  return true;
+}
+
 // ═══ CONFIG ═══
 var CFG = {
   CLP: {label:'Colon Logistics Park', rampas:6, buffer:8},
@@ -633,6 +723,7 @@ function onBufTap(b, pos, opId) {
 
 // ═══ MOVE MODE ═══
 function startMove(opId) {
+  if(!requireSup('⚠ Solo supervisores pueden mover contenedores')) return;
   mvState = {active:true, opId:opId};
   closeMod();
   document.getElementById('mvbanner').classList.add('on');
@@ -692,6 +783,7 @@ function execMove(opId, type, b, dest) {
 // ═══ ASSIGN ═══
 var aData = {b:null, r:null, tipo:'ENTRADA'};
 function openAssign(b, r) {
+  if(!requireSup('⚠ Solo supervisores pueden asignar rampas')) return;
   aData = {b:b, r:r, tipo:'ENTRADA'};
   document.getElementById('mtitle').textContent = r + ' \u2014 ' + b;
   var h = '<div class="tipo-sel">';
@@ -712,6 +804,7 @@ function openAssign(b, r) {
   openMod();
 }
 function openAssignBuf(b, pos) {
+  if(!requireSup('⚠ Solo supervisores pueden asignar buffer')) return;
   aData = {b:b, r:null, tipo:'ENTRADA', bufPos:pos};
   document.getElementById('mtitle').textContent = 'Buffer B' + pos + ' \u2014 ' + b;
   var h = '<div class="abox warn">Registrar contenedor en cola de espera</div>';
@@ -1185,10 +1278,10 @@ async function buildAndSharePDF(op) {
 // ═══ MODAL & HELPERS ═══
 function openMod() { document.getElementById('mov').classList.remove('hidden'); }
 function closeMod() { document.getElementById('mov').classList.add('hidden'); }
-function showToast(msg, ok) {
+function showToast(msg, ok, warn) {
   var t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast show' + (ok?' ok':'');
+  t.className = 'toast show' + (ok?' ok':warn?' warn':'');
   setTimeout(function(){ t.className='toast'; }, 2600);
 }
 function fmtT(iso) {
