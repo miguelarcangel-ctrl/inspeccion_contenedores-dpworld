@@ -73,6 +73,15 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .cfill{position:absolute;bottom:0;left:0;right:0;transition:height .7s cubic-bezier(.4,0,.2,1);z-index:1}
 .ccont{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;align-items:center;padding:4px 2px 2px}
 .ctag{font-family:'Barlow Condensed',sans-serif;font-size:7px;font-weight:800;letter-spacing:.5px;padding:1px 3px;border-radius:2px;white-space:nowrap;text-align:center;line-height:1.3;margin-bottom:3px;width:100%}
+.ctimer{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;color:var(--green);text-align:center;letter-spacing:.5px;margin-top:auto;padding-bottom:2px;line-height:1.2;min-height:12px;transition:color .5s}
+.cflags{display:flex;flex-direction:column;gap:2px;position:absolute;top:3px;right:2px;z-index:5}
+.cflag{width:7px;height:7px;border-radius:50%}
+.cflag.hazmat{background:#ff4466;box-shadow:0 0 4px #ff446688}.cflag.alto{background:#f5a20b;box-shadow:0 0 4px #f5a20b88}.cflag.fragil{background:#b388ff;box-shadow:0 0 4px #b388ff88}
+.flag-row{display:flex;gap:6px;margin-top:4px}
+.flag-btn{flex:1;padding:7px 4px;border-radius:6px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--t3);text-align:center;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.flag-btn.active-haz{border-color:#ff4466!important;background:rgba(255,68,102,.12)!important;color:#ff4466!important}
+.flag-btn.active-av{border-color:#f5a20b!important;background:rgba(245,162,11,.12)!important;color:#f5a20b!important}
+.flag-btn.active-fr{border-color:#b388ff!important;background:rgba(179,136,255,.12)!important;color:#b388ff!important}
 .cvert{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;width:100%}
 .ctext-v{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;letter-spacing:1.2px;white-space:nowrap;line-height:1.3;overflow:hidden;flex:1}
 .cbox.libre{border:1.5px dashed rgba(255,255,255,.1);background:rgba(255,255,255,.02)}
@@ -505,15 +514,42 @@ var sb = window.supabase.createClient(
 );
 
 // ═══ CACHE ═══
-var _opsCache=[], _clientesCache=[], _bitacoraCache=[], _rtChannel=null;
+var _opsCache=[], _clientesCache=[], _bitacoraCache=[], _rtChannel=null, _dockTimer=null;
 
+function fmtDur(ms){
+  var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;
+  return (h>0?h+'h ':'')+m+'m '+(sc<10?'0':'')+sc+'s';
+}
+function startDockTimer(){
+  if(_dockTimer)return;
+  _dockTimer=setInterval(function(){
+    document.querySelectorAll('[data-inicio]').forEach(function(el){
+      var ts=el.getAttribute('data-inicio');if(!ts)return;
+      var ms=Date.now()-new Date(ts).getTime();
+      var t=el.querySelector('.ctimer');if(!t)return;
+      t.textContent=fmtDur(ms);
+      var h=ms/3600000;
+      t.style.color=h<3?'var(--green)':h<5?'#f5a20b':'#ff4466';
+    });
+  },1000);
+}
+function stopDockTimer(){if(_dockTimer){clearInterval(_dockTimer);_dockTimer=null;}}
+function toggleFlag(f){
+  if(!aData.flags)aData.flags=[];
+  var idx=aData.flags.indexOf(f);
+  if(idx>=0){aData.flags.splice(idx,1);}else{aData.flags.push(f);}
+  var map={HAZMAT:'fl-haz',ALTO_VALOR:'fl-av',FRAGIL:'fl-fr'};
+  var cls={HAZMAT:'active-haz',ALTO_VALOR:'active-av',FRAGIL:'active-fr'};
+  var el=document.getElementById(map[f]);
+  if(el){el.className='flag-btn'+(aData.flags.indexOf(f)>=0?' '+cls[f]:'');}
+}
 function dbToOp(r){
-  return {id:r.id,bodega:r.bodega,rampa:r.rampa||null,tipo:r.tipo,contenedor:r.contenedor,tipoContenedor:r.tipo_contenedor||'',cliente:r.cliente_nombre||'',clienteId:r.cliente_id||null,transportista:r.transportista||'',estado:r.estado,inspeccionCompleta:r.inspeccion_completa||false,inspeccion:r.inspeccion||null,log:r.log_ops||[],sello:r.sello||null,creadoEn:r.creado_en,actualizadoEn:r.actualizado_en};
+  return {id:r.id,bodega:r.bodega,rampa:r.rampa||null,tipo:r.tipo,contenedor:r.contenedor,tipoContenedor:r.tipo_contenedor||'',cliente:r.cliente_nombre||'',clienteId:r.cliente_id||null,transportista:r.transportista||'',estado:r.estado,inspeccionCompleta:r.inspeccion_completa||false,inspeccion:r.inspeccion||null,log:r.log_ops||[],sello:r.sello||null,inicioOp:r.inicio_op||null,matricula:r.matricula||'',conductor:r.conductor||'',flags:r.flags||[],creadoEn:r.creado_en,actualizadoEn:r.actualizado_en};
 }
 function opToDb(op){
   var insp=null;
   if(op.inspeccion){insp={result:op.inspeccion.result,inspector:op.inspeccion.inspector,tipoContenedor:op.inspeccion.tipoContenedor,comentarios:op.inspeccion.comentarios,fecha:op.inspeccion.fecha,answers:op.inspeccion.answers};}
-  return {id:op.id,bodega:op.bodega,rampa:op.rampa||null,tipo:op.tipo,contenedor:op.contenedor,tipo_contenedor:op.tipoContenedor||null,cliente_nombre:op.cliente||null,cliente_id:op.clienteId||null,transportista:op.transportista||null,estado:op.estado,inspeccion_completa:op.inspeccionCompleta||false,inspeccion:insp,log_ops:op.log||[],sello:op.sello||null,actualizado_en:new Date().toISOString()};
+  return {id:op.id,bodega:op.bodega,rampa:op.rampa||null,tipo:op.tipo,contenedor:op.contenedor,tipo_contenedor:op.tipoContenedor||null,cliente_nombre:op.cliente||null,cliente_id:op.clienteId||null,transportista:op.transportista||null,estado:op.estado,inspeccion_completa:op.inspeccionCompleta||false,inspeccion:insp,log_ops:op.log||[],sello:op.sello||null,inicio_op:op.inicioOp||null,matricula:op.matricula||null,conductor:op.conductor||null,flags:op.flags||[],actualizado_en:new Date().toISOString()};
 }
 async function dbInit(){
   try{
@@ -629,8 +665,9 @@ function switchScreen(name){
   });
   var fab=document.getElementById('fab');
   if(fab)fab.className=(name==='clientes'&&currentUser&&currentUser.role==='supervisor')?'fab show':'fab';
-  if(name==='rampas'){renderStats();renderDockView();renderPost();}
-  else if(name==='historial')renderHistorial();
+  if(name==='rampas'){startDockTimer();renderStats();renderDockView();renderPost();}
+  else{stopDockTimer();}
+  if(name==='historial')renderHistorial();
   else if(name==='reportes')renderReportes();
   else if(name==='bitacora')fetchBitacora();
   else if(name==='clientes')renderClientes();
@@ -923,11 +960,14 @@ function buildCBox(op, isDA, isBuf) {
   var boxCls = isBuf ? ('bbox ' + (isPost?'buffer-post':op.tipo.toLowerCase()) + selCls) : ('cbox ' + sc + selCls + daCls);
   var clickFn = isBuf ? "onRampTap('" + op.bodega + "','buf','" + op.id + "')" : "onRampTap('" + op.bodega + "','" + (op.rampa||'') + "','" + op.id + "')";
   var dataAttrs = ' data-op-id="'+op.id+'" data-drop="'+(isBuf?'buf':'ramp')+'" data-bodega="'+op.bodega+'" data-rampa="'+(op.rampa||'')+'"';
+  if(!isBuf && op.inicioOp) dataAttrs += ' data-inicio="'+op.inicioOp+'"';
+  var flagsHtml=''; if(op.flags&&op.flags.length){flagsHtml='<div class="cflags">';if(op.flags.indexOf('HAZMAT')>=0)flagsHtml+='<div class="cflag hazmat"></div>';if(op.flags.indexOf('ALTO_VALOR')>=0)flagsHtml+='<div class="cflag alto"></div>';if(op.flags.indexOf('FRAGIL')>=0)flagsHtml+='<div class="cflag fragil"></div>';flagsHtml+='</div>';}
   var h = '<div class="' + boxCls + '"' + dataAttrs + ' style="height:' + ht + 'px;" onclick="' + clickFn + '">';
   h += '<div class="cfill" style="height:'+fillH+'%;background:'+fillColor+';"></div>';
-  h += '<div class="ccont">';
+  h += '<div class="ccont">'+flagsHtml;
   h += '<div class="ctag" style="background:'+tagBg+';color:'+tagC+';">'+s.s+'</div>';
   h += '<div class="cvert"><div class="ctext-v" style="color:'+s.c+';text-shadow:0 0 6px '+s.g+';">'+contNum+' '+cliShort+'</div></div>';
+  if(!isBuf && op.inicioOp) h += '<div class="ctimer">--:--</div>';
   h += '</div></div>';
   return h;
 }
@@ -1003,6 +1043,7 @@ function execMove(opId,type,b,dest){
   if(type==='rampa'){
     op.rampa=dest;op.bodega=b;
     op.estado=(op.tipo==='SALIDA'&&!op.inspeccionCompleta)?'PEND_INSP':'EN_RAMPA';
+    op.inicioOp=new Date().toISOString();
     op.log.push({ev:'Movido a '+dest+' \u2014 '+b,ts:new Date().toISOString()});
   }else if(type==='buf-done'){
     op.estado='P100';op.rampa=null;
@@ -1021,7 +1062,7 @@ function execMove(opId,type,b,dest){
 var aData = {b:null, r:null, tipo:'ENTRADA'};
 function openAssign(b, r) {
   if(!requireSup('⚠ Solo supervisores pueden asignar rampas')) return;
-  aData = {b:b, r:r, tipo:'ENTRADA'};
+  aData = {b:b, r:r, tipo:'ENTRADA', flags:[]};
   document.getElementById('mtitle').textContent = r + ' \u2014 ' + b;
   var h = '<div class="tipo-sel">';
   h += '<div class="tipo-btn ent act" id="tbent" onclick="setTipo(\'ENTRADA\')">';
@@ -1035,7 +1076,14 @@ function openAssign(b, r) {
   h += '<div class="ig2"><div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU1234567" oninput="this.value=this.value.toUpperCase()"></div>';
   h += '<div class="fg"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
   h += '<div class="fg"><div class="flbl">Cliente</div><select class="fin" id="acli">'+buildClienteOptions()+'</select></div>';
-  h += '<div class="fg" style="margin-top:4px;"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
+  h += '<div class="fg"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
+  h += '<div class="ig2"><div class="fg"><div class="flbl">Matr\u00edcula / Placa</div><input type="text" class="fin" id="amat" placeholder="ABC-1234" oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg"><div class="flbl">Conductor</div><input type="text" class="fin" id="acond" placeholder="Juan P\u00e9rez..."></div></div>';
+  h += '<div class="fg"><div class="flbl">Condici\u00f3n especial</div><div class="flag-row">';
+  h += '<div class="flag-btn" id="fl-haz" onclick="toggleFlag(\x27HAZMAT\x27)">\u2623 HAZMAT</div>';
+  h += '<div class="flag-btn" id="fl-av" onclick="toggleFlag(\x27ALTO_VALOR\x27)">&#36; Alto Valor</div>';
+  h += '<div class="flag-btn" id="fl-fr" onclick="toggleFlag(\x27FRAGIL\x27)">\u26a0 Fr\u00e1gil</div>';
+  h += '</div></div>';
   h += '<button class="btn-p btn-green" onclick="confirmAssign()">ASIGNAR '+r+'</button>';
   document.getElementById('mbody').innerHTML = h;
   openMod();
@@ -1082,7 +1130,9 @@ function confirmAssign(){
   if(!cont){showToast('Ingresa el N de contenedor');return;}
   if(!cli){showToast('Selecciona el cliente');return;}
   var cliObj=_clientesCache.find(function(c){return c.nombre===cli;});
-  var op={id:Date.now().toString(),bodega:aData.b,rampa:aData.r,tipo:aData.tipo,contenedor:cont,tipoContenedor:(document.getElementById('atc')||{}).value||'',cliente:cli,clienteId:cliObj?cliObj.id:null,transportista:((document.getElementById('attr')||{}).value||'').trim(),estado:aData.tipo==='SALIDA'?'PEND_INSP':'EN_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,log:[{ev:'Rampa asignada \u2014 '+aData.tipo,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
+  var mat=((document.getElementById('amat')||{}).value||'').trim().toUpperCase();
+  var cond=((document.getElementById('acond')||{}).value||'').trim();
+  var op={id:Date.now().toString(),bodega:aData.b,rampa:aData.r,tipo:aData.tipo,contenedor:cont,tipoContenedor:(document.getElementById('atc')||{}).value||'',cliente:cli,clienteId:cliObj?cliObj.id:null,transportista:((document.getElementById('attr')||{}).value||'').trim(),estado:aData.tipo==='SALIDA'?'PEND_INSP':'EN_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,inicioOp:new Date().toISOString(),matricula:mat,conductor:cond,flags:aData.flags||[],log:[{ev:'Rampa asignada \u2014 '+aData.tipo,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
   saveOp(op);closeMod();refresh();
   showToast(aData.r+' asignada \u2014 '+cli,true);
   logBit('Rampa asignada: '+aData.r+' \u2014 '+cont,op.id,{tipo:aData.tipo,cliente:cli});
@@ -1279,11 +1329,12 @@ function saveSealAndContinue(){
 
 function setDest(opId,destSt){
   var op=_opsCache.find(function(o){return o.id===opId;});if(!op)return;
+  var dur=op.inicioOp?fmtDur(Date.now()-new Date(op.inicioOp).getTime()):null;
   op.estado=destSt;op.rampa=null;
-  op.log.push({ev:'Destino: '+(ST[destSt]||{}).l,ts:new Date().toISOString()});
+  op.log.push({ev:'Destino: '+(ST[destSt]||{}).l+(dur?' \u2014 '+dur:''),ts:new Date().toISOString()});
   saveOp(op);closeMod();refresh();
   showToast((ST[destSt]||{}).l+' \u2014 rampa liberada',true);
-  logBit('Destino: '+(ST[destSt]||{}).l,opId,{destino:destSt});
+  logBit('Operaci\u00f3n completada',opId,{destino:destSt,duracion:dur||'N/A'});
 }
 
 function openDestinoMod(opId) {
@@ -1298,10 +1349,11 @@ function openDestinoMod(opId) {
 
 function liberarRampa(opId){
   var op=_opsCache.find(function(o){return o.id===opId;});if(!op)return;
+  var dur=op.inicioOp?fmtDur(Date.now()-new Date(op.inicioOp).getTime()):null;
   op.estado='EIR';op.rampa=null;
-  op.log.push({ev:'Rampa liberada',ts:new Date().toISOString()});
+  op.log.push({ev:'Rampa liberada'+(dur?' \u2014 '+dur:''),ts:new Date().toISOString()});
   saveOp(op);closeMod();refresh();showToast('Rampa liberada');
-  logBit('Rampa liberada',opId,null);
+  logBit('Rampa liberada',opId,dur?{duracion:dur}:null);
 }
 
 // ═══ POST-RAMP ═══
