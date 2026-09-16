@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Control de Rampas — DP World</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
 :root{
@@ -275,6 +276,63 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .toast.warn{background:rgba(245,162,11,.1);border-color:rgba(245,162,11,.3);color:var(--amber)}
 input[type=file]{display:none}
 
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--b1);display:flex;z-index:85;height:56px}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;color:var(--t4);transition:color .2s;padding:4px 0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.bnav-btn.active{color:var(--green)}
+.bnav-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+/* ── SCREENS ── */
+.screen{display:none;padding-bottom:72px}
+.screen.active{display:block}
+.sc-hdr{padding:14px 14px 10px;border-bottom:1px solid var(--b0)}
+.sc-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800}
+.sc-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.sc-empty{padding:32px 16px;text-align:center;font-size:12px;color:var(--t4)}
+/* ── HISTORIAL ── */
+.hist-top{padding:8px 12px;display:flex;flex-direction:column;gap:7px;border-bottom:1px solid var(--b0)}
+.hist-search{border:1.5px solid var(--b1);border-radius:7px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--t);background:rgba(255,255,255,.04);width:100%}
+.hist-search:focus{outline:none;border-color:var(--green)}
+.htabs{display:flex;gap:5px}
+.htab{padding:5px 10px;border-radius:5px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--t3);cursor:pointer;touch-action:manipulation}
+.htab.active{border-color:var(--green);color:var(--green);background:rgba(0,195,137,.08)}
+.hrow{padding:10px 12px;border-bottom:1px solid var(--b0);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s}
+.hrow:active{background:var(--b0)}
+.htag{padding:2px 7px;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;flex-shrink:0}
+.hnum{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;flex:1}
+.hcli{font-size:10px;color:var(--t3)}
+.hdate{font-size:9px;color:var(--t4);white-space:nowrap;flex-shrink:0}
+/* ── REPORTES ── */
+.rpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.rpt-card{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:14px}
+.rpt-n{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;line-height:1}
+.rpt-l{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-top:3px}
+.rpt-sec{padding:0 12px 12px}
+.rpt-sec-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t4);margin-bottom:8px}
+.rpt-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.rpt-bar-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rpt-bar-track{flex:1;height:7px;background:var(--b0);border-radius:4px;overflow:hidden}
+.rpt-bar-fill{height:100%;border-radius:4px;transition:width .6s}
+.rpt-bar-val{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--t3);width:26px;text-align:right;flex-shrink:0}
+/* ── BITACORA ── */
+.bit-item{padding:10px 12px;border-bottom:1px solid var(--b0)}
+.bit-ev{font-size:12px;font-weight:600;color:var(--t);line-height:1.3}
+.bit-meta{font-size:10px;color:var(--t3);margin-top:2px}
+.bit-cont{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--green);font-weight:700}
+/* ── CLIENTES ADMIN ── */
+.cli-item{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.cli-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cli-name{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700}
+.cli-user{font-size:11px;color:var(--t3);margin-top:2px}
+.cli-badge{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
+.cli-badge.on{background:rgba(0,195,137,.15);color:var(--green);border:1px solid rgba(0,195,137,.25)}
+.cli-badge.off{background:rgba(232,0,61,.1);color:#ff6680;border:1px solid rgba(232,0,61,.2)}
+.cli-actions{display:flex;gap:6px;margin-top:8px}
+.cli-act-btn{flex:1;padding:7px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--b1);background:var(--b0);color:var(--t3);touch-action:manipulation}
+.cli-act-btn:active{background:var(--b2);color:var(--t)}
+.fab{position:fixed;bottom:66px;right:14px;background:var(--green);color:var(--bg);border:none;border-radius:50%;width:46px;height:46px;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 14px var(--gg);z-index:80;display:none;align-items:center;justify-content:center;touch-action:manipulation}
+.fab.show{display:flex}
+.sup-only{display:none}
+
 /* ── LOGIN ── */
 #vlogin{position:fixed;inset:0;background:linear-gradient(135deg,#07051c 0%,var(--pk) 50%,#1a1760 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:999}
 .lg-logo{text-align:center;margin-bottom:32px}
@@ -357,64 +415,232 @@ input[type=file]{display:none}
       <button class="hdr-logout" onclick="doLogout()">SALIR</button>
     </div>
   </div>
-  <div class="stats" id="stats"></div>
-  <div class="mvbanner" id="mvbanner">
-    <div class="mvbanner-t">Toca la rampa o buffer destino</div>
-    <button class="mvbanner-x" id="mvcancel">Cancelar</button>
-  </div>
-  <div class="tabs">
-    <button class="tab active" id="tab-CLP">CLP</button>
-    <button class="tab" id="tab-MSL">MSL</button>
-    <button class="tab" id="tab-AMBAS">AMBAS</button>
-  </div>
-  <div id="dockArea"></div>
-  <div class="psect">
-    <div class="psect-hdr">
-      <div class="psect-title">Seguimiento post-rampa</div>
-      <div class="psect-cnt" id="pcnt">0</div>
+
+  <!-- RAMPAS SCREEN -->
+  <div id="sc-rampas" class="screen active">
+    <div class="stats" id="stats"></div>
+    <div class="mvbanner" id="mvbanner">
+      <div class="mvbanner-t">Toca la rampa o buffer destino</div>
+      <button class="mvbanner-x" id="mvcancel">Cancelar</button>
     </div>
-    <div class="pscroll" id="pscroll"></div>
+    <div class="tabs">
+      <button class="tab active" id="tab-CLP">CLP</button>
+      <button class="tab" id="tab-MSL">MSL</button>
+      <button class="tab" id="tab-AMBAS">AMBAS</button>
+    </div>
+    <div id="dockArea"></div>
+    <div class="psect">
+      <div class="psect-hdr">
+        <div class="psect-title">Seguimiento post-rampa</div>
+        <div class="psect-cnt" id="pcnt">0</div>
+      </div>
+      <div class="pscroll" id="pscroll"></div>
+    </div>
   </div>
+
+  <!-- HISTORIAL SCREEN -->
+  <div id="sc-historial" class="screen">
+    <div class="sc-hdr"><div class="sc-title">Historial</div><div class="sc-sub">Todos los contenedores</div></div>
+    <div class="hist-top">
+      <input type="text" class="hist-search" id="hist-q" placeholder="Buscar contenedor o cliente..." oninput="renderHistorial()">
+      <div class="htabs">
+        <button class="htab active" onclick="setHistFilter('all',this)">Todos</button>
+        <button class="htab" onclick="setHistFilter('rampa',this)">En Rampa</button>
+        <button class="htab" onclick="setHistFilter('post',this)">Tr&#225;nsito</button>
+        <button class="htab" onclick="setHistFilter('eir',this)">Finalizados</button>
+      </div>
+    </div>
+    <div id="hist-body"><div class="sc-empty">Cargando...</div></div>
+  </div>
+
+  <!-- REPORTES SCREEN -->
+  <div id="sc-reportes" class="screen">
+    <div class="sc-hdr"><div class="sc-title">Reporte&#769;ria</div><div class="sc-sub">Estad&#237;sticas de operaciones</div></div>
+    <div id="rpt-body"><div class="sc-empty">Cargando...</div></div>
+  </div>
+
+  <!-- BITACORA SCREEN (sup only) -->
+  <div id="sc-bitacora" class="screen">
+    <div class="sc-hdr"><div class="sc-title">Bit&#225;cora</div><div class="sc-sub">Registro de actividad</div></div>
+    <div id="bit-body"><div class="sc-empty">Cargando...</div></div>
+  </div>
+
+  <!-- CLIENTES SCREEN (sup only) -->
+  <div id="sc-clientes" class="screen">
+    <div class="sc-hdr"><div class="sc-title">Clientes</div><div class="sc-sub">Perfiles de acceso</div></div>
+    <div id="cli-body" style="padding:12px;"><div class="sc-empty">Cargando...</div></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bnav">
+    <button class="bnav-btn active" id="bn-rampas" onclick="switchScreen('rampas')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="7" height="18"/><rect x="9" y="8" width="7" height="13"/><rect x="16" y="12" width="7" height="9"/></svg>
+      <span class="bnav-lbl">Rampas</span>
+    </button>
+    <button class="bnav-btn" id="bn-historial" onclick="switchScreen('historial')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
+      <span class="bnav-lbl">Historial</span>
+    </button>
+    <button class="bnav-btn" id="bn-reportes" onclick="switchScreen('reportes')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="bnav-lbl">Reportes</span>
+    </button>
+    <button class="bnav-btn sup-only" id="bn-bitacora" onclick="switchScreen('bitacora')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
+      <span class="bnav-lbl">Bit&#225;cora</span>
+    </button>
+    <button class="bnav-btn sup-only" id="bn-clientes" onclick="switchScreen('clientes')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="bnav-lbl">Clientes</span>
+    </button>
+  </nav>
+  <button class="fab" id="fab" onclick="openNewCliente()">+</button>
 </div>
 
 <script>
+// ═══ SUPABASE ═══
+var sb = window.supabase.createClient(
+  'https://nfqunrphpkopfodmcwar.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mcXVucnBocGtvcGZvZG1jd2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NzI1NjgsImV4cCI6MjA5MjU0ODU2OH0.KdiHB3Vh8uHzVxBaQvmXDBhZRsyWf-4K095Znvrb_jg'
+);
+
+// ═══ CACHE ═══
+var _opsCache=[], _clientesCache=[], _bitacoraCache=[], _rtChannel=null;
+
+function dbToOp(r){
+  return {id:r.id,bodega:r.bodega,rampa:r.rampa||null,tipo:r.tipo,contenedor:r.contenedor,tipoContenedor:r.tipo_contenedor||'',cliente:r.cliente_nombre||'',clienteId:r.cliente_id||null,transportista:r.transportista||'',estado:r.estado,inspeccionCompleta:r.inspeccion_completa||false,inspeccion:r.inspeccion||null,log:r.log_ops||[],sello:r.sello||null,creadoEn:r.creado_en,actualizadoEn:r.actualizado_en};
+}
+function opToDb(op){
+  var insp=null;
+  if(op.inspeccion){insp={result:op.inspeccion.result,inspector:op.inspeccion.inspector,tipoContenedor:op.inspeccion.tipoContenedor,comentarios:op.inspeccion.comentarios,fecha:op.inspeccion.fecha,answers:op.inspeccion.answers};}
+  return {id:op.id,bodega:op.bodega,rampa:op.rampa||null,tipo:op.tipo,contenedor:op.contenedor,tipo_contenedor:op.tipoContenedor||null,cliente_nombre:op.cliente||null,cliente_id:op.clienteId||null,transportista:op.transportista||null,estado:op.estado,inspeccion_completa:op.inspeccionCompleta||false,inspeccion:insp,log_ops:op.log||[],sello:op.sello||null,actualizado_en:new Date().toISOString()};
+}
+async function dbInit(){
+  try{
+    var r1=await sb.from('operaciones').select('*').order('creado_en',{ascending:false});
+    _opsCache=(r1.data||[]).map(dbToOp);
+    var r2=await sb.from('clientes').select('*').order('nombre',{ascending:true});
+    _clientesCache=r2.data||[];
+    setupRealtime();
+    if(currentUser)refresh();
+  }catch(e){console.error('dbInit:',e);if(currentUser)refresh();}
+}
+function setupRealtime(){
+  if(_rtChannel)sb.removeChannel(_rtChannel);
+  _rtChannel=sb.channel('rt-ops')
+    .on('postgres_changes',{event:'*',schema:'public',table:'operaciones'},function(p){
+      if(p.eventType==='INSERT'||p.eventType==='UPDATE'){
+        var op=dbToOp(p.new);
+        var idx=_opsCache.findIndex(function(o){return o.id===op.id;});
+        if(idx>=0)_opsCache[idx]=op; else _opsCache.unshift(op);
+      }else if(p.eventType==='DELETE'){
+        _opsCache=_opsCache.filter(function(o){return o.id!==p.old.id;});
+      }
+      if(currentUser)refresh();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'clientes'},function(p){
+      if(p.eventType==='INSERT')_clientesCache.push(p.new);
+      else if(p.eventType==='UPDATE'){var i=_clientesCache.findIndex(function(c){return c.id===p.new.id;});if(i>=0)_clientesCache[i]=p.new;}
+      else if(p.eventType==='DELETE')_clientesCache=_clientesCache.filter(function(c){return c.id!==p.old.id;});
+      if(currentUser&&currentScreen==='clientes')renderClientes();
+    })
+    .subscribe();
+}
+function saveOp(op){
+  op.actualizadoEn=new Date().toISOString();
+  var idx=_opsCache.findIndex(function(o){return o.id===op.id;});
+  if(idx<0)_opsCache.unshift(op);
+  sb.from('operaciones').upsert(opToDb(op)).then(function(r){if(r.error)console.error('saveOp:',r.error);});
+}
+function logBit(evento,opId,datos){
+  var op=opId?_opsCache.find(function(o){return o.id===opId;}):null;
+  sb.from('bitacora').insert({op_id:opId||null,contenedor:op?op.contenedor:null,cliente_nombre:op?op.cliente:null,evento:evento,usuario:currentUser?currentUser.label:null,rol:currentUser?currentUser.role:null,datos:datos||null}).then(function(){});
+}
+async function fetchBitacora(){
+  document.getElementById('bit-body').innerHTML='<div class="sc-empty">Cargando...</div>';
+  try{
+    var r=await sb.from('bitacora').select('*').order('creado_en',{ascending:false}).limit(100);
+    _bitacoraCache=r.data||[];renderBitacora();
+  }catch(e){document.getElementById('bit-body').innerHTML='<div class="sc-empty">Error al cargar</div>';}
+}
+
 // ═══ AUTH ═══
-var USERS = {
-  'supervisor': {password:'dpw2025',    role:'supervisor', label:'Supervisor'},
-  'cliente':    {password:'cliente2025',role:'cliente',    label:'Cliente'}
-};
-var userRole = null;
+var currentUser=null;
+var _loginPending=false;
 
-function doLogin() {
-  var user  = (document.getElementById('lg-user').value||'').trim().toLowerCase();
-  var pass  = document.getElementById('lg-pass').value;
-  var errEl = document.getElementById('lg-err');
-  var match = USERS[user];
-  if(!match || match.password !== pass) {
-    errEl.classList.add('show');
-    document.getElementById('lg-pass').value = '';
-    return;
-  }
+async function doLogin(){
+  if(_loginPending)return;
+  var user=(document.getElementById('lg-user').value||'').trim().toLowerCase();
+  var pass=document.getElementById('lg-pass').value;
+  var errEl=document.getElementById('lg-err');
   errEl.classList.remove('show');
-  userRole = match.role;
-  document.getElementById('hdr-role').textContent = match.label;
-  document.getElementById('vlogin').style.display = 'none';
-  document.getElementById('vdash').style.display  = '';
-  refresh();
+  if(!user||!pass){errEl.textContent='Ingresa usuario y contraseña';errEl.classList.add('show');return;}
+  if(user==='supervisor'&&pass==='dpw2025'){
+    currentUser={role:'supervisor',label:'Supervisor',nombre:'Supervisor',clienteId:null};
+    showDash();return;
+  }
+  _loginPending=true;
+  var btn=document.querySelector('.lg-btn');
+  if(btn)btn.textContent='VERIFICANDO...';
+  try{
+    var res=await sb.from('clientes').select('*').eq('usuario',user).eq('activo',true);
+    var match=(res.data||[]).find(function(c){return c.password===pass;});
+    if(!match){errEl.textContent='Usuario o contraseña incorrectos';errEl.classList.add('show');document.getElementById('lg-pass').value='';}
+    else{currentUser={role:'cliente',label:match.nombre,nombre:match.nombre,clienteId:match.id};showDash();}
+  }catch(e){errEl.textContent='Error de conexión';errEl.classList.add('show');}
+  _loginPending=false;
+  if(btn)btn.textContent='INGRESAR';
 }
 
-function doLogout() {
-  userRole = null;
-  document.getElementById('lg-user').value = '';
-  document.getElementById('lg-pass').value = '';
+function showDash(){
+  document.getElementById('hdr-role').textContent=currentUser.label;
+  document.getElementById('vlogin').style.display='none';
+  document.getElementById('vdash').style.display='';
+  document.querySelectorAll('.sup-only').forEach(function(el){el.style.display=currentUser.role==='supervisor'?'':'none';});
+  switchScreen('rampas');
+  dbInit();
+}
+
+function doLogout(){
+  currentUser=null;_opsCache=[];_clientesCache=[];_bitacoraCache=[];
+  if(_rtChannel){sb.removeChannel(_rtChannel);_rtChannel=null;}
+  document.getElementById('lg-user').value='';
+  document.getElementById('lg-pass').value='';
   document.getElementById('lg-err').classList.remove('show');
-  document.getElementById('vdash').style.display  = 'none';
-  document.getElementById('vlogin').style.display = '';
+  document.getElementById('vdash').style.display='none';
+  document.getElementById('vlogin').style.display='';
 }
 
-function requireSup(msg) {
-  if(userRole !== 'supervisor') { showToast(msg || '⚠ Solo supervisores', false, true); return false; }
+function requireSup(msg){
+  if(!currentUser||currentUser.role!=='supervisor'){showToast(msg||'⚠ Solo supervisores',false,true);return false;}
   return true;
+}
+
+// ═══ SCREEN SWITCH ═══
+var currentScreen='rampas';
+var _histFilter='all';
+
+function switchScreen(name){
+  if((name==='bitacora'||name==='clientes')&&currentUser&&currentUser.role!=='supervisor')name='rampas';
+  currentScreen=name;
+  ['rampas','historial','reportes','bitacora','clientes'].forEach(function(s){
+    var sc=document.getElementById('sc-'+s);if(sc)sc.classList.toggle('active',s===name);
+    var bn=document.getElementById('bn-'+s);if(bn)bn.classList.toggle('active',s===name);
+  });
+  var fab=document.getElementById('fab');
+  if(fab)fab.className=(name==='clientes'&&currentUser&&currentUser.role==='supervisor')?'fab show':'fab';
+  if(name==='rampas'){renderStats();renderDockView();renderPost();}
+  else if(name==='historial')renderHistorial();
+  else if(name==='reportes')renderReportes();
+  else if(name==='bitacora')fetchBitacora();
+  else if(name==='clientes')renderClientes();
+}
+
+function setHistFilter(f,el){
+  _histFilter=f;
+  document.querySelectorAll('.htab').forEach(function(b){b.classList.remove('active');});
+  if(el)el.classList.add('active');
+  renderHistorial();
 }
 
 // ═══ CONFIG ═══
@@ -551,63 +777,72 @@ function endDrag(touch) {
 var inspA = {}, inspIP = {}, inspGP = [];
 
 // ═══ STORAGE ═══
-function getOps() {
-  try { return JSON.parse(localStorage.getItem('dpw_ops') || '[]'); } catch(e) { return []; }
+function getOps(){return _opsCache;}
+function saveOps(){}
+function getVisibleOps(){
+  if(!currentUser||currentUser.role==='supervisor')return _opsCache;
+  var n=currentUser.nombre;
+  return _opsCache.filter(function(o){return o.cliente===n;});
 }
-function saveOps(ops) {
-  try { localStorage.setItem('dpw_ops', JSON.stringify(ops)); } catch(e) {}
-}
-function getRampOp(b, r) {
-  var ops = getOps();
-  for(var i=0; i<ops.length; i++) {
-    var o = ops[i];
-    if(o.bodega===b && o.rampa===r && RS.indexOf(o.estado)>=0 && o.estado!=='ESPERA_RAMPA') return o;
+function getRampOp(b,r){
+  for(var i=0;i<_opsCache.length;i++){
+    var o=_opsCache[i];
+    if(o.bodega===b&&o.rampa===r&&RS.indexOf(o.estado)>=0&&o.estado!=='ESPERA_RAMPA')return o;
   }
   return null;
 }
-function getPostOps() {
-  return getOps().filter(function(o){ return RS.indexOf(o.estado)<0 && o.estado!=='ESPERA_RAMPA' && o.estado!=='BUFFER_POST' && o.estado!=='EIR'; });
+function getPostOps(){
+  return _opsCache.filter(function(o){
+    if(currentUser&&currentUser.role==='cliente'&&o.cliente!==currentUser.nombre)return false;
+    return RS.indexOf(o.estado)<0&&o.estado!=='ESPERA_RAMPA'&&o.estado!=='BUFFER_POST'&&o.estado!=='EIR';
+  });
 }
-
-// ═══ DEMO DATA ═══
-function loadDemo() {
-  if(getOps().length > 0) return;
-  var n = new Date().toISOString();
-  function lg(ev){ return {ev:ev, ts:n}; }
-  saveOps([
-    {id:'d1',bodega:'CLP',rampa:'R1',tipo:'SALIDA',contenedor:'MSCU1234567',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'P50',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('Inspeccionada'),lg('20%'),lg('50%')],creadoEn:n,actualizadoEn:n},
-    {id:'d2',bodega:'CLP',rampa:'R2',tipo:'ENTRADA',contenedor:'CMAU9876543',tipoContenedor:'20FT',cliente:'ALICORP',transportista:'',estado:'P20',inspeccionCompleta:true,inspeccion:null,log:[lg('Asignada'),lg('20%')],creadoEn:n,actualizadoEn:n},
-    {id:'d3',bodega:'CLP',rampa:'R3',tipo:'SALIDA',contenedor:'HPCU5678901',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'PEND_INSP',inspeccionCompleta:false,inspeccion:null,log:[lg('Asignada')],creadoEn:n,actualizadoEn:n},
-    {id:'d4',bodega:'CLP',rampa:'R4',tipo:'SALIDA',contenedor:'MSDU1122334',tipoContenedor:'40FT',cliente:'VIMA CARIBE',transportista:'Ocean Cargo',estado:'PROXIMO',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'M. Charris'},log:[lg('Asignada'),lg('Inspeccionada')],creadoEn:n,actualizadoEn:n},
-    {id:'d5',bodega:'CLP',rampa:null,tipo:'ENTRADA',contenedor:'TCKU9988776',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'',estado:'ESPERA_RAMPA',inspeccionCompleta:true,inspeccion:null,log:[lg('En cola')],creadoEn:n,actualizadoEn:n},
-    {id:'d6',bodega:'CLP',rampa:null,tipo:'SALIDA',contenedor:'HLXU1234000',tipoContenedor:'20FT',cliente:'ALICORP',transportista:'Intertrans',estado:'ESPERA_RAMPA',inspeccionCompleta:false,inspeccion:null,log:[lg('En cola')],creadoEn:n,actualizadoEn:n},
-    {id:'d7',bodega:'MSL',rampa:'R1',tipo:'SALIDA',contenedor:'OOLU3344556',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'P100',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('100%')],creadoEn:n,actualizadoEn:n},
-    {id:'d8',bodega:'MSL',rampa:'R3',tipo:'ENTRADA',contenedor:'MSCU0011223',tipoContenedor:'20FT',cliente:'VIMA CARIBE',transportista:'',estado:'EN_RAMPA',inspeccionCompleta:true,inspeccion:null,log:[lg('Asignada')],creadoEn:n,actualizadoEn:n},
-    {id:'pr1',bodega:'CLP',rampa:null,tipo:'SALIDA',contenedor:'CMAU0000111',tipoContenedor:'40FT',cliente:'CERNAC',transportista:'Intertrans',estado:'TRANSITO',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'M. Charris'},log:[lg('Asignada'),lg('100%'),lg('En transito')],creadoEn:n,actualizadoEn:n},
-    {id:'pr2',bodega:'MSL',rampa:null,tipo:'SALIDA',contenedor:'MSDU9990001',tipoContenedor:'40FT',cliente:'ALICORP',transportista:'Intertrans',estado:'ESPERA_DOCS',inspeccionCompleta:true,inspeccion:{result:'apto',inspector:'J. Asencio'},log:[lg('Asignada'),lg('100%'),lg('Docs pendientes')],creadoEn:n,actualizadoEn:n}
-  ]);
+function buildClienteOptions(){
+  var active=_clientesCache.filter(function(c){return c.activo;});
+  var opts='<option value="">Seleccionar cliente...</option>';
+  for(var i=0;i<active.length;i++)opts+='<option value="'+active[i].nombre+'">'+active[i].nombre+'</option>';
+  if(!active.length)opts='<option value="">Sin clientes registrados</option>';
+  return opts;
 }
+function escHtml(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ═══ RENDER ═══
-function refresh() { renderStats(); renderDockView(); renderPost(); }
+function refresh(){
+  if(currentScreen==='rampas'){renderStats();renderDockView();renderPost();}
+  else if(currentScreen==='historial')renderHistorial();
+  else if(currentScreen==='reportes')renderReportes();
+  else if(currentScreen==='clientes')renderClientes();
+}
 
-function renderStats() {
-  var ops = getOps(); var lib=0, en=0, sa=0, bf=0;
-  var bods = ['CLP','MSL'];
-  for(var bi=0; bi<bods.length; bi++) {
-    var b = bods[bi];
-    for(var r=1; r<=CFG[b].rampas; r++) {
-      var op = getRampOp(b,'R'+r);
-      if(!op) lib++; else if(op.tipo==='ENTRADA') en++; else sa++;
+function renderStats(){
+  if(currentUser&&currentUser.role==='cliente'){
+    var ops=getVisibleOps();
+    var er=ops.filter(function(o){return RS.indexOf(o.estado)>=0&&o.estado!=='ESPERA_RAMPA';}).length;
+    var esp=ops.filter(function(o){return o.estado==='ESPERA_RAMPA';}).length;
+    var post=ops.filter(function(o){return RS.indexOf(o.estado)<0&&o.estado!=='EIR';}).length;
+    var fin=ops.filter(function(o){return o.estado==='EIR';}).length;
+    var h='<div class="sbox"><div class="sn en">'+er+'</div><div class="sl2">En Rampa</div></div>';
+    h+='<div class="sbox"><div class="sn bf">'+esp+'</div><div class="sl2">En Espera</div></div>';
+    h+='<div class="sbox"><div class="sn sa">'+post+'</div><div class="sl2">Tránsito</div></div>';
+    h+='<div class="sbox"><div class="sn ok">'+fin+'</div><div class="sl2">EIR</div></div>';
+    document.getElementById('stats').innerHTML=h;return;
+  }
+  var lib=0,en=0,sa=0,bf=0;
+  var bods=['CLP','MSL'];
+  for(var bi=0;bi<bods.length;bi++){
+    var b=bods[bi];
+    for(var r=1;r<=CFG[b].rampas;r++){
+      var op=getRampOp(b,'R'+r);
+      if(!op)lib++; else if(op.tipo==='ENTRADA')en++; else sa++;
     }
   }
-  bf = ops.filter(function(o){ return o.estado==='ESPERA_RAMPA'; }).length;
-  var h = '<div class="sbox"><div class="sn sl">'+lib+'</div><div class="sl2">Libres</div></div>';
-  h += '<div class="sbox"><div class="sn en">'+en+'</div><div class="sl2">Entrada</div></div>';
-  h += '<div class="sbox"><div class="sn sa">'+sa+'</div><div class="sl2">Salida</div></div>';
-  h += '<div class="sbox"><div class="sn bf">'+bf+'</div><div class="sl2">Buffer</div></div>';
-  h += '<div class="sbox"><div class="sn ok">'+getPostOps().length+'</div><div class="sl2">Transito</div></div>';
-  document.getElementById('stats').innerHTML = h;
+  bf=_opsCache.filter(function(o){return o.estado==='ESPERA_RAMPA';}).length;
+  var h='<div class="sbox"><div class="sn sl">'+lib+'</div><div class="sl2">Libres</div></div>';
+  h+='<div class="sbox"><div class="sn en">'+en+'</div><div class="sl2">Entrada</div></div>';
+  h+='<div class="sbox"><div class="sn sa">'+sa+'</div><div class="sl2">Salida</div></div>';
+  h+='<div class="sbox"><div class="sn bf">'+bf+'</div><div class="sl2">Buffer</div></div>';
+  h+='<div class="sbox"><div class="sn ok">'+getPostOps().length+'</div><div class="sl2">Transito</div></div>';
+  document.getElementById('stats').innerHTML=h;
 }
 
 function renderDockView() {
@@ -641,7 +876,12 @@ function renderDock(b) {
   for(var r=1; r<=R; r++) {
     var op = getRampOp(b,'R'+r);
     var isDA = mvState.active && !op;
-    var box = op ? buildCBox(op, false) : buildFreeBox(b, 'R'+r, isDA);
+    var box;
+    if(op&&currentUser&&currentUser.role==='cliente'&&op.cliente!==currentUser.nombre){
+      box='<div class="cbox" style="border:1.5px solid rgba(255,255,255,.1);cursor:default;"><div class="ccont" style="justify-content:center;"><div style="font-family:Barlow Condensed,sans-serif;font-size:8px;font-weight:700;color:rgba(255,255,255,.2);letter-spacing:1px;">OCUPADO</div></div></div>';
+    }else{
+      box=op?buildCBox(op,false):buildFreeBox(b,'R'+r,isDA);
+    }
     rslots += '<div class="rslot"><div class="rpipe"></div>' + box + '<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>';
   }
 
@@ -758,26 +998,23 @@ function openMoveToBuf(opId, b, pos) {
   document.getElementById('mbody').innerHTML = h;
   openMod();
 }
-function execMove(opId, type, b, dest) {
-  var ops = getOps();
-  var idx = -1;
-  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
-  if(idx < 0) return;
-  if(type==='rampa') {
-    ops[idx].rampa = dest; ops[idx].bodega = b;
-    ops[idx].estado = (ops[idx].tipo==='SALIDA' && !ops[idx].inspeccionCompleta) ? 'PEND_INSP' : 'EN_RAMPA';
-    ops[idx].log.push({ev:'Movido a '+dest+' \u2014 '+b, ts:new Date().toISOString()});
-  } else if(type==='buf-done') {
-    ops[idx].estado = 'P100'; ops[idx].rampa = null;
-    ops[idx].log.push({ev:'100% completado, movido a buffer', ts:new Date().toISOString()});
-  } else {
-    ops[idx].rampa = null; ops[idx].estado = 'ESPERA_RAMPA';
-    ops[idx].log.push({ev:'Reubicado a buffer', ts:new Date().toISOString()});
+function execMove(opId,type,b,dest){
+  var op=_opsCache.find(function(o){return o.id===opId;});if(!op)return;
+  if(type==='rampa'){
+    op.rampa=dest;op.bodega=b;
+    op.estado=(op.tipo==='SALIDA'&&!op.inspeccionCompleta)?'PEND_INSP':'EN_RAMPA';
+    op.log.push({ev:'Movido a '+dest+' \u2014 '+b,ts:new Date().toISOString()});
+  }else if(type==='buf-done'){
+    op.estado='P100';op.rampa=null;
+    op.log.push({ev:'100% completado, movido a buffer',ts:new Date().toISOString()});
+  }else{
+    op.rampa=null;op.estado='ESPERA_RAMPA';
+    op.log.push({ev:'Reubicado a buffer',ts:new Date().toISOString()});
   }
-  ops[idx].actualizadoEn = new Date().toISOString();
-  saveOps(ops); cancelMove(); closeMod(); refresh();
-  showToast('Contenedor movido', true);
-  if(type==='buf-done') { setTimeout(function(){ openDestinoMod(opId); }, 500); }
+  saveOp(op);logBit('Movido: '+type,opId,{tipo:type,destino:dest||null});
+  cancelMove();closeMod();refresh();
+  showToast('Contenedor movido',true);
+  if(type==='buf-done'){setTimeout(function(){openDestinoMod(opId);},500);}
 }
 
 // ═══ ASSIGN ═══
@@ -797,7 +1034,7 @@ function openAssign(b, r) {
   h += '<div id="iwarn" class="abox warn" style="display:none;">Salida requiere inspeccion SL-02-007 antes del cargue.</div>';
   h += '<div class="ig2"><div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU1234567" oninput="this.value=this.value.toUpperCase()"></div>';
   h += '<div class="fg"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
-  h += '<div class="fg"><div class="flbl">Cliente</div><input type="text" class="fin" id="acli" placeholder="CERNAC..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg"><div class="flbl">Cliente</div><select class="fin" id="acli">'+buildClienteOptions()+'</select></div>';
   h += '<div class="fg" style="margin-top:4px;"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
   h += '<button class="btn-p btn-green" onclick="confirmAssign()">ASIGNAR '+r+'</button>';
   document.getElementById('mbody').innerHTML = h;
@@ -812,7 +1049,7 @@ function openAssignBuf(b, pos) {
   h += '<div class="tipo-btn sal" id="tbsal" onclick="setTipo(\'SALIDA\')"><span class="tipo-lbl">SALIDA</span></div></div>';
   h += '<div class="ig2"><div class="fg"><div class="flbl">N Contenedor</div><input type="text" class="fin" id="acont" placeholder="MSCU..." oninput="this.value=this.value.toUpperCase()"></div>';
   h += '<div class="fg"><div class="flbl">Tipo</div><select class="fin" id="atc"><option value="">-</option><option>20FT</option><option>40FT</option><option>45FT</option></select></div></div>';
-  h += '<div class="fg"><div class="flbl">Cliente</div><input type="text" class="fin" id="acli" placeholder="CERNAC..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h += '<div class="fg"><div class="flbl">Cliente</div><select class="fin" id="acli">'+buildClienteOptions()+'</select></div>';
   h += '<div class="fg" style="margin-top:4px;"><div class="flbl">Transportista</div><input type="text" class="fin" id="attr" placeholder="Intertrans..."></div>';
   h += '<button class="btn-p btn-amber" onclick="confirmAssignBuf('+pos+')">AGREGAR A COLA</button>';
   document.getElementById('mbody').innerHTML = h;
@@ -825,23 +1062,27 @@ function setTipo(t) {
   if(ts) { ts.className = 'tipo-btn sal' + (t==='SALIDA'?' act':''); }
   var iw = document.getElementById('iwarn'); if(iw) iw.style.display = t==='SALIDA'?'flex':'none';
 }
-function confirmAssign() {
-  var cont = (document.getElementById('acont')||{}).value; if(cont) cont = cont.trim().toUpperCase();
-  var cli = (document.getElementById('acli')||{}).value; if(cli) cli = cli.trim().toUpperCase();
-  if(!cont) { showToast('Ingresa el N de contenedor'); return; }
-  if(!cli) { showToast('Ingresa el cliente'); return; }
-  var op = {id:Date.now().toString(), bodega:aData.b, rampa:aData.r, tipo:aData.tipo, contenedor:cont, tipoContenedor:(document.getElementById('atc')||{}).value||'', cliente:cli, transportista:((document.getElementById('attr')||{}).value||'').trim(), estado:aData.tipo==='SALIDA'?'PEND_INSP':'EN_RAMPA', inspeccionCompleta:aData.tipo==='ENTRADA', inspeccion:null, log:[{ev:'Rampa asignada \u2014 '+aData.tipo, ts:new Date().toISOString()}], creadoEn:new Date().toISOString(), actualizadoEn:new Date().toISOString()};
-  var ops = getOps(); ops.push(op); saveOps(ops); closeMod(); refresh();
-  showToast(aData.r + ' asignada \u2014 ' + cli, true);
-  if(aData.tipo==='SALIDA') { setTimeout(function(){ openInsp(op.id); }, 400); }
+function confirmAssign(){
+  var cont=(document.getElementById('acont')||{}).value;if(cont)cont=cont.trim().toUpperCase();
+  var cli=(document.getElementById('acli')||{}).value||'';
+  if(!cont){showToast('Ingresa el N de contenedor');return;}
+  if(!cli){showToast('Selecciona el cliente');return;}
+  var cliObj=_clientesCache.find(function(c){return c.nombre===cli;});
+  var op={id:Date.now().toString(),bodega:aData.b,rampa:aData.r,tipo:aData.tipo,contenedor:cont,tipoContenedor:(document.getElementById('atc')||{}).value||'',cliente:cli,clienteId:cliObj?cliObj.id:null,transportista:((document.getElementById('attr')||{}).value||'').trim(),estado:aData.tipo==='SALIDA'?'PEND_INSP':'EN_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,log:[{ev:'Rampa asignada \u2014 '+aData.tipo,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
+  saveOp(op);closeMod();refresh();
+  showToast(aData.r+' asignada \u2014 '+cli,true);
+  logBit('Rampa asignada: '+aData.r+' \u2014 '+cont,op.id,{tipo:aData.tipo,cliente:cli});
+  if(aData.tipo==='SALIDA'){setTimeout(function(){openInsp(op.id);},400);}
 }
-function confirmAssignBuf(pos) {
-  var cont = (document.getElementById('acont')||{}).value; if(cont) cont = cont.trim().toUpperCase();
-  var cli = (document.getElementById('acli')||{}).value; if(cli) cli = cli.trim().toUpperCase();
-  if(!cont || !cli) { showToast('Completa los campos'); return; }
-  var op = {id:Date.now().toString(), bodega:aData.b, rampa:null, tipo:aData.tipo, contenedor:cont, tipoContenedor:(document.getElementById('atc')||{}).value||'', cliente:cli, transportista:((document.getElementById('attr')||{}).value||'').trim(), estado:'ESPERA_RAMPA', inspeccionCompleta:aData.tipo==='ENTRADA', inspeccion:null, log:[{ev:'Cola buffer B'+pos, ts:new Date().toISOString()}], creadoEn:new Date().toISOString(), actualizadoEn:new Date().toISOString()};
-  var ops = getOps(); ops.push(op); saveOps(ops); closeMod(); refresh();
-  showToast('En cola B' + pos, true);
+function confirmAssignBuf(pos){
+  var cont=(document.getElementById('acont')||{}).value;if(cont)cont=cont.trim().toUpperCase();
+  var cli=(document.getElementById('acli')||{}).value||'';
+  if(!cont||!cli){showToast('Completa los campos');return;}
+  var cliObj=_clientesCache.find(function(c){return c.nombre===cli;});
+  var op={id:Date.now().toString(),bodega:aData.b,rampa:null,tipo:aData.tipo,contenedor:cont,tipoContenedor:(document.getElementById('atc')||{}).value||'',cliente:cli,clienteId:cliObj?cliObj.id:null,transportista:((document.getElementById('attr')||{}).value||'').trim(),estado:'ESPERA_RAMPA',inspeccionCompleta:aData.tipo==='ENTRADA',inspeccion:null,log:[{ev:'Cola buffer B'+pos,ts:new Date().toISOString()}],creadoEn:new Date().toISOString(),actualizadoEn:new Date().toISOString()};
+  saveOp(op);closeMod();refresh();
+  showToast('En cola B'+pos,true);
+  logBit('Buffer asignado: B'+pos+' \u2014 '+cont,op.id,{cliente:cli});
 }
 
 // ═══ DETAIL MODAL ═══
@@ -869,13 +1110,14 @@ function openDetail(opId) {
     h += '<div style="font-family:Barlow Condensed,sans-serif;font-size:11px;color:var(--t3);">'+pct+'% '+(op.tipo==='ENTRADA'?'descargado':'cargado')+'</div>';
   }
   h += '</div>';
+  var isSup=currentUser&&currentUser.role==='supervisor';
   if(ni) {
     h += '<div class="abox err">Inspeccion SL-02-007 pendiente \u2014 el cargue no puede iniciar.</div>';
-    h += '<button class="btn-p btn-red" onclick="closeMod();setTimeout(function(){openInsp(\''+opId+'\')},200)">INICIAR INSPECCION</button>';
+    if(isSup)h += '<button class="btn-p btn-red" onclick="closeMod();setTimeout(function(){openInsp(\''+opId+'\')},200)">INICIAR INSPECCION</button>';
   } else if(op.tipo==='SALIDA' && op.inspeccionCompleta && op.inspeccion) {
     h += '<div class="abox suc">Inspeccion OK \u2014 ' + (op.inspeccion.result==='apto'?'APTO':'NO APTO') + ' &middot; ' + (op.inspeccion.inspector||'') + '</div>';
   }
-  if(sp) {
+  if(sp&&isSup) {
     h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">ACTUALIZAR PROGRESO</div>';
     h += '<div class="prog-row">';
     h += '<div class="pbtn p20" onclick="updEstado(\''+opId+'\',\'P20\');closeMod()"><div class="pn">20%</div><div class="pl">Iniciando</div></div>';
@@ -883,17 +1125,17 @@ function openDetail(opId) {
     h += '<div class="pbtn p100" onclick="updEstado(\''+opId+'\',\'P100\');closeMod()"><div class="pn">100%</div><div class="pl">Completo</div></div>';
     h += '</div>';
   }
-  if(sd) {
+  if(sd&&isSup) {
     h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">DESTINO FINAL</div>';
     h += buildDestButtons(opId);
   }
-  if(op.estado==='EN_RAMPA' && op.inspeccionCompleta) {
+  if(op.estado==='EN_RAMPA'&&op.inspeccionCompleta&&isSup) {
     h += '<button class="btn-p btn-navy" onclick="updEstado(\''+opId+'\',\'PROXIMO\');closeMod()">Marcar Proximo Cargue/Descargue</button>';
   }
-  if(op.estado==='ESPERA_RAMPA') {
+  if(op.estado==='ESPERA_RAMPA'&&isSup) {
     h += '<button class="btn-p btn-amber" onclick="closeMod();setTimeout(function(){openMoveAssign(\''+opId+'\')},200)">Asignar a Rampa</button>';
   }
-  if(ir) {
+  if(ir&&isSup) {
     h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="startMove(\''+opId+'\')">Mover contenedor</button>';
   }
   var log = op.log || [];
@@ -904,7 +1146,7 @@ function openDetail(opId) {
   }
   if(!recent.length) h += '<div style="font-size:11px;color:var(--t4);">Sin actividad</div>';
   h += '</div>';
-  h += '<button class="btn-dang" onclick="liberarRampa(\''+opId+'\')">Liberar rampa</button>';
+  if(isSup)h += '<button class="btn-dang" onclick="liberarRampa(\''+opId+'\')">Liberar rampa</button>';
   document.getElementById('mbody').innerHTML = h;
   openMod();
 }
@@ -943,16 +1185,14 @@ function openMoveAssign(opId) {
 }
 
 // ═══ STATE UPDATES ═══
-function updEstado(opId, newSt) {
-  var ops = getOps(); var idx=-1;
-  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
-  if(idx<0) return;
-  ops[idx].estado = newSt;
-  ops[idx].log.push({ev:'Estado: '+(ST[newSt]||{}).l, ts:new Date().toISOString()});
-  ops[idx].actualizadoEn = new Date().toISOString();
-  saveOps(ops); refresh();
-  showToast((ST[newSt]||{}).l||newSt, true);
-  if(newSt==='P100') { setTimeout(function(){ openSealMod(opId); }, 500); }
+function updEstado(opId,newSt){
+  var op=_opsCache.find(function(o){return o.id===opId;});if(!op)return;
+  op.estado=newSt;
+  op.log.push({ev:'Estado: '+(ST[newSt]||{}).l,ts:new Date().toISOString()});
+  saveOp(op);refresh();
+  showToast((ST[newSt]||{}).l||newSt,true);
+  logBit('Estado: '+(ST[newSt]||{}).l,opId,{estado:newSt});
+  if(newSt==='P100'){setTimeout(function(){openSealMod(opId);},500);}
 }
 var sealOpId = null;
 function openSealMod(opId) {
@@ -969,31 +1209,23 @@ function openSealMod(opId) {
   if(si) si.addEventListener('input', function(){ this.value=this.value.toUpperCase(); });
   openMod();
 }
-function saveSealAndContinue() {
-  var opId = sealOpId; if(!opId) return;
-  var sealInput = document.getElementById('seal-input');
-  var seal = sealInput ? sealInput.value.trim() : '';
-  if(seal) {
-    var ops = getOps(); var idx=-1;
-    for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
-    if(idx>=0) {
-      ops[idx].sello = seal;
-      ops[idx].log.push({ev:'Sello registrado: '+seal, ts:new Date().toISOString()});
-      saveOps(ops); refresh();
-    }
+function saveSealAndContinue(){
+  var opId=sealOpId;if(!opId)return;
+  var seal=(document.getElementById('seal-input')||{}).value||'';seal=seal.trim();
+  if(seal){
+    var op=_opsCache.find(function(o){return o.id===opId;});
+    if(op){op.sello=seal;op.log.push({ev:'Sello: '+seal,ts:new Date().toISOString()});saveOp(op);logBit('Sello: '+seal,opId,{sello:seal});refresh();}
   }
   openDestinoMod(opId);
 }
 
-function setDest(opId, destSt) {
-  var ops = getOps(); var idx=-1;
-  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
-  if(idx<0) return;
-  ops[idx].estado = destSt; ops[idx].rampa = null;
-  ops[idx].log.push({ev:'Destino: '+(ST[destSt]||{}).l, ts:new Date().toISOString()});
-  ops[idx].actualizadoEn = new Date().toISOString();
-  saveOps(ops); closeMod(); refresh();
-  showToast((ST[destSt]||{}).l+' \u2014 rampa liberada', true);
+function setDest(opId,destSt){
+  var op=_opsCache.find(function(o){return o.id===opId;});if(!op)return;
+  op.estado=destSt;op.rampa=null;
+  op.log.push({ev:'Destino: '+(ST[destSt]||{}).l,ts:new Date().toISOString()});
+  saveOp(op);closeMod();refresh();
+  showToast((ST[destSt]||{}).l+' \u2014 rampa liberada',true);
+  logBit('Destino: '+(ST[destSt]||{}).l,opId,{destino:destSt});
 }
 
 function openDestinoMod(opId) {
@@ -1006,13 +1238,12 @@ function openDestinoMod(opId) {
   openMod();
 }
 
-function liberarRampa(opId) {
-  var ops = getOps(); var idx=-1;
-  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
-  if(idx<0) return;
-  ops[idx].estado = 'EIR'; ops[idx].rampa = null;
-  ops[idx].log.push({ev:'Rampa liberada', ts:new Date().toISOString()});
-  saveOps(ops); closeMod(); refresh(); showToast('Rampa liberada');
+function liberarRampa(opId){
+  var op=_opsCache.find(function(o){return o.id===opId;});if(!op)return;
+  op.estado='EIR';op.rampa=null;
+  op.log.push({ev:'Rampa liberada',ts:new Date().toISOString()});
+  saveOp(op);closeMod();refresh();showToast('Rampa liberada');
+  logBit('Rampa liberada',opId,null);
 }
 
 // ═══ POST-RAMP ═══
@@ -1180,21 +1411,19 @@ function saveInsp(opId, doShare) {
   }
   var answered = Object.keys(inspA).length;
   var result = answered===AIDS.length ? (fail?'no-apto':'apto') : 'parcial';
-  var insp = {answers:{}, result:result, inspector:inspector, tipoContenedor:tc, comentarios:com, fecha:new Date().toISOString(), itemFotos:{}, globalFotos:inspGP.slice()};
-  for(var k in inspA) insp.answers[k] = inspA[k];
-  for(var k in inspIP) insp.itemFotos[k] = inspIP[k];
-  var ops = getOps(); var idx=-1;
-  for(var i=0; i<ops.length; i++) { if(ops[i].id===opId) { idx=i; break; } }
-  if(idx<0) return null;
-  ops[idx].inspeccion = insp; ops[idx].inspeccionCompleta = true; ops[idx].estado = 'INSPECCIONADO';
-  if(tc) ops[idx].tipoContenedor = tc;
-  ops[idx].log.push({ev:'Inspeccion: '+(result==='apto'?'APTO':result==='no-apto'?'NO APTO':'PARCIAL')+' - '+(inspector||'--'), ts:new Date().toISOString()});
-  ops[idx].actualizadoEn = new Date().toISOString();
-  saveOps(ops); inspA = {};
-  var op = ops[idx];
-  if(!doShare) {
-    closeMod(); refresh();
-    showToast(result==='apto'?'Inspeccion APTO - listo para cargue':'Inspeccion NO APTO', result!=='no-apto');
+  var insp={answers:{},result:result,inspector:inspector,tipoContenedor:tc,comentarios:com,fecha:new Date().toISOString(),itemFotos:{},globalFotos:inspGP.slice()};
+  for(var k in inspA)insp.answers[k]=inspA[k];
+  for(var k in inspIP)insp.itemFotos[k]=inspIP[k];
+  var op=_opsCache.find(function(o){return o.id===opId;});
+  if(!op)return null;
+  op.inspeccion=insp;op.inspeccionCompleta=true;op.estado='INSPECCIONADO';
+  if(tc)op.tipoContenedor=tc;
+  op.log.push({ev:'Inspeccion: '+(result==='apto'?'APTO':result==='no-apto'?'NO APTO':'PARCIAL')+' - '+(inspector||'--'),ts:new Date().toISOString()});
+  saveOp(op);inspA={};
+  logBit('Inspeccion: '+result,opId,{result:result,inspector:inspector});
+  if(!doShare){
+    closeMod();refresh();
+    showToast(result==='apto'?'Inspeccion APTO - listo para cargue':'Inspeccion NO APTO',result!=='no-apto');
     return op;
   }
   closeMod(); refresh();
@@ -1275,6 +1504,151 @@ async function buildAndSharePDF(op) {
   } catch(e) { showToast('Error generando PDF'); }
 }
 
+// ═══ HISTORIAL ═══
+function renderHistorial(){
+  var q=((document.getElementById('hist-q')||{}).value||'').toLowerCase();
+  var ops=getVisibleOps().filter(function(o){
+    if(_histFilter==='rampa'&&RS.indexOf(o.estado)<0)return false;
+    if(_histFilter==='post'&&(RS.indexOf(o.estado)>=0||o.estado==='EIR'))return false;
+    if(_histFilter==='eir'&&o.estado!=='EIR')return false;
+    if(q&&o.contenedor.toLowerCase().indexOf(q)<0&&(o.cliente||'').toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  if(!ops.length){document.getElementById('hist-body').innerHTML='<div class="sc-empty">Sin resultados</div>';return;}
+  var h='';
+  for(var i=0;i<ops.length;i++){
+    var o=ops[i];var s=ST[o.estado]||{l:o.estado,c:'rgba(255,255,255,.4)'};
+    var tc=o.tipo==='ENTRADA'?'background:rgba(0,153,230,.15);color:#0099e6':'background:rgba(245,162,11,.12);color:#f5a20b';
+    h+='<div class="hrow" onclick="openDetail(\''+o.id+'\')">';
+    h+='<div style="flex:1"><div class="hnum">'+escHtml(o.contenedor)+'</div><div class="hcli">'+escHtml(o.cliente)+' &middot; '+escHtml(o.bodega)+(o.rampa?' &middot; '+o.rampa:'')+'</div></div>';
+    h+='<div style="text-align:right"><div class="htag" style="'+tc+'">'+o.tipo+'</div>';
+    h+='<div style="font-family:Barlow Condensed,sans-serif;font-size:9px;font-weight:700;color:'+s.c+';margin-top:2px;">'+s.l+'</div></div>';
+    h+='<div class="hdate">'+fmtT(o.creadoEn)+'</div>';
+    h+='</div>';
+  }
+  document.getElementById('hist-body').innerHTML=h;
+}
+
+// ═══ REPORTES ═══
+function renderReportes(){
+  var ops=getVisibleOps();var total=ops.length;
+  var enRampa=ops.filter(function(o){return RS.indexOf(o.estado)>=0&&o.estado!=='ESPERA_RAMPA';}).length;
+  var eir=ops.filter(function(o){return o.estado==='EIR';}).length;
+  var noAptos=ops.filter(function(o){return o.inspeccion&&o.inspeccion.result==='no-apto';}).length;
+  var entradas=ops.filter(function(o){return o.tipo==='ENTRADA';}).length;
+  var salidas=ops.filter(function(o){return o.tipo==='SALIDA';}).length;
+  var clp=ops.filter(function(o){return o.bodega==='CLP';}).length;
+  var msl=ops.filter(function(o){return o.bodega==='MSL';}).length;
+  var h='<div class="rpt-grid">';
+  h+=rptCard(total,'Total Operaciones','var(--t)');
+  h+=rptCard(enRampa,'En Rampas','var(--blue)');
+  h+=rptCard(eir,'Finalizados EIR','var(--green)');
+  h+=rptCard(noAptos,'No Aptos','var(--red)');
+  h+='</div>';
+  h+='<div class="rpt-sec"><div class="rpt-sec-title">Por Tipo</div>';
+  h+=rptBar('ENTRADA',entradas,total,'var(--blue)');
+  h+=rptBar('SALIDA',salidas,total,'var(--amber)');
+  h+='</div>';
+  h+='<div class="rpt-sec"><div class="rpt-sec-title">Por Bodega</div>';
+  h+=rptBar('CLP',clp,total,'var(--primary)');
+  h+=rptBar('MSL',msl,total,'var(--green)');
+  h+='</div>';
+  if(currentUser&&currentUser.role==='supervisor'){
+    var byClient={};
+    ops.forEach(function(o){if(o.cliente)byClient[o.cliente]=(byClient[o.cliente]||0)+1;});
+    var sorted=Object.keys(byClient).sort(function(a,b){return byClient[b]-byClient[a];});
+    if(sorted.length){
+      h+='<div class="rpt-sec"><div class="rpt-sec-title">Por Cliente</div>';
+      for(var i=0;i<sorted.length;i++)h+=rptBar(sorted[i],byClient[sorted[i]],total,'var(--amber)');
+      h+='</div>';
+    }
+  }
+  document.getElementById('rpt-body').innerHTML=h;
+}
+function rptCard(n,l,c){return '<div class="rpt-card"><div class="rpt-n" style="color:'+c+';">'+n+'</div><div class="rpt-l">'+l+'</div></div>';}
+function rptBar(label,n,total,color){
+  var pct=total>0?Math.round(n/total*100):0;
+  return '<div class="rpt-bar-row"><div class="rpt-bar-lbl">'+escHtml(label)+'</div><div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div class="rpt-bar-val">'+n+'</div></div>';
+}
+
+// ═══ BITACORA ═══
+function renderBitacora(){
+  if(!_bitacoraCache.length){document.getElementById('bit-body').innerHTML='<div class="sc-empty">Sin eventos registrados</div>';return;}
+  var h='';
+  for(var i=0;i<_bitacoraCache.length;i++){
+    var b=_bitacoraCache[i];
+    h+='<div class="bit-item"><div class="bit-ev">'+escHtml(b.evento)+'</div>';
+    h+='<div class="bit-meta">';
+    if(b.contenedor)h+='<span class="bit-cont">'+escHtml(b.contenedor)+'</span> &middot; ';
+    if(b.cliente_nombre)h+=escHtml(b.cliente_nombre)+' &middot; ';
+    if(b.usuario)h+=escHtml(b.usuario)+' &middot; ';
+    h+=fmtT(b.creado_en)+'</div></div>';
+  }
+  document.getElementById('bit-body').innerHTML=h;
+}
+
+// ═══ CLIENTES ADMIN ═══
+function renderClientes(){
+  var fab=document.getElementById('fab');if(fab)fab.className='fab show';
+  if(!_clientesCache.length){document.getElementById('cli-body').innerHTML='<div class="sc-empty">Sin clientes. Toca + para agregar.</div>';return;}
+  var h='';
+  for(var i=0;i<_clientesCache.length;i++){
+    var c=_clientesCache[i];
+    h+='<div class="cli-item"><div class="cli-top">';
+    h+='<div><div class="cli-name">'+escHtml(c.nombre)+'</div><div class="cli-user">@'+escHtml(c.usuario)+'</div></div>';
+    h+='<div class="cli-badge '+(c.activo?'on':'off')+'">'+(c.activo?'ACTIVO':'INACTIVO')+'</div>';
+    h+='</div><div class="cli-actions">';
+    h+='<button class="cli-act-btn" onclick="toggleClienteActivo(\''+c.id+'\','+(!c.activo)+')">'+(c.activo?'Desactivar':'Activar')+'</button>';
+    h+='<button class="cli-act-btn" onclick="openEditPassword(\''+c.id+'\',\''+escHtml(c.nombre)+'\')">Cambiar clave</button>';
+    h+='</div></div>';
+  }
+  document.getElementById('cli-body').innerHTML=h;
+}
+function openNewCliente(){
+  document.getElementById('mtitle').textContent='Nuevo Cliente';
+  var h='<div class="fg"><div class="flbl">Nombre empresa</div><input type="text" class="fin" id="nc-nombre" placeholder="CERNAC..." oninput="this.value=this.value.toUpperCase()"></div>';
+  h+='<div class="fg"><div class="flbl">Usuario (login)</div><input type="text" class="fin" id="nc-user" placeholder="cernac"></div>';
+  h+='<div class="fg"><div class="flbl">Contraseña</div><input type="password" class="fin" id="nc-pass" placeholder="••••••••"></div>';
+  h+='<button class="btn-p btn-green" onclick="saveNewCliente()">CREAR CLIENTE</button>';
+  document.getElementById('mbody').innerHTML=h;openMod();
+}
+async function saveNewCliente(){
+  var nombre=(document.getElementById('nc-nombre')||{}).value||'';
+  var user=(document.getElementById('nc-user')||{}).value||'';
+  var pass=(document.getElementById('nc-pass')||{}).value||'';
+  if(!nombre||!user||!pass){showToast('Completa todos los campos');return;}
+  try{
+    var r=await sb.from('clientes').insert({nombre:nombre,usuario:user.toLowerCase().trim(),password:pass,activo:true});
+    if(r.error){showToast('Error: '+(r.error.message||'usuario ya existe'));return;}
+    closeMod();
+    var r2=await sb.from('clientes').select('*').order('nombre',{ascending:true});
+    _clientesCache=r2.data||[];renderClientes();
+    showToast('Cliente creado',true);
+    logBit('Cliente creado: '+nombre,null,{usuario:user});
+  }catch(e){showToast('Error al crear cliente');}
+}
+async function toggleClienteActivo(id,newVal){
+  try{
+    await sb.from('clientes').update({activo:newVal}).eq('id',id);
+    var c=_clientesCache.find(function(x){return x.id===id;});if(c)c.activo=newVal;
+    renderClientes();showToast(newVal?'Cliente activado':'Cliente desactivado',true);
+  }catch(e){showToast('Error al actualizar');}
+}
+function openEditPassword(id,nombre){
+  document.getElementById('mtitle').textContent='Cambiar clave — '+nombre;
+  var h='<div class="fg"><div class="flbl">Nueva contraseña</div><input type="password" class="fin" id="ep-pass" placeholder="••••••••"></div>';
+  h+='<button class="btn-p btn-green" onclick="saveEditPassword(\''+id+'\')">GUARDAR</button>';
+  document.getElementById('mbody').innerHTML=h;openMod();
+}
+async function saveEditPassword(id){
+  var pass=(document.getElementById('ep-pass')||{}).value||'';
+  if(!pass){showToast('Ingresa la nueva contraseña');return;}
+  try{
+    await sb.from('clientes').update({password:pass}).eq('id',id);
+    closeMod();showToast('Contraseña actualizada',true);
+  }catch(e){showToast('Error al actualizar');}
+}
+
 // ═══ MODAL & HELPERS ═══
 function openMod() { document.getElementById('mov').classList.remove('hidden'); }
 function closeMod() { document.getElementById('mov').classList.add('hidden'); }
@@ -1291,8 +1665,6 @@ function fmtT(iso) {
 
 // ═══ INIT ═══
 document.addEventListener('DOMContentLoaded', function() {
-  loadDemo();
-  refresh();
 
   document.getElementById('mclose').addEventListener('click', closeMod);
   document.getElementById('mov').addEventListener('click', function(e){ if(e.target===this) closeMod(); });
