@@ -596,7 +596,7 @@ function showDash(){
   document.getElementById('hdr-role').textContent=currentUser.label;
   document.getElementById('vlogin').style.display='none';
   document.getElementById('vdash').style.display='';
-  document.querySelectorAll('.sup-only').forEach(function(el){el.style.display=currentUser.role==='supervisor'?'':'none';});
+  document.querySelectorAll('.sup-only').forEach(function(el){el.style.display=currentUser.role==='supervisor'?'flex':'none';});
   switchScreen('rampas');
   dbInit();
 }
