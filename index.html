@@ -76,7 +76,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .ctimer{font-family:'Barlow Condensed',sans-serif;font-size:8px;font-weight:700;color:var(--green);text-align:center;letter-spacing:.5px;margin-top:auto;padding-bottom:2px;line-height:1.2;min-height:12px;transition:color .5s}
 .cflags{display:flex;flex-direction:column;gap:2px;position:absolute;top:3px;right:2px;z-index:5}
 .cflag{width:7px;height:7px;border-radius:50%}
-.cflag.hazmat{background:#ff4466;box-shadow:0 0 4px #ff446688}.cflag.alto{background:#f5a20b;box-shadow:0 0 4px #f5a20b88}.cflag.fragil{background:#b388ff;box-shadow:0 0 4px #b388ff88}
+.cflag.hazmat{background:#ff4466;box-shadow:0 0 4px #ff446688}.cflag.alto{background:#f5a20b;box-shadow:0 0 4px #f5a20b88}.cflag.fragil{background:#b388ff;box-shadow:0 0 4px #b388ff88}.cflag.general{background:rgba(255,255,255,.25)}
 .flag-row{display:flex;gap:6px;margin-top:4px}
 .flag-btn{flex:1;padding:7px 4px;border-radius:6px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:var(--t3);text-align:center;cursor:pointer;transition:all .15s;letter-spacing:.5px}
 .flag-btn.active-haz{border-color:#ff4466!important;background:rgba(255,68,102,.12)!important;color:#ff4466!important}
@@ -469,10 +469,7 @@ input[type=file]{display:none}
   </div>
 
   <!-- BITACORA SCREEN (sup only) -->
-  <div id="sc-bitacora" class="screen">
-    <div class="sc-hdr"><div class="sc-title">Bit&#225;cora</div><div class="sc-sub">Registro de actividad</div></div>
-    <div id="bit-body"><div class="sc-empty">Cargando...</div></div>
-  </div>
+  
 
   <!-- CLIENTES SCREEN (sup only) -->
   <div id="sc-clientes" class="screen">
@@ -494,10 +491,7 @@ input[type=file]{display:none}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       <span class="bnav-lbl">Reportes</span>
     </button>
-    <button class="bnav-btn sup-only" id="bn-bitacora" onclick="switchScreen('bitacora')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
-      <span class="bnav-lbl">Bit&#225;cora</span>
-    </button>
+
     <button class="bnav-btn sup-only" id="bn-clientes" onclick="switchScreen('clientes')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span class="bnav-lbl">Clientes</span>
@@ -514,7 +508,7 @@ var sb = window.supabase.createClient(
 );
 
 // ═══ CACHE ═══
-var _opsCache=[], _clientesCache=[], _bitacoraCache=[], _rtChannel=null, _dockTimer=null;
+var _opsCache=[], _clientesCache=[], _rtChannel=null, _dockTimer=null;
 
 function fmtDur(ms){
   var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;
@@ -538,8 +532,8 @@ function toggleFlag(f){
   if(!aData.flags)aData.flags=[];
   var idx=aData.flags.indexOf(f);
   if(idx>=0){aData.flags.splice(idx,1);}else{aData.flags.push(f);}
-  var map={HAZMAT:'fl-haz',ALTO_VALOR:'fl-av',FRAGIL:'fl-fr'};
-  var cls={HAZMAT:'active-haz',ALTO_VALOR:'active-av',FRAGIL:'active-fr'};
+  var map={HAZMAT:'fl-haz',ALTO_VALOR:'fl-av',FRAGIL:'fl-fr',GENERAL:'fl-gen'};
+  var cls={HAZMAT:'active-haz',ALTO_VALOR:'active-av',FRAGIL:'active-fr',GENERAL:'active-gen'};
   var el=document.getElementById(map[f]);
   if(el){el.className='flag-btn'+(aData.flags.indexOf(f)>=0?' '+cls[f]:'');}
 }
@@ -592,13 +586,7 @@ function logBit(evento,opId,datos){
   var op=opId?_opsCache.find(function(o){return o.id===opId;}):null;
   sb.from('bitacora').insert({op_id:opId||null,contenedor:op?op.contenedor:null,cliente_nombre:op?op.cliente:null,evento:evento,usuario:currentUser?currentUser.label:null,rol:currentUser?currentUser.role:null,datos:datos||null}).then(function(){});
 }
-async function fetchBitacora(){
-  document.getElementById('bit-body').innerHTML='<div class="sc-empty">Cargando...</div>';
-  try{
-    var r=await sb.from('bitacora').select('*').order('creado_en',{ascending:false}).limit(100);
-    _bitacoraCache=r.data||[];renderBitacora();
-  }catch(e){document.getElementById('bit-body').innerHTML='<div class="sc-empty">Error al cargar</div>';}
-}
+
 
 // ═══ AUTH ═══
 var currentUser=null;
@@ -638,7 +626,7 @@ function showDash(){
 }
 
 function doLogout(){
-  currentUser=null;_opsCache=[];_clientesCache=[];_bitacoraCache=[];
+  currentUser=null;_opsCache=[];_clientesCache=[];
   if(_rtChannel){sb.removeChannel(_rtChannel);_rtChannel=null;}
   document.getElementById('lg-user').value='';
   document.getElementById('lg-pass').value='';
@@ -657,9 +645,9 @@ var currentScreen='rampas';
 var _histFilter='all';
 
 function switchScreen(name){
-  if((name==='bitacora'||name==='clientes')&&currentUser&&currentUser.role!=='supervisor')name='rampas';
+  if((name==='clientes')&&currentUser&&currentUser.role!=='supervisor')name='rampas';
   currentScreen=name;
-  ['rampas','historial','reportes','bitacora','clientes'].forEach(function(s){
+  ['rampas','historial','reportes','clientes'].forEach(function(s){
     var sc=document.getElementById('sc-'+s);if(sc)sc.classList.toggle('active',s===name);
     var bn=document.getElementById('bn-'+s);if(bn)bn.classList.toggle('active',s===name);
   });
@@ -669,7 +657,6 @@ function switchScreen(name){
   else{stopDockTimer();}
   if(name==='historial')renderHistorial();
   else if(name==='reportes')renderReportes();
-  else if(name==='bitacora')fetchBitacora();
   else if(name==='clientes')renderClientes();
 }
 
@@ -954,19 +941,21 @@ function buildCBox(op, isDA, isBuf) {
   var isSel = drag.active && drag.opId===op.id;
   var selCls = isSel ? ' selected' : '';
   var daCls = isDA ? ' dest-av' : '';
-  var contNum = op.contenedor.substring(0,4) + '...' + op.contenedor.slice(-4);
-  var cliShort = (op.cliente || '').substring(0,6).toUpperCase();
+  var cliShort = (op.cliente || '').substring(0,8).toUpperCase();
   var ht = isBuf ? 90 : 148;
   var boxCls = isBuf ? ('bbox ' + (isPost?'buffer-post':op.tipo.toLowerCase()) + selCls) : ('cbox ' + sc + selCls + daCls);
   var clickFn = isBuf ? "onRampTap('" + op.bodega + "','buf','" + op.id + "')" : "onRampTap('" + op.bodega + "','" + (op.rampa||'') + "','" + op.id + "')";
   var dataAttrs = ' data-op-id="'+op.id+'" data-drop="'+(isBuf?'buf':'ramp')+'" data-bodega="'+op.bodega+'" data-rampa="'+(op.rampa||'')+'"';
   if(!isBuf && op.inicioOp) dataAttrs += ' data-inicio="'+op.inicioOp+'"';
-  var flagsHtml=''; if(op.flags&&op.flags.length){flagsHtml='<div class="cflags">';if(op.flags.indexOf('HAZMAT')>=0)flagsHtml+='<div class="cflag hazmat"></div>';if(op.flags.indexOf('ALTO_VALOR')>=0)flagsHtml+='<div class="cflag alto"></div>';if(op.flags.indexOf('FRAGIL')>=0)flagsHtml+='<div class="cflag fragil"></div>';flagsHtml+='</div>';}
+  var flagsHtml=''; if(op.flags&&op.flags.length){flagsHtml='<div class="cflags">';if(op.flags.indexOf('HAZMAT')>=0)flagsHtml+='<div class="cflag hazmat"></div>';if(op.flags.indexOf('ALTO_VALOR')>=0)flagsHtml+='<div class="cflag alto"></div>';if(op.flags.indexOf('FRAGIL')>=0)flagsHtml+='<div class="cflag fragil"></div>';if(op.flags.indexOf('GENERAL')>=0)flagsHtml+='<div class="cflag general"></div>';flagsHtml+='</div>';}
   var h = '<div class="' + boxCls + '"' + dataAttrs + ' style="height:' + ht + 'px;" onclick="' + clickFn + '">';
   h += '<div class="cfill" style="height:'+fillH+'%;background:'+fillColor+';"></div>';
   h += '<div class="ccont">'+flagsHtml;
   h += '<div class="ctag" style="background:'+tagBg+';color:'+tagC+';">'+s.s+'</div>';
-  h += '<div class="cvert"><div class="ctext-v" style="color:'+s.c+';text-shadow:0 0 6px '+s.g+';">'+contNum+' '+cliShort+'</div></div>';
+  h += '<div class="cvert" style="flex-direction:column-reverse;gap:2px;">';
+  h += '<div class="ctext-v" style="color:'+s.c+';text-shadow:0 0 6px '+s.g+';flex:1;overflow:hidden;">'+op.contenedor+'</div>';
+  h += '<div class="ctext-v" style="font-size:6.5px;color:var(--t3);letter-spacing:.3px;font-weight:600;flex:none;">'+cliShort+'</div>';
+  h += '</div>';
   if(!isBuf && op.inicioOp) h += '<div class="ctimer">--:--</div>';
   h += '</div></div>';
   return h;
@@ -1082,7 +1071,8 @@ function openAssign(b, r) {
   h += '<div class="fg"><div class="flbl">Condici\u00f3n especial</div><div class="flag-row">';
   h += '<div class="flag-btn" id="fl-haz" onclick="toggleFlag(\x27HAZMAT\x27)">\u2623 HAZMAT</div>';
   h += '<div class="flag-btn" id="fl-av" onclick="toggleFlag(\x27ALTO_VALOR\x27)">&#36; Alto Valor</div>';
-  h += '<div class="flag-btn" id="fl-fr" onclick="toggleFlag(\x27FRAGIL\x27)">\u26a0 Fr\u00e1gil</div>';
+  h += '<div class="flag-btn" id="fl-fr" onclick="toggleFlag(\x27FRAGIL\x27)">\u26a0 Fr\u00e1gil</div>
+  h += '<div class="flag-btn" id="fl-gen" onclick="toggleFlag(\x27GENERAL\x27)">\u2610 General</div>';';
   h += '</div></div>';
   h += '<button class="btn-p btn-green" onclick="confirmAssign()">ASIGNAR '+r+'</button>';
   document.getElementById('mbody').innerHTML = h;
@@ -1682,20 +1672,6 @@ function rptBar(label,n,total,color){
 }
 
 // ═══ BITACORA ═══
-function renderBitacora(){
-  if(!_bitacoraCache.length){document.getElementById('bit-body').innerHTML='<div class="sc-empty">Sin eventos registrados</div>';return;}
-  var h='';
-  for(var i=0;i<_bitacoraCache.length;i++){
-    var b=_bitacoraCache[i];
-    h+='<div class="bit-item"><div class="bit-ev">'+escHtml(b.evento)+'</div>';
-    h+='<div class="bit-meta">';
-    if(b.contenedor)h+='<span class="bit-cont">'+escHtml(b.contenedor)+'</span> &middot; ';
-    if(b.cliente_nombre)h+=escHtml(b.cliente_nombre)+' &middot; ';
-    if(b.usuario)h+=escHtml(b.usuario)+' &middot; ';
-    h+=fmtT(b.creado_en)+'</div></div>';
-  }
-  document.getElementById('bit-body').innerHTML=h;
-}
 
 // ═══ CLIENTES ADMIN ═══
 function renderClientes(){
