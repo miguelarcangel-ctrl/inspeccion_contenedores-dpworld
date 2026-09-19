@@ -24,11 +24,11 @@
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
 
 /* HEADER */
-.hdr{background:linear-gradient(90deg,var(--pk) 0%,var(--primary) 100%);border-bottom:1px solid var(--b1);padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 20px rgba(0,0,0,.4)}
+.hdr{background:#fff;border-bottom:1px solid #e2e2e2;padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.07)}
 .hdr-l{display:flex;align-items:center;gap:10px}
-.hdr-logo{width:28px;height:28px;flex-shrink:0}
-.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;line-height:1}
-.hdr-sub{font-size:9px;color:var(--green);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.hdr-logo{flex-shrink:0}.hdr-logo img{height:34px;display:block}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#1a1760;letter-spacing:.5px;line-height:1}
+.hdr-sub{font-size:9px;color:var(--primary);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
 
 /* STATS */
 .stats{display:flex;background:rgba(13,10,46,.8);border-bottom:1px solid var(--b0)}
@@ -345,51 +345,49 @@ input[type=file]{display:none}
 .sup-only{display:none}
 
 /* ── LOGIN ── */
-#vlogin{position:fixed;inset:0;background:linear-gradient(135deg,#07051c 0%,var(--pk) 50%,#1a1760 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:999}
-.lg-logo{text-align:center;margin-bottom:32px}
-.lg-brand{font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:800;color:#fff;letter-spacing:3px;line-height:1}
-.lg-sub{font-size:10px;color:var(--green);font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-top:6px}
-.lg-ref{font-size:10px;color:rgba(255,255,255,.3);margin-top:8px;letter-spacing:1px}
-.lg-card{background:rgba(255,255,255,.04);border:1px solid var(--b2);border-radius:14px;padding:28px 22px;width:100%;max-width:340px;backdrop-filter:blur(20px)}
-.lg-card-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
-.lg-card-sub{font-size:12px;color:var(--t3);margin-bottom:22px}
-.lg-err{background:rgba(232,0,61,.1);border:1px solid rgba(232,0,61,.3);color:#ff6680;font-size:12px;font-weight:600;padding:9px 12px;border-radius:7px;margin-bottom:14px;display:none}
+.lg-err{background:rgba(220,0,50,.06);border:1px solid rgba(220,0,50,.2);color:#c0002a;font-size:12px;font-weight:600;padding:9px 12px;border-radius:7px;margin-bottom:14px;display:none;text-align:left}
 .lg-err.show{display:block}
-.lg-fg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
-.lg-lbl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
-.lg-in{border:1.5px solid var(--b1);border-radius:7px;padding:11px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:#fff;background:rgba(255,255,255,.05);width:100%;transition:border-color .2s}
-.lg-in:focus{outline:none;border-color:var(--green);background:rgba(0,195,137,.05)}
-.lg-in::placeholder{color:var(--t4)}
-.lg-btn{width:100%;background:var(--green);color:var(--bg);border:none;border-radius:7px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;margin-top:6px}
-.lg-btn:hover{background:var(--gd)}
+.lg-fg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;text-align:left}
+.lg-lbl{font-size:10px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:1px}
+.lg-in{border:1.5px solid #ddd;border-radius:7px;padding:11px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:#1a1760;background:#fff;width:100%;transition:border-color .2s}
+.lg-in:focus{outline:none;border-color:var(--primary);background:#f8f8ff}
+.lg-in::placeholder{color:#bbb}
+.lg-btn{width:100%;background:var(--primary);color:#fff;border:none;border-radius:7px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;margin-top:4px}
+.lg-btn:hover{background:var(--pk)}
+.login-footer{font-size:10px;color:#bbb;margin-top:18px;letter-spacing:.04em;text-align:center}
+.login-logo{text-align:center;margin-bottom:20px}
+.login-logo img{height:70px;margin:0 auto;display:block;object-fit:contain}
+.login-sub{font-size:.7rem;color:var(--primary);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
+.login-ref{font-size:.68rem;color:#999;margin-top:4px;letter-spacing:.03em}
+.login-card{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.35);display:flex;flex-direction:column}
+#vlogin{position:fixed;inset:0;background:var(--pk);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999}
 .hdr-user{display:flex;align-items:center;gap:8px}
-.hdr-role{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(0,195,137,.15);color:var(--green);border:1px solid rgba(0,195,137,.25)}
-.hdr-logout{background:var(--b0);border:1px solid var(--b1);color:var(--t3);padding:5px 10px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
-.hdr-logout:hover{background:var(--b2);color:#fff}
+.hdr-role{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(62,60,144,.1);color:var(--primary);border:1px solid rgba(62,60,144,.2)}
+.hdr-logout{background:#f4f4f7;border:1px solid #ddd;color:#555;padding:5px 10px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.hdr-logout:hover{background:#e0e0ec;color:#1a1760}
 </style>
 </head>
 <body>
 
 <!-- ════ LOGIN ════ -->
 <div id="vlogin">
-  <div class="lg-logo">
-    <div class="lg-brand">DP WORLD</div>
-    <div class="lg-sub">Control de Rampas</div>
-    <div class="lg-ref">SL-02-007 · DAL Colón Logistics Park</div>
-  </div>
-  <div class="lg-card">
-    <div class="lg-card-title">Iniciar Sesión</div>
-    <div class="lg-card-sub">Ingresa tus credenciales para continuar</div>
-    <div class="lg-err" id="lg-err">Usuario o contraseña incorrectos</div>
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="https://raw.githubusercontent.com/miguelarcangel-ctrl/cotizador-dpworld/main/logo_white.png" alt="DP World">
+      <div class="login-sub">3PL PANAM&#193; &middot; CONTROL DE RAMPAS</div>
+      <div class="login-ref">SL-02-007 &middot; DAL Col&#243;n Logistics Park</div>
+    </div>
+    <div class="lg-err" id="lg-err">Usuario o contrase&#241;a incorrectos</div>
     <div class="lg-fg">
       <div class="lg-lbl">Usuario</div>
       <input type="text" class="lg-in" id="lg-user" placeholder="Ingresa tu usuario" autocomplete="username">
     </div>
     <div class="lg-fg">
-      <div class="lg-lbl">Contraseña</div>
-      <input type="password" class="lg-in" id="lg-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="lg-lbl">Contrase&#241;a</div>
+      <input type="password" class="lg-in" id="lg-pass" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="lg-btn" onclick="doLogin()">INGRESAR</button>
+    <div class="login-footer">&#128274; USO INTERNO EXCLUSIVO &middot; DP WORLD PANAM&#193;</div>
   </div>
 </div>
 
@@ -409,13 +407,7 @@ input[type=file]{display:none}
 <div id="vdash" style="display:none">
   <div class="hdr">
     <div class="hdr-l">
-      <div class="hdr-logo">
-        <svg viewBox="0 0 28 28" fill="none">
-          <circle cx="14" cy="14" r="11" stroke="#00C389" stroke-width="1.5" fill="rgba(0,195,137,0.08)"/>
-          <ellipse cx="14" cy="14" rx="5" ry="11" stroke="rgba(0,195,137,0.25)" stroke-width="1" fill="none"/>
-          <line x1="4" y1="14" x2="24" y2="14" stroke="rgba(0,195,137,0.18)" stroke-width="1"/>
-        </svg>
-      </div>
+      <div class="hdr-logo"><img src="https://raw.githubusercontent.com/miguelarcangel-ctrl/cotizador-dpworld/main/logo_white.png" alt="DP World"></div>
       <div>
         <div class="hdr-title">DP WORLD</div>
         <div class="hdr-sub">Control de Rampas</div>
@@ -591,6 +583,12 @@ function logBit(evento,opId,datos){
 
 
 // ═══ AUTH ═══
+// SESSION
+var SESSION_KEY='dpw_rampas_sess';
+var SESSION_TTL=3600000;
+function saveSession(){if(!currentUser)return;try{localStorage.setItem(SESSION_KEY,JSON.stringify({u:currentUser,t:Date.now()}));}catch(e){}}
+function clearSession(){try{localStorage.removeItem(SESSION_KEY);}catch(e){}}function loadSession(){try{var s=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');if(!s||!s.u||!s.t)return false;if(Date.now()-s.t>SESSION_TTL){clearSession();return false;}currentUser=s.u;return true;}catch(e){return false;}}
+
 var currentUser=null;
 var _loginPending=false;
 
@@ -619,6 +617,7 @@ async function doLogin(){
 }
 
 function showDash(){
+  saveSession();
   document.getElementById('hdr-role').textContent=currentUser.label;
   document.getElementById('vlogin').style.display='none';
   document.getElementById('vdash').style.display='';
@@ -628,6 +627,7 @@ function showDash(){
 }
 
 function doLogout(){
+  clearSession();
   currentUser=null;_opsCache=[];_clientesCache=[];
   if(_rtChannel){sb.removeChannel(_rtChannel);_rtChannel=null;}
   document.getElementById('lg-user').value='';
@@ -1877,6 +1877,9 @@ function fmtT(iso) {
 
 // ═══ INIT ═══
 document.addEventListener('DOMContentLoaded', function() {
+  if(loadSession()){showDash();}
+  document.addEventListener('click', function(){if(currentUser)saveSession();});
+  document.addEventListener('touchstart', function(){if(currentUser)saveSession();},{passive:true});
 
   document.getElementById('mclose').addEventListener('click', closeMod);
   document.getElementById('mov').addEventListener('click', function(e){ if(e.target===this) closeMod(); });
