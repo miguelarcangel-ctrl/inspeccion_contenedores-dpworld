@@ -1665,17 +1665,35 @@ async function buildAndSharePDF(op) {
     var doc = new jsPDF({unit:'mm', format:'a4'});
     var W=210, M=14, y=0;
     var navy=[26,16,96], green=[0,195,137], white=[255,255,255], gray=[90,96,117], lg=[240,241,245], red=[232,0,61];
-    doc.setFillColor.apply(doc,navy); doc.rect(0,0,W,30,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor.apply(doc,white);
-    doc.text('DP WORLD PANAMA', M, 11);
-    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc,green);
-    doc.text('FORMULARIO DE INSPECCION DE CONTENEDORES - SL-02-007', M, 17);
-    doc.setTextColor(180,180,200); doc.setFontSize(7);
-    doc.text('Generado: '+new Date().toLocaleString('es-PA')+' - '+op.bodega, M, 23);
+    // Fetch DP World logo for PDF header
+    var _logoData=null, _logoAR=3.2;
+    try {
+      var _lr=await fetch('https://raw.githubusercontent.com/miguelarcangel-ctrl/cotizador-dpworld/main/logo_white.png');
+      var _lb=await _lr.blob();
+      var _lu=URL.createObjectURL(_lb);
+      var _li=await new Promise(function(res,rej){var i=new Image();i.onload=function(){res(i);};i.onerror=rej;i.src=_lu;});
+      _logoAR=(_li.naturalWidth||1)/(_li.naturalHeight||1);
+      var _lc=document.createElement('canvas');
+      _lc.width=_li.naturalWidth;_lc.height=_li.naturalHeight;
+      _lc.getContext('2d').drawImage(_li,0,0);
+      _logoData=_lc.toDataURL('image/png');
+      URL.revokeObjectURL(_lu);
+    }catch(e){}
+    // Header: white background + navy divider line
+    doc.setFillColor(255,255,255); doc.rect(0,0,W,30,'F');
+    doc.setFillColor.apply(doc,navy); doc.rect(0,29.5,W,0.5,'F');
+    var _tx=M;
+    if(_logoData){var _lh=18,_lw=_lh*_logoAR;doc.addImage(_logoData,'PNG',M,(30-_lh)/2,_lw,_lh);_tx=M+_lw+5;}
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor.apply(doc,navy);
+    doc.text('DP WORLD PANAMA', _tx, 11);
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(62,60,144);
+    doc.text('FORMULARIO DE INSPECCION DE CONTENEDORES - SL-02-007', _tx, 17);
+    doc.setTextColor(130,130,150); doc.setFontSize(6.5);
+    doc.text('Generado: '+new Date().toLocaleString('es-PA')+' - '+op.bodega, _tx, 23);
     var insp = op.inspeccion;
     var bc = insp&&insp.result==='apto' ? green : insp&&insp.result==='no-apto' ? red : [200,150,0];
     doc.setFillColor.apply(doc,bc); doc.roundedRect(W-M-34,8,34,14,3,3,'F');
-    doc.setTextColor.apply(doc,navy); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.setTextColor.apply(doc,white); doc.setFont('helvetica','bold'); doc.setFontSize(10);
     doc.text(insp&&insp.result==='apto'?'APTO':insp&&insp.result==='no-apto'?'NO APTO':'PARCIAL', W-M-17, 17, {align:'center'});
     y=36;
     doc.setFillColor.apply(doc,lg); doc.rect(M,y,W-M*2,6,'F');
