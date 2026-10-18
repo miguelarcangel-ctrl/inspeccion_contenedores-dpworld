@@ -15,18 +15,35 @@
       <div class="hdr-sub">Last Mile</div>
     </div>
   </div>
-  <div class="hdr-user"><span class="hdr-role">Prototipo</span></div>
+  <div class="hdr-user"><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
 </div>
-<div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Vista por rol" id="roles"></nav></div></div>
+<div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Secciones" id="roles"></nav></div></div>
 <div class="flow gut"><ol id="flow"></ol></div>
 <main class="lm-main gut"><div class="wrap" id="view"></div></main>
 <footer class="gut"><div class="wrap"><span>Prototipo navegable · datos de ejemplo · Bodega DP World</span><button class="link" data-act="reset">Reiniciar demo</button></div></footer>
 <div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="toasts" aria-live="polite"></div>
+<div id="vlogin" hidden>
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World">
+      <div class="login-sub">3PL Panamá · Last Mile</div>
+      <div class="login-ref">Prototipo · DAL Colón Logistics Park</div>
+    </div>
+    <div class="lg-err" id="lg-err">Usuario o contraseña incorrectos</div>
+    <form id="lgForm" novalidate>
+      <div class="lg-fg"><label class="lg-lbl" for="lg-user">Usuario</label><input type="text" class="lg-in" id="lg-user" placeholder="Ingresa tu usuario" autocomplete="username"></div>
+      <div class="lg-fg"><label class="lg-lbl" for="lg-pass">Contraseña</label><input type="password" class="lg-in" id="lg-pass" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="lg-btn" type="submit">INGRESAR</button>
+    </form>
+    <div class="lg-demo"><span class="lg-lbl">Usuarios de prueba · contraseña «demo»</span><div id="lg-demo"></div></div>
+    <div class="login-footer">🔒 USO INTERNO EXCLUSIVO · DP WORLD PANAMÁ</div>
+  </div>
+</div>
 <script>
 (function(){
 'use strict';
-const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v2';
+const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v3';
 const ST=[
  {k:'publicado',l:'Publicado'},
  {k:'confirmado',l:'Confirmado · por aprobar'},
@@ -60,7 +77,22 @@ const ago=t=>{const m=Math.round((Date.now()-t)/MIN);if(m<1)return'ahora';if(m<6
 const cnum=nav=>(PREFIX[nav]||'TCKU')+' '+String(100000+rnd(899999))+'-'+rnd(10);
 const plate=()=>'AK'+(1000+rnd(8999));
 
-let state, objUrls={}, ui={role:'cliente',carrier:'c1'};
+let state, objUrls={}, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main'};
+
+/* sesión: cada usuario activa solo las vistas de su rol */
+const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
+const SECTIONS={cliente:[['main','Mis bookings']],transportista:[['main','Bookings']],bodega:[['main','Bookings'],['rampas','Rampas']],admin:[['main','Panel'],['rampas','Rampas']]};
+
+/* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
+const RAMPS=6, BUFFER=16;
+const RST={
+ ESPERA_RAMPA:{l:'En cola de rampa',s:'ESPERA',c:'#f5a20b',g:'rgba(245,162,11,.4)',p:'wait'},
+ PEND_INSP:{l:'Pend. inspección',s:'INSP!',c:'#E8003D',g:'rgba(232,0,61,.5)',p:'off'},
+ INSPECCIONADO:{l:'Inspeccionado',s:'INSP OK',c:'#00C389',g:'rgba(0,195,137,.5)',p:'on'},
+ P20:{l:'20 % en proceso',s:'20%',c:'#ff6830',g:'rgba(255,104,48,.4)',p:'wait'},
+ P50:{l:'50 % en proceso',s:'50%',c:'#f5a20b',g:'rgba(245,162,11,.4)',p:'wait'},
+ P100:{l:'100 % completado',s:'100%',c:'#00C389',g:'rgba(0,195,137,.5)',p:'on'},
+ BUFFER_POST:{l:'En buffer · sellado',s:'BUFF',c:'rgba(255,255,255,.35)',g:'rgba(255,255,255,.1)',p:'on'}};
 
 function mkContainers(n,status,carrierId,nav,opts){
   opts=opts||{};
@@ -83,7 +115,8 @@ function seed(){
   const B2={id:'b2',ref:'HLCU COL2610458',naviera:'Hapag-Lloyd',size:'40\' HC',qty:8,pickFrom:D('2026-10-16T13:00:00-05:00'),pickTo:D('2026-10-17T12:00:00-05:00'),pickLoc:PICK[1],delFrom:D('2026-10-20T06:00:00-05:00'),delTo:D('2026-10-20T20:00:00-05:00'),delLoc:DELIV[1],docs:['Booking_HLCU_COL2610458.pdf'],cargo:mixto,createdAt:now-74*MIN,publishedAt:now-72*MIN,mode:'abierto',directTo:null,hidden:[]};
   B2.containers=mkContainers(8,'publicado',null,'Hapag-Lloyd');
   const B3={id:'b3',ref:'CMDU PAN0918822',naviera:'CMA CGM',size:'20\' DV',qty:6,pickFrom:D('2026-10-14T07:00:00-05:00'),pickTo:D('2026-10-15T12:00:00-05:00'),pickLoc:PICK[2],delFrom:D('2026-10-15T14:00:00-05:00'),delTo:D('2026-10-16T18:00:00-05:00'),delLoc:DELIV[2],docs:['Booking_CMDU_PAN0918822.pdf','Instrucciones_naviera.pdf'],cargo:vigor,createdAt:now-30*HOUR,publishedAt:now-30*HOUR,mode:'directo',directTo:'c2',hidden:[]};
-  B3.containers=[].concat(mkContainers(2,'transito','c2','CMA CGM',{boxes:980}),mkContainers(2,'bodega','c2','CMA CGM',{boxes:980}),mkContainers(2,'retiro','c2','CMA CGM'));
+  B3.containers=[].concat(mkContainers(2,'transito','c2','CMA CGM',{boxes:980}),mkContainers(1,'bodega','c2','CMA CGM',{boxes:980}),mkContainers(3,'retiro','c2','CMA CGM'));
+  Object.assign(B3.containers[3],{ramp:'P50',rampa:'R2'});Object.assign(B3.containers[4],{ramp:'PEND_INSP',rampa:'R4'});
   B3.containers.forEach((c,i)=>c.seq=i+1);
   const B4={id:'b4',ref:'MEDU PA7710451',naviera:'MSC',size:'40\' HC',qty:4,pickFrom:D('2026-10-12T07:00:00-05:00'),pickTo:D('2026-10-13T12:00:00-05:00'),pickLoc:PICK[3],delFrom:D('2026-10-14T06:00:00-05:00'),delTo:D('2026-10-14T18:00:00-05:00'),delLoc:DELIV[0],docs:['Booking_MEDU_PA7710451.pdf'],cargo:atlas,createdAt:now-80*HOUR,publishedAt:now-80*HOUR,mode:'directo',directTo:'c1',hidden:[]};
   B4.containers=[].concat(mkContainers(2,'devuelto','c1','MSC',{boxes:1540}),mkContainers(2,'entregado','c1','MSC',{boxes:1540}));
@@ -147,6 +180,14 @@ function cargoHtml(b,full){
     (c.notes?'<div class="note"><b>Instrucciones especiales:</b> '+esc(c.notes)+'</div>':'')+'</div>';
 }
 
+/* rampas */
+const rs=c=>c.status==='retiro'?(c.ramp||'ESPERA_RAMPA'):c.status==='bodega'?'BUFFER_POST':null;
+function allC(){const o=[];state.bookings.forEach(b=>b.containers.forEach(c=>o.push({b:b,c:c})));return o;}
+const rampOcc=r=>allC().find(x=>x.c.status==='retiro'&&x.c.rampa===r);
+const freeRamps=()=>Array.from({length:RAMPS},(_,i)=>'R'+(i+1)).filter(r=>!rampOcc(r));
+const cola=()=>allC().filter(x=>rs(x.c)==='ESPERA_RAMPA');
+function rampBadge(c){const k=rs(c);return '<span class="cli-badge '+RST[k].p+'">'+(c.rampa?c.rampa+' · ':'')+RST[k].l+'</span>';}
+
 /* attention badges */
 function attention(){
   const a={cliente:0,bodega:0,transportista:0,admin:0};
@@ -157,14 +198,15 @@ function attention(){
   a.admin+=state.confs.filter(f=>f.status==='pendiente').length;
   return a;
 }
-const ROLES=[{k:'cliente',l:'Cliente · CERNAC'},{k:'bodega',l:'Bodega'},{k:'transportista',l:'Transportista'},{k:'admin',l:'DP World · Admin'}];
 function renderRoles(){
-  const a=attention();
-  document.getElementById('roles').innerHTML=ROLES.map(r=>'<button class="tab'+(ui.role===r.k?' active':'')+'" role="tab" aria-selected="'+(ui.role===r.k)+'" data-act="role" data-k="'+r.k+'">'+r.l+(a[r.k]?'<span class="badge">'+a[r.k]+'</span>':'')+'</button>').join('');
-  const steps=[['cliente','Cliente crea booking'],['transportista','Transportista confirma ≤ 1 h'],['admin','DP World aprueba'],['transportista','Retiro de vacío'],['bodega','Bodega carga y sella'],['transportista','Entrega lleno y devuelve'],['cliente','Cliente ve todo bajo DP World']];
+  const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
+  const badge={bodega:{rampas:cola().length},admin:{main:attention().admin}}[ui.role]||{};
+  nav.hidden=secs.length<2;
+  nav.innerHTML=secs.length<2?'':secs.map(x=>'<button class="tab'+(ui.sec===x[0]?' active':'')+'" role="tab" aria-selected="'+(ui.sec===x[0])+'" data-act="sec" data-k="'+x[0]+'">'+x[1]+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
+  document.getElementById('hdr-role').textContent=ui.role==='transportista'?CN[ui.carrier]:(USERS[ui.user]||{}).n||ui.role;
+  const steps=[['cliente','Cliente crea booking'],['transportista','Transportista confirma ≤ 1 h'],['admin','DP World aprueba'],['transportista','Retiro de vacío → cola de rampa'],['bodega','Rampa: inspección, carga y sello'],['transportista','Entrega lleno y devuelve'],['cliente','Cliente ve todo bajo DP World']];
   document.getElementById('flow').innerHTML=steps.map((s,i)=>'<li class="'+(s[0]===ui.role?'on':'')+'"><b>'+(i+1)+'</b>'+s[1]+'</li>').join('');
 }
-
 /* ===== CLIENTE ===== */
 function vCliente(){
   let pr=0,asg=0,ruta=0,ent=0;
@@ -179,32 +221,87 @@ function vCliente(){
 
 /* ===== BODEGA ===== */
 function vBodega(){
-  const ready=[],coming=[],done=[];
-  state.bookings.forEach(b=>{const ct=counts(b);
-    if(ct.retiro)ready.push(b);
+  const q=[],inR=[],coming=[],done=[];
+  state.bookings.forEach(b=>{const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');
+    if(cs.some(c=>!c.rampa))q.push(b);
+    if(cs.some(c=>c.rampa))inR.push(b);
     if(ct.publicado+ct.confirmado+ct.asignado>0)coming.push(b);
     if(ct.bodega)done.push(b);});
+  const rows=(b,f,lbl)=>'<div class="tw"><table class="t" style="min-width:0"><thead><tr><th>#</th><th>Contenedor</th><th>Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+
+    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td>'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c)+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
   const card=(b,mode)=>{
-    const ct=counts(b);
-    let rows='';
-    if(mode==='ready') rows='<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+
-      b.containers.filter(c=>c.status==='retiro').map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td>'+esc(c.plate)+' · '+esc(c.driver)+'</td><td><span class="cli-badge wait">Vacío en bodega</span></td><td class="r"><button class="btn-p btn-green inl" data-act="load" data-b="'+b.id+'" data-c="'+c.id+'">Marcar cargado</button></td></tr>').join('')+'</tbody></table></div>';
-    const head = mode==='ready'?'<span class="cli-badge wait">'+ct.retiro+' vacíos por cargar</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' aún sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' cargados y sellados</span>';
-    return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b,head)+cargoHtml(b)+rows+'</div></article>';
+    const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');
+    const head=mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola de rampa</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' aún sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' cargados y sellados</span>';
+    const t=mode==='cola'?rows(b,c=>c.status==='retiro'&&!c.rampa,'Asignar rampa'):mode==='rampa'?rows(b,c=>c.status==='retiro'&&c.rampa,'Abrir rampa'):mode==='done'?rows(b,c=>c.status==='bodega','Ver'):'';
+    return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b,head)+cargoHtml(b)+t+'</div></article>';
   };
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Personal de bodega</h1><p class="sc-sub">Qué cargar en cada contenedor, según lo que pidió el cliente. Tú marcas «Cargado en bodega» al cerrar y sellar.</p></div></div>'+
-   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Vacíos listos para cargar</h2><span class="psect-cnt">'+ready.reduce((s,b)=>s+counts(b).retiro,0)+'</span></div>'+(ready.length?'<div class="cards">'+ready.map(b=>card(b,'ready')).join('')+'</div>':'<div class="empty">No hay contenedores vacíos esperando carga. Aparecen aquí cuando el transportista marca «Retiro de vacío».</div>')+'</div>'+
-   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Próximas cargas</h2><span class="psect-cnt">'+coming.length+'</span></div>'+(coming.length?'<div class="cards">'+coming.map(b=>card(b,'coming')).join('')+'</div>':'<div class="empty">Sin bookings por llegar.</div>')+'</div>'+
-   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Cargados, esperando salida</h2><span class="psect-cnt">'+done.reduce((s,b)=>s+counts(b).bodega,0)+'</span></div>'+(done.length?'<div class="cards">'+done.map(b=>card(b,'done')).join('')+'</div>':'<div class="empty">Nada cargado pendiente de salir.</div>')+'</div></section>';
+  const n=(arr,f)=>arr.reduce((s,b)=>s+b.containers.filter(f).length,0);
+  const sec=(title,cnt,arr,mode,empty)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+title+'</h2><span class="psect-cnt">'+cnt+'</span></div>'+(arr.length?'<div class="cards">'+arr.map(b=>card(b,mode)).join('')+'</div>':'<div class="empty">'+empty+'</div>')+'</div>';
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bookings de bodega</h1><p class="sc-sub">Lo que viene a la bodega y qué cargar en cada contenedor. Los vacíos que retira el transportista entran solos a la cola de rampas; «Cargado en bodega» se marca al sellar en Rampas.</p></div><button class="btn-p btn-green inl" data-act="sec" data-k="rampas">Ir a rampas</button></div>'+
+   sec('En cola de rampa · vacíos retirados',n(q,c=>c.status==='retiro'&&!c.rampa),q,'cola','No hay vacíos esperando rampa.')+
+   sec('En rampa · inspección y carga',n(inR,c=>c.status==='retiro'&&c.rampa),inR,'rampa','No hay contenedores en rampa.')+
+   sec('Próximas cargas',coming.length,coming,'coming','Sin bookings por llegar.')+
+   sec('Cargados y sellados · esperando salida',n(done,c=>c.status==='bodega'),done,'done','Nada cargado pendiente de salir.')+'</section>';
 }
 
+/* ===== RAMPAS (mismo muelle que Control de Rampas) ===== */
+function cbox(x,isBuf){
+  const c=x.c,k=rs(c),st=RST[k],post=k==='BUFFER_POST';
+  const fillH=k==='P20'?25:k==='P50'?55:(k==='P100'||post)?100:5;
+  const sc={PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',P20:'p20',P50:'p50',P100:'p100',BUFFER_POST:'buffer-post'}[k]||'salida';
+  const cls=isBuf?'bbox '+(post?'buffer-post':'salida'):'cbox '+sc;
+  return '<div class="'+cls+'" style="height:'+(isBuf?90:148)+'px" role="button" tabindex="0" aria-label="'+esc(c.number+' · '+st.l)+'" data-act="rtap" data-b="'+x.b.id+'" data-c="'+c.id+'">'+
+    '<div class="cfill" style="height:'+fillH+'%;background:'+((k==='P100'||post)?'rgba(0,195,137,0.2)':'rgba(245,162,11,0.2)')+'"></div><div class="ccont">'+
+    '<div class="ctag" style="background:'+(post?'rgba(0,195,137,.15)':'rgba(245,162,11,.15)')+';color:'+(post?'#00C389':'#f5a20b')+'">'+st.s+'</div>'+
+    '<div class="cvert" style="flex-direction:column-reverse;gap:2px"><div class="ctext-v" style="color:'+st.c+';text-shadow:0 0 6px '+st.g+';flex:1;overflow:hidden">'+esc(c.number.replace(/\s/g,''))+'</div><div class="ctext-v" style="font-size:6.5px;color:var(--t3);letter-spacing:.3px;font-weight:600;flex:none">CERNAC</div></div></div></div>';
+}
+function vRampas(){
+  const all=allC(),q=cola(),post=all.filter(x=>x.c.status==='bodega'),inR=all.filter(x=>x.c.status==='retiro'&&x.c.rampa);
+  const pend=inR.filter(x=>x.c.ramp==='PEND_INSP').length;
+  let doors='<div class="wh-bl">CLP</div>',slots='';
+  for(let i=1;i<=RAMPS;i++){const r='R'+i,x=rampOcc(r);
+    doors+='<div class="rdoor"><div class="dframe"><div class="dseal"></div><div class="dnum">'+r+'</div></div></div>';
+    slots+='<div class="rslot"><div class="rpipe"></div>'+(x?cbox(x,false):'<div class="cbox libre" role="button" tabindex="0" aria-label="Rampa '+r+' libre" data-act="rfree" data-r="'+r+'"><div class="ccont"><div class="libre-plus"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="libre-lbl">Libre</div></div></div>')+'<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>';}
+  const buf=q.concat(post);let bs='';
+  for(let i=1;i<=BUFFER;i++){const x=buf[i-1];bs+='<div class="bslot"><div class="bpipe"></div>'+(x?cbox(x,true):'<div class="bbox libre-b"></div>')+'<div class="bnum">B'+i+'</div></div>';}
+  const sb=(n,cls,l)=>'<div class="sbox"><div class="sn '+cls+'">'+n+'</div><div class="sl2">'+l+'</div></div>';
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Control de Rampas · CLP</h1><p class="sc-sub">Los vacíos que retira el transportista llegan solos a la cola. Toca uno en cola para asignarle rampa; toca la rampa para inspeccionar, cargar y sellar.</p></div>'+(ui.role==='bodega'?'<button class="btn-p btn-navy inl" data-act="sec" data-k="main">Ver bookings</button>':'')+'</div>'+
+   '<div class="stats">'+sb(RAMPS-inR.length,'sl','Rampas libres')+sb(q.length,q.length?'sa':'sl','En cola')+sb(pend,pend?'er':'sl','Pend. inspección')+sb(inR.length-pend,'en','En carga')+sb(post.length,'ok','Sellados en buffer')+'</div>'+
+   '<div class="dock-wrap"><div class="wh-wall"><div class="wh-inner">'+doors+'</div></div><div class="rscroll"><div class="rinner">'+slots+'</div></div><div class="dlane"><div class="dlane-lbl">ZONA DE MANIOBRA</div></div>'+
+   '<div class="bzone"><div class="bzone-hdr"><div class="bzone-lbl">Buffer de espera</div>'+(q.length?'<div class="bzone-pill">'+q.length+' en cola</div>':'')+'</div><div class="bscroll"><div class="binner">'+bs+'</div></div></div></div>'+
+   '<p class="muted" style="font-size:12px">Solo se muestran las operaciones de SALIDA que vienen de bookings. En la app integrada conviven con las ENTRADAS que hoy se registran a mano.</p></section>';
+}
+function rampModal(bid,cid){
+  const b=B(bid),c=b.containers.find(x=>x.id===cid),k=rs(c);
+  const d='data-b="'+bid+'" data-c="'+cid+'"';
+  let body='',foot='<button class="btn-p btn-navy inl" data-act="close">Cerrar</button>';
+  if(k==='ESPERA_RAMPA'){const fr=freeRamps();
+    body=fr.length?'<div class="f"><span class="flbl">Asignar a rampa libre</span><div class="htabs">'+fr.map(r=>'<button class="htab" data-act="toRamp" '+d+' data-r="'+r+'">'+r+'</button>').join('')+'</div></div>':'<div class="abox warn">No hay rampas libres. El contenedor sigue en cola.</div>';}
+  else if(k==='PEND_INSP'){
+    body='<div class="abox err">Contenedor de salida: requiere inspección antes de cargar.</div><div class="abox inf">En Control de Rampas aquí se llena el checklist de 20 puntos con fotos y se genera el PDF. En el prototipo se simula con un botón.</div>';
+    foot+='<button class="btn-p btn-navy inl" data-act="rstep" '+d+' data-to="ESPERA_RAMPA">Devolver a cola</button><button class="btn-p btn-green inl" data-act="rstep" '+d+' data-to="INSPECCIONADO">Inspección OK</button>';}
+  else if(k==='INSPECCIONADO'||k==='P20'||k==='P50'){
+    body='<div class="f"><span class="flbl">Avance de carga</span><div class="prog-row">'+['P20','P50','P100'].map(x=>'<div class="pbtn '+x.toLowerCase()+'" role="button" tabindex="0" data-act="rstep" '+d+' data-to="'+x+'"><div class="pn">'+x.slice(1)+'%</div><div class="pl">'+(x==='P100'?'Completo':'En proceso')+'</div></div>').join('')+'</div></div>';}
+  else if(k==='P100'){
+    body='<div class="abox suc">Carga completa. Cierra puertas, coloca el sello y toma la foto: el contenedor pasa al buffer y el cliente lo ve como «Cargado en bodega».</div>';
+    foot+='<button class="btn-p btn-green inl" data-act="seal" '+d+'>Cerrar y sellar</button>';}
+  else if(k==='BUFFER_POST'){
+    body='<div class="abox suc">Cargado y sellado · sello '+esc(c.seal)+(c.loaded?' · '+c.loaded.toLocaleString('es-PA')+' cajas':'')+'. Espera a que el transportista lo marque en tránsito.</div>';}
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · contenedor '+c.seq+(c.rampa?' · '+c.rampa:'')+'</span><h3 class="mtitle">'+esc(c.number)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="row">'+rampBadge(c)+'</div><div class="bk-meta"><span>Unidad <strong>'+esc(c.plate)+' · '+esc(c.driver)+'</strong></span><span>Transportista <strong>'+esc(CN[c.carrierId]||'—')+'</strong></span></div>'+body+cargoHtml(b)+'</div><div class="sh-f">'+foot+'</div>',true);
+}
+function freeModal(r){
+  const q=cola();
+  openModal('<div class="sh-h"><div><span class="flbl">Rampa libre</span><h3 class="mtitle">'+r+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form">'+(q.length?'<span class="flbl">Asignar un contenedor en cola</span><div class="psblist">'+q.map(x=>'<button class="btn-p btn-navy" style="margin:0;justify-content:space-between" data-act="toRamp" data-b="'+x.b.id+'" data-c="'+x.c.id+'" data-r="'+r+'"><span>'+esc(x.c.number)+'</span><span class="muted">'+esc(x.b.ref)+' · '+esc(x.b.size)+'</span></button>').join('')+'</div>':'<div class="empty">No hay contenedores en cola. Llegan solos cuando el transportista marca «Retiro de vacío».</div>')+'</div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cerrar</button></div>',true);
+}
 /* ===== TRANSPORTISTA ===== */
 function vTrans(){
   const me=ui.carrier;
   const avail=state.bookings.filter(b=>openCount(b)>0&&(b.mode==='abierto'||b.directTo===me)&&b.hidden.indexOf(me)<0);
   const pend=state.confs.filter(f=>f.carrierId===me&&f.status==='pendiente');
   const mine=state.bookings.filter(b=>b.containers.some(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado));
-  const sel='<label class="row"><span class="flbl">Operando como</span><select class="fin" id="carrierSel" data-act="carrier">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===me?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>';
   const availCard=b=>{
     const ex=expired(b);
     return '<article class="bk'+(ex?' alert':'')+'">'+windows(b)+'<div class="bk-main">'+idRow(b,b.mode==='directo'?'<span class="cli-badge tr">Directo para ti</span>':'<span class="cli-badge mute">Abierto</span>')+
@@ -225,14 +322,14 @@ function vTrans(){
        else if(c.status==='transito')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="entregado">Entregado lleno</button>';
        else if(c.status==='entregado')act='<button class="btn-p btn-navy inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="devuelto">Devuelto</button>';
        else act='<span class="cli-badge on">Cerrado</span>';
-       return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
+       return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status,c)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
      (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+'</div></article>';};
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Transportista</h1><p class="sc-sub">Bookings para transporte bajo bandera DP World. Confirma disponibilidad de equipo dentro de 1 hora; DP World aprueba antes de quedar en firme.</p></div>'+sel+'</div>'+
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">'+esc(CN[me])+'</h1><p class="sc-sub">Bookings para transporte bajo bandera DP World. Confirma disponibilidad de equipo dentro de 1 hora; DP World aprueba antes de quedar en firme.</p></div></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Disponibles para confirmar</h2><span class="psect-cnt">'+avail.length+'</span></div>'+(avail.length?'<div class="cards">'+avail.map(availCard).join('')+'</div>':'<div class="empty">No hay bookings publicados para ti en este momento.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Esperando aprobación de DP World</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Booking</th><th>Tamaño</th><th>Contenedores</th><th>Enviado</th><th>Nota</th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td class="mono">'+esc(b.ref)+'</td><td>'+esc(b.size)+'</td><td class="num">'+f.qty+'</td><td>'+ago(f.at)+'</td><td>'+esc(f.note||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada pendiente de aprobación.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Mis operaciones</h2><span class="psect-cnt">'+mine.length+'</span></div>'+(mine.length?'<div class="cards">'+mine.map(mineCard).join('')+'</div>':'<div class="empty">Sin contenedores asignados todavía.</div>')+'</div></section>';
 }
-function statusPill(k){const i=IDX[k];const cls=i===0?'wait':i===1?'wait':i>=6?'on':'tr';return '<span class="cli-badge '+cls+'">'+esc(LBL[k])+'</span>';}
+function statusPill(k,c){if(k==='retiro'&&c&&c.rampa)return '<span class="cli-badge tr">En bodega · '+RST[c.ramp].l+'</span>';const i=IDX[k];const cls=i===0?'wait':i===1?'wait':i>=6?'on':'tr';return '<span class="cli-badge '+cls+'">'+esc(LBL[k])+'</span>';}
 
 /* ===== ADMIN ===== */
 function vAdmin(){
@@ -263,7 +360,7 @@ function detail(id){
   '<div class="sh-b"><div class="bk" style="box-shadow:none">'+windows(b)+'<div class="bk-main">'+idRow(b,stagePill(b,r))+bar(b)+'<div><span class="flbl">Documentos</span>'+docsHtml(b.docs)+'</div></div></div>'+
   (r!=='transportista'?cargoHtml(b):'')+
   '<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Estado</th><th>Chofer</th><th>Placa</th>'+(isAdmin?'<th>Transportista real</th>':'')+'<th>Sello</th><th>Pruebas</th></tr></thead><tbody>'+
-  b.containers.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por asignar</span>')+'</td><td>'+(isAdmin?'<select data-act="fix" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Corregir estado">'+ST.map(s=>'<option value="'+s.k+'"'+(s.k===c.status?' selected':'')+'>'+esc(s.l)+'</option>').join('')+'</select>':(r==='cliente'&&IDX[c.status]<=1?'<span class="cli-badge wait">Programando</span>':statusPill(c.status)))+'</td>'+
+  b.containers.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por asignar</span>')+'</td><td>'+(isAdmin?'<select data-act="fix" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Corregir estado">'+ST.map(s=>'<option value="'+s.k+'"'+(s.k===c.status?' selected':'')+'>'+esc(s.l)+'</option>').join('')+'</select>':(r==='cliente'&&IDX[c.status]<=1?'<span class="cli-badge wait">Programando</span>':statusPill(c.status,c)))+'</td>'+
     '<td>'+(c.driver?esc(c.driver)+(r==='cliente'?' <span class="muted" style="font-size:12px">· DP World</span>':''):'<span class="muted">—</span>')+'</td><td>'+(c.plate?esc(c.plate):'<span class="muted">—</span>')+'</td>'+
     (isAdmin?'<td>'+(IDX[c.status]<=2?'<select data-act="reassign" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Transportista"><option value="">— Sin asignar —</option>'+CARRIERS.map(k=>'<option value="'+k.id+'"'+(k.id===c.carrierId?' selected':'')+'>'+esc(k.name)+'</option>').join('')+'</select>':esc(CN[c.carrierId]||'—'))+'</td>':'')+
     '<td class="mono">'+(esc(c.seal)||'<span class="muted">—</span>')+'</td><td style="font-size:12.5px">'+(c.proofs.length?c.proofs.map(p=>(objUrls[p.name]?'<a href="'+objUrls[p.name]+'" target="_blank" rel="noopener">':'<span>')+esc(p.type)+(objUrls[p.name]?'</a>':'</span>')).join('<br>'):'<span class="muted">—</span>')+'</td></tr>').join('')+
@@ -349,7 +446,7 @@ function advForm(bid,cid,to){
   '<div class="sh-b form">'+(to==='bodega'?cargoHtml(b):'')+
   (st.fields.length?'<div class="fgrid">'+st.fields.map(f=>'<label class="f"><span class="flbl">'+f[1]+'</span><input class="fin'+(f[0]==='num'?' mono':'')+'" id="fx-'+f[0]+'" type="'+f[2]+'" value="'+esc(def[f[0]])+'"></label>').join('')+'</div>':'')+
   (st.proof?'<label class="f"><span class="flbl">Prueba · '+st.proof+'</span><input class="fin" type="file" id="fx-file" accept="image/*,application/pdf"></label>':'')+
-  (to==='retiro'?'<div class="abox inf">El cliente verá chofer y placa como unidad DP World.</div>':'')+
+  (to==='retiro'?'<div class="abox inf">El cliente verá chofer y placa como unidad DP World. Al marcar el retiro, el contenedor entra solo a la cola de rampas de bodega.</div>':'')+
   (planned&&to==='bodega'?'<div class="abox inf">Plan del cliente: '+planned.toLocaleString('es-PA')+' cajas por contenedor.</div>':'')+
   '<div class="err" id="aErr"></div></div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="doAdv" data-b="'+bid+'" data-c="'+cid+'" data-to="'+to+'">Marcar '+st.t.toLowerCase()+'</button></div>',true);
 }
@@ -357,13 +454,13 @@ function doAdv(bid,cid,to){
   const b=B(bid),c=b.containers.find(x=>x.id===cid),st=STEP[to];
   const g=k=>{const el=document.getElementById('fx-'+k);return el?el.value.trim():'';};
   for(const f of st.fields){if(f[3]&&!g(f[0])){document.getElementById('aErr').textContent='Completa: '+f[1]+'.';return;}}
-  if(to==='retiro'){c.number=g('num').toUpperCase();c.driver=g('drv');c.plate=g('plt').toUpperCase();}
-  if(to==='bodega'){c.seal=g('seal');c.loaded=parseInt(g('box'),10)||null;}
+  if(to==='retiro'){c.number=g('num').toUpperCase();c.driver=g('drv');c.plate=g('plt').toUpperCase();c.ramp='ESPERA_RAMPA';c.rampa=null;}
+  if(to==='bodega'){c.seal=g('seal');c.loaded=parseInt(g('box'),10)||null;log('Bodega selló '+c.number+' en '+c.rampa+' y lo pasó al buffer');c.ramp=null;c.rampa=null;}
   const fi=document.getElementById('fx-file');
   if(st.proof){const file=fi&&fi.files&&fi.files[0];const name=file?file.name:(st.proof.replace(/\W+/g,'_')+'_'+(c.number||c.seq).toString().replace(/\W/g,'')+'.pdf');if(file){try{objUrls[name]=URL.createObjectURL(file);}catch(e){}}c.proofs.push({type:st.proof,name:name,by:OWNER[to]});}
   c.status=to;
   log((to==='bodega'?'Bodega':CN[c.carrierId])+' marcó '+st.t.toLowerCase()+' · '+b.ref+' #'+c.seq+(c.number?' ('+c.number+')':''));
-  closeModal();commit();toast(st.t+' registrado. El cliente ya lo ve.');
+  closeModal();commit();toast(st.t+' registrado. '+(to==='retiro'?'Ya aparece en la cola de rampas de bodega.':'El cliente ya lo ve.'));
 }
 
 /* ===== modal / toast ===== */
@@ -375,14 +472,16 @@ function toast(t,bad){const el=document.createElement('div');el.className='toast
 /* ===== render ===== */
 let expSeen=new Set();
 function render(){
+  const lg=document.getElementById('vlogin');
+  lg.hidden=!!ui.auth;
+  if(!ui.auth){document.getElementById('lg-demo').innerHTML=Object.keys(USERS).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
+  if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
-  v.innerHTML=ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  v.innerHTML=ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
   window.scrollTo(0,sy);
   tickClocks();
-  const ov=document.getElementById('ov');
-  if(!ov.hidden){const d=document.querySelector('#sheet [data-detail]');}
 }
 function commit(){save();render();const ov=document.getElementById('ov');if(!ov.hidden&&ov.dataset.detail){detail(ov.dataset.detail);}}
 function checkExpiry(){
@@ -400,7 +499,18 @@ document.addEventListener('click',e=>{
   const a=t.dataset.act, ov=document.getElementById('ov');
   if(['carrier','pref','fix','reassign'].indexOf(a)>=0)return;
   switch(a){
-   case 'role':ui.role=t.dataset.k;save();render();window.scrollTo(0,0);break;
+   case 'sec':closeModal();ui.sec=t.dataset.k;save();render();window.scrollTo(0,0);break;
+   case 'demo':document.getElementById('lg-user').value=t.dataset.u;document.getElementById('lg-pass').value='demo';document.getElementById('lg-pass').focus();break;
+   case 'logout':closeModal();document.getElementById('toasts').innerHTML='';ui.auth=false;ui.user='';save();render();break;
+   case 'rtap':ov.dataset.detail='';rampModal(t.dataset.b,t.dataset.c);break;
+   case 'rfree':ov.dataset.detail='';freeModal(t.dataset.r);break;
+   case 'toRamp':{const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c),r=t.dataset.r;
+     if(rampOcc(r)){toast('La rampa '+r+' ya está ocupada.',true);break;}
+     c.rampa=r;c.ramp='PEND_INSP';log('Bodega asignó '+c.number+' ('+b.ref+') a '+r);closeModal();commit();toast(c.number+' asignado a '+r+'. Pendiente de inspección.');break;}
+   case 'rstep':{const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c),to=t.dataset.to;
+     if(to==='ESPERA_RAMPA')c.rampa=null;
+     c.ramp=to;log('Bodega: '+c.number+' → '+RST[to].l.toLowerCase());closeModal();commit();toast(c.number+': '+RST[to].l+'.');break;}
+   case 'seal':advForm(t.dataset.b,t.dataset.c,'bodega');break;
    case 'new':ov.dataset.detail='';newBooking();break;
    case 'addsku':addSku();break;
    case 'rmsku':t.parentElement.remove();break;
@@ -440,12 +550,22 @@ document.addEventListener('change',e=>{
     if(IDX[t.value]===0){c.carrierId=null;c.confId=null;}
     if(IDX[t.value]>=IDX.retiro&&!c.number){c.number=cnum(b.naviera);}
     if(IDX[t.value]>=IDX.asignado&&!c.carrierId){c.carrierId=b.directTo||state.settings.preferred;}
+    c.rampa=null;c.ramp=t.value==='retiro'?'ESPERA_RAMPA':null;
     log('DP World corrigió '+b.ref+' #'+c.seq+': '+LBL[old]+' → '+LBL[t.value]);commit();toast('Estado corregido.');}
   else if(a==='reassign'){const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c);
     if(!t.value){c.carrierId=null;c.status='publicado';c.confId=null;}else{c.carrierId=t.value;c.confId=null;if(IDX[c.status]<2)c.status='asignado';}
     log('DP World asignó '+b.ref+' #'+c.seq+' a '+(CN[t.value]||'nadie'));commit();toast('Contenedor reasignado.');}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('ov').hidden){document.getElementById('ov').dataset.detail='';closeModal();}});
+document.getElementById('lgForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const u=document.getElementById('lg-user').value.trim().toLowerCase(),pw=document.getElementById('lg-pass').value,err=document.getElementById('lg-err'),usr=USERS[u];
+  if(!usr||pw!=='demo'){err.classList.add('show');return;}
+  err.classList.remove('show');
+  Object.assign(ui,{auth:true,user:u,role:usr.role,carrier:usr.carrier||ui.carrier,sec:'main'});
+  document.getElementById('lg-pass').value='';save();render();window.scrollTo(0,0);
+});
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click();return;}if(e.key==='Escape'&&!document.getElementById('ov').hidden){document.getElementById('ov').dataset.detail='';closeModal();}});
 
 load();
 state.bookings.forEach(b=>{if(expired(b))expSeen.add(b.id);});

@@ -59,6 +59,13 @@ Last Mile agrega **lo que pasa antes**: el booking del cliente, la publicación 
 | entregado lleno | `EN_PUERTO → EIR` |
 | devuelto | (nuevo, opcional: cierre de chasis) |
 
+### Cómo lo simula el prototipo
+- **Login por rol** (usuarios de prueba con contraseña `demo`): `cernac` (cliente), `bodega`, `costa` / `istmo` / `caribe` (cada transportista) y `admin`. Cada sesión activa solo las vistas de su rol.
+- **Bodega** entra a *Bookings* (sección previa: en cola de rampa, en rampa, próximas cargas con detalle de carga, y cargados y sellados) y de ahí a *Rampas*, que usa el mismo muelle de Control de Rampas (CLP, 6 rampas, buffer de 16).
+- **Retiro de vacío** (transportista) → el contenedor entra solo a la cola (`ESPERA_RAMPA`). Bodega le asigna rampa → `PEND_INSP` → inspección → `P20/P50/P100` → **Cerrar y sellar** (sello, cajas y foto) → `BUFFER_POST`, que es lo que el cliente ve como «Cargado en bodega». Ya no se marca a mano en Last Mile.
+- **En tránsito, entregado lleno y devuelto** los marca el transportista.
+- El admin ve el panel y también Rampas.
+
 ### Cambios de datos propuestos (Supabase)
 ```sql
 CREATE TABLE transportistas (

@@ -466,6 +466,7 @@ main.lm-main{padding-block:18px 56px}
 .lm .t tr:first-child td{border-top:0}
 .lm .t tbody tr:hover td{background:var(--b0)}
 .lm .t td.r{text-align:right}
+.lm .t td.mono{white-space:nowrap}
 .lm .t a{color:var(--blue)}
 .lm .chips{display:flex;flex-wrap:wrap;gap:4px}
 .lm .chip{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;padding:1px 8px;border-radius:10px;background:var(--b0);border:1px solid var(--b1);white-space:nowrap}
@@ -517,4 +518,13 @@ main.lm-main{padding-block:18px 56px}
 @media (prefers-reduced-motion:reduce){.lm #toasts .toast{animation:none}}
 .lm footer{padding-block:18px;color:var(--t3);font-size:12px;border-top:1px solid var(--b0)}
 .lm footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+/* login por rol (tarjeta de la raíz) y muelle de rampas */
+.lm .lg-demo{margin-top:18px;text-align:center}
+.lm .lg-demo .lg-lbl{display:block;margin-bottom:8px}
+.lm .lg-demo div{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.lm .tabs[hidden]{display:none!important}
+.lm .dock-wrap{padding:0}
+.lm .prog-row{margin-bottom:0}
+.lm .psblist .muted{font-family:'Barlow',sans-serif;font-size:12px;font-weight:500}
+.lm [role=button][data-act]:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 @media (max-width:560px){.lm .vhead .sc-title{font-size:22px}.lm .win{grid-template-columns:1fr}.lm .tab{flex:1 1 40%}.lm .sn{font-size:22px}.lm .hdr-role{display:none}}
