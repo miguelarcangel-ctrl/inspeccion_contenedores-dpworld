@@ -43,7 +43,7 @@
 <script>
 (function(){
 'use strict';
-const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v4';
+const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v5';
 const ST=[
  {k:'publicado',l:'Publicado'},
  {k:'confirmado',l:'Confirmado · por aprobar'},
@@ -68,6 +68,7 @@ const DELIV=['MIT · Manzanillo','CCT · Colón Container Terminal','PPC · Cris
 const DRIVERS=['José Batista','Ricardo Morán','Luis Castillo','Edwin Pinzón','Abdiel Quintero','Marcos Rodríguez','Iván Sánchez','Félix Ortega'];
 const PREFIX={'Maersk':'MSKU','Hapag-Lloyd':'HLXU','CMA CGM':'CMAU','MSC':'MEDU','ONE':'ONEU','Evergreen':'EGHU','COSCO':'CSNU'};
 const Date_=s=>new Date(s).getTime(), D=Date_, DAY=24*3600000;
+const weekStart=t=>{const d=new Date(t-5*3600000),dw=(d.getUTCDay()+6)%7;return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-dw)+5*3600000;};
 const SHIFT=Math.round((Date.now()-Date_('2026-10-16T09:00:00-05:00'))/DAY)*DAY;
 const rnd=n=>Math.floor(Math.random()*n);
 const uid=p=>p+Math.random().toString(36).slice(2,8);
@@ -78,11 +79,11 @@ const ago=t=>{const m=Math.round((Date.now()-t)/MIN);if(m<1)return'ahora';if(m<6
 const cnum=nav=>(PREFIX[nav]||'TCKU')+' '+String(100000+rnd(899999))+'-'+rnd(10);
 const plate=()=>'AK'+(1000+rnd(8999));
 
-let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{}};
+let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90'};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
 const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
-const SECTIONS={cliente:[['main','Mis bookings']],transportista:[['main','Bookings']],bodega:[['main','Bookings'],['rampas','Rampas']],admin:[['main','Panel'],['rampas','Rampas']]};
+const SECTIONS={cliente:[['main','Mis bookings']],transportista:[['main','Bookings']],bodega:[['main','Bookings'],['rampas','Rampas']],admin:[['main','Panel'],['rampas','Rampas'],['reportes','Reportes']]};
 
 /* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
 const RAMPS=6, BUFFER=16;
@@ -95,6 +96,13 @@ const RST={
  P100:{l:'100 % completado',s:'100%',c:'#00C389',g:'rgba(0,195,137,.5)',p:'on'},
  BUFFER_POST:{l:'En buffer · sellado',s:'BUFF',c:'rgba(255,255,255,.35)',g:'rgba(255,255,255,.1)',p:'on'}};
 
+/* fecha y hora en que cada contenedor llegó a cada estado (base de la reportería) */
+function stamp(c,k,at){(c.t=c.t||{})[k]=at||Date.now();}
+function backfill(b){
+  // tiempos plausibles para los datos de ejemplo vivos (seed)
+  const step={publicado:b.publishedAt,confirmado:b.publishedAt+18*MIN,asignado:b.publishedAt+40*MIN,retiro:b.pickFrom+2*HOUR,bodega:b.pickFrom+9*HOUR,transito:b.pickFrom+12*HOUR,entregado:b.delFrom+3*HOUR,devuelto:b.delFrom+9*HOUR};
+  b.containers.forEach(c=>ST.forEach((x,i)=>{if(i<=IDX[c.status]&&!(c.t&&c.t[x.k]))stamp(c,x.k,step[x.k]);}));
+}
 function mkContainers(n,status,carrierId,nav,opts){
   opts=opts||{};
   return Array.from({length:n},(_,i)=>{
@@ -126,7 +134,8 @@ function seed(){
   const B5={id:'b5',ref:'ONEU PTY5562018',naviera:'ONE',size:'40\' DV',qty:10,pickFrom:D('2026-10-17T07:00:00-05:00'),pickTo:D('2026-10-19T12:00:00-05:00'),pickLoc:PICK[4],delFrom:D('2026-10-21T06:00:00-05:00'),delTo:D('2026-10-21T18:00:00-05:00'),delLoc:DELIV[1],docs:['Booking_ONEU_PTY5562018.pdf'],cargo:mixto,createdAt:now-9*MIN,publishedAt:now-8*MIN,mode:'directo',directTo:'c1',hidden:[]};
   B5.containers=mkContainers(10,'publicado',null,'ONE');
   b.push(B5,B1,B2,B3,B4);
-  return {settings:{mode:'abierto',preferred:'c1'},bookings:b,
+  b.forEach(backfill);
+  return {settings:{mode:'abierto',preferred:'c1'},bookings:b,hist:seedHistory(now,{atlas:atlas,mixto:mixto,vigor:vigor}),
     confs:[{id:'f1',bookingId:'b1',carrierId:'c1',qty:12,units:12,note:'12 cabezales con chasis 40\' disponibles desde vie 06:00.',at:now-6*MIN,status:'pendiente'},
            {id:'f2',bookingId:'b1',carrierId:'c3',qty:5,units:5,note:'Podemos cubrir 5 el sábado en la mañana.',at:now-3*MIN,status:'pendiente'}],
     log:[{at:now-3*MIN,t:'Rutas del Caribe confirmó 5 contenedores de MAEU 258741963'},{at:now-6*MIN,t:'Costa Atlántica confirmó 12 contenedores de MAEU 258741963'},{at:now-8*MIN,t:'CERNAC creó ONEU PTY5562018 · 10 × 40\' DV · directo a Costa Atlántica'},{at:now-25*MIN,t:'CERNAC creó MAEU 258741963 · 21 × 40\' HC · publicado abierto'},{at:now-72*MIN,t:'CERNAC creó HLCU COL2610458 · 8 × 40\' HC · publicado abierto'}]};
@@ -153,11 +162,52 @@ function samplePdf(lines){
 async function downloadDoc(key,name,ref){
   let blob=null;try{blob=await FILES.get(key);}catch(e){}
   if(!blob){blob=samplePdf(['DP World · Last Mile','Documento de ejemplo: '+name,'Booking: '+ref,'Generado por el prototipo: el archivo original no se subió en esta demo.']);name=name.replace(/\.[^.]+$/,'')+'_ejemplo.pdf';}
-  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
+  bajar(blob,name);
+}
+
+/* historial archivado de ejemplo (~11 semanas): alimenta la reportería, no aparece en las listas operativas.
+   Aleatorio con semilla fija: los números son estables entre reinicios. */
+function seedHistory(now,cargos){
+  let a=20261018;const r=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
+  const pick=arr=>arr[Math.floor(r()*arr.length)], between=(x,y)=>x+r()*(y-x);
+  const Q={c1:{late:.03,ret:.99,ent:.985,prf:.98,dec:.03,force:.02},c2:{late:.09,ret:.95,ent:.94,prf:.92,dec:.08,force:.05},c3:{late:.18,ret:.88,ent:.9,prf:.85,dec:.16,force:.08}};
+  const wCarrier=()=>{const x=r();return x<.5?'c1':x<.8?'c2':'c3';};
+  const wSize=()=>{const x=r();return x<.6?'40\' HC':x<.8?'40\' DV':'20\' DV';};
+  const out=[], monday=weekStart(now);
+  for(let w=11;w>=1;w--){
+    const ws=monday-w*7*DAY, nb=2+Math.floor(r()*3);
+    for(let k=0;k<nb;k++){
+      const nav=pick(NAVIERAS), size=wSize(), qty=2+Math.floor(r()*9), main=wCarrier();
+      const pickFrom=ws+Math.floor(r()*5)*DAY+7*HOUR, pub=pickFrom-between(20,60)*HOUR;
+      const b={id:'h'+w+'_'+k,hist:true,ref:(PREFIX[nav]||'TCKU').slice(0,4)+' '+String(Math.floor(100000000+r()*899999999)),naviera:nav,size:size,qty:qty,
+        pickFrom:pickFrom,pickTo:pickFrom+29*HOUR,pickLoc:pick(PICK),delFrom:pickFrom+3*DAY-HOUR,delTo:pickFrom+3*DAY+between(12,36)*HOUR,delLoc:pick(DELIV),
+        docs:['Booking_'+nav.replace(/\W/g,'')+'.pdf'],cargo:size.indexOf('20')===0?cargos.vigor:pick([cargos.atlas,cargos.mixto]),createdAt:pub-HOUR,publishedAt:pub,mode:'abierto',directTo:null,hidden:[],declines:[],containers:[]};
+      ['c1','c2','c3'].forEach(cid=>{if(cid!==main&&r()<Q[cid].dec*2)b.declines.push({carrierId:cid,at:pub+between(5,50)*MIN});});
+      const split=r()<.15?wCarrier():null, conf={};
+      [main,split].filter(Boolean).forEach(cid=>{const q=Q[cid];conf[cid]=r()<q.force?null:(r()<q.late?between(61,180):between(5,55));});
+      for(let i=0;i<qty;i++){
+        const cid=split&&i>=Math.ceil(qty/2)?split:main, q=Q[cid];
+        const c={id:b.id+'k'+i,seq:i+1,status:'devuelto',carrierId:cid,confId:null,number:(PREFIX[nav]||'TCKU')+' '+String(100000+Math.floor(r()*899999))+'-'+Math.floor(r()*10),
+          driver:pick(DRIVERS),plate:'AK'+(1000+Math.floor(r()*8999)),seal:String(4400000+Math.floor(r()*99999)),loaded:null,proofs:[],t:{publicado:pub}};
+        if(conf[cid]===null){c.t.asignado=pub+between(70,150)*MIN;}
+        else{c.confId='hist';c.t.confirmado=pub+conf[cid]*MIN;c.t.asignado=c.t.confirmado+between(10,40)*MIN;}
+        c.t.retiro=r()<q.ret?b.pickFrom+between(0,26)*HOUR:b.pickTo+between(1,10)*HOUR;
+        c.t.bodega=c.t.retiro+between(3,10)*HOUR;c.t.transito=c.t.bodega+between(1,4)*HOUR;
+        c.t.entregado=r()<q.ent?Math.max(c.t.transito+HOUR,b.delFrom+between(0,6)*HOUR):b.delTo+between(1,12)*HOUR;
+        c.t.devuelto=c.t.entregado+between(4,24)*HOUR;
+        const pr=[['EIR retiro','transportista'],['Foto puerta + sello','bodega'],['EIR entrega lleno','transportista']];
+        if(r()>q.prf)pr.splice(Math.floor(r()*3),1);
+        c.proofs=pr.map(x=>({type:x[0],name:x[0].replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:x[1]}));
+        b.containers.push(c);
+      }
+      out.push(b);
+    }
+  }
+  return out;
 }
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify({state:state,ui:ui}));}catch(e){}}
-function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};return;}}catch(e){}state=seed();}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;state.hist=state.hist||[];ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};return;}}catch(e){}state=seed();}
 function log(t){state.log.unshift({at:Date.now(),t:t});state.log=state.log.slice(0,60);}
 
 /* derived */
@@ -416,6 +466,123 @@ function vAdmin(){
   '<div class="panel"><h2 class="psect-title">Actividad</h2><div class="log">'+state.log.slice(0,12).map(l=>'<div><span class="muted num">'+hm(l.at)+'</span><span>'+esc(l.t)+'</span></div>').join('')+'</div></div></section>';
 }
 
+/* ===== REPORTES (admin) ===== */
+const METAS={conf:95,ret:98,ent:100,prf:100};
+const PERIODOS=[['30','30 días'],['90','90 días'],['mes','Este mes'],['todo','Todo']];
+const PROOFS_REQ=['EIR retiro','Foto puerta + sello','EIR entrega lleno'];
+const pct=(n,d)=>d?Math.round(n/d*1000)/10:null;
+const teu=b=>b.size.indexOf('20')===0?1:2;
+function periodo(){
+  const now=Date.now();
+  if(ui.rp==='30')return now-30*DAY; if(ui.rp==='90')return now-90*DAY;
+  if(ui.rp==='mes'){const d=new Date(now-5*HOUR);return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)+5*HOUR;}
+  return -Infinity;
+}
+function rpRows(){
+  // una fila por contenedor del período (por inicio de la ventana de retiro), con sus mediciones
+  const from=periodo(),now=Date.now(),out=[];
+  state.bookings.concat(state.hist||[]).forEach(b=>{if(b.pickFrom<from)return;b.containers.forEach(c=>{
+    const t=c.t||{},types=c.proofs.map(p=>p.type),i=IDX[c.status];
+    const confMin=t.confirmado&&t.publicado?(t.confirmado-t.publicado)/MIN:null;
+    out.push({b:b,c:c,t:t,
+      conf:{ev:!!(t.confirmado||t.asignado||(t.publicado&&now-t.publicado>HOUR)),ok:confMin!==null&&confMin<=60,min:confMin},
+      ret:{ev:!!(t.retiro||now>b.pickTo),ok:!!(t.retiro&&t.retiro<=b.pickTo)},
+      ent:{ev:!!(t.entregado||now>b.delTo),ok:!!(t.entregado&&t.entregado<=b.delTo)},
+      prf:{ev:i>=IDX.entregado,ok:PROOFS_REQ.every(x=>types.indexOf(x)>=0),n:PROOFS_REQ.filter(x=>types.indexOf(x)>=0).length}});
+  });});
+  return out;
+}
+function kpi(rows,k){const ev=rows.filter(x=>x[k].ev);return {n:ev.filter(x=>x[k].ok).length,d:ev.length,v:pct(ev.filter(x=>x[k].ok).length,ev.length)};}
+function nivel(v,meta){return v===null?'na':v>=meta?'ok':v>=meta-5?'warn':'crit';}
+const NIVEL={ok:['on','✓','Cumple'],warn:['wait','▲','Bajo meta'],crit:['off','✕','Crítico'],na:['mute','–','Sin datos']};
+const fmtPct=v=>v===null?'—':(Math.round(v*10)/10).toLocaleString('es-PA')+' %';
+function celda(v,meta,n){const lv=NIVEL[nivel(v,meta)];return '<span class="rk '+lv[0]+'" title="'+lv[2]+'"><i aria-hidden="true">'+lv[1]+'</i>'+fmtPct(v)+(n!==undefined?'<small>'+n+'</small>':'')+'</span>';}
+function barsSvg(data){
+  // barras verticales, una serie: contenedores por semana (tooltip por barra)
+  const W=560,H=250,pl=30,pb=28,pt=18,max=Math.max(1,...data.map(d=>d.v)),bw=(W-pl)/data.length,gap=Math.min(10,bw*.3);
+  const y=v=>H-pb-(v/max)*(H-pb-pt);
+  const ticks=[0,Math.round(max/2),max];
+  let g=ticks.map(v=>'<line x1="'+pl+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'" class="grid"/><text x="'+(pl-6)+'" y="'+(y(v)+3)+'" class="ax" text-anchor="end">'+v+'</text>').join('');
+  const iMax=data.reduce((m,d,i)=>d.v>data[m].v?i:m,0),last=data.length-1;
+  data.forEach((d,i)=>{const x=pl+i*bw+gap/2,w=bw-gap,yy=y(d.v),h=H-pb-yy,r=Math.min(4,w/2,h);
+    g+=(d.v?'<path class="bar" d="M'+x+','+(H-pb)+'V'+(yy+r)+'q0,-'+r+' '+r+',-'+r+'H'+(x+w-r)+'q'+r+',0 '+r+','+r+'V'+(H-pb)+'Z"/>':'')+
+      '<rect class="hit" x="'+(x-gap/2)+'" y="'+pt+'" width="'+bw+'" height="'+(H-pb-pt)+'" tabindex="0" data-tip="'+esc(d.tip)+'" aria-label="'+esc(d.tip)+'"/>'+
+      ((i===iMax||i===last)&&d.v?'<text x="'+(x+w/2)+'" y="'+(yy-4)+'" class="lb" text-anchor="middle">'+d.v+'</text>':'')+
+      ((data.length<=12||i%2===last%2)?'<text x="'+(x+w/2)+'" y="'+(H-8)+'" class="ax" text-anchor="middle">'+d.l+'</text>':'');});
+  return '<svg class="rp-chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Contenedores por semana">'+g+'<line x1="'+pl+'" x2="'+W+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" class="base"/></svg>';
+}
+function hbars(title,map){
+  const e=Object.entries(map).sort((x,y)=>y[1]-x[1]),max=Math.max(1,...e.map(x=>x[1]));
+  return '<div class="rpt-sec"><div class="rpt-sec-title">'+title+'</div>'+(e.length?e.map(x=>'<div class="rpt-bar-row" data-tip="'+esc(x[0]+': '+x[1]+' contenedores')+'"><div class="rpt-bar-lbl" title="'+esc(x[0])+'">'+esc(x[0])+'</div><div class="rpt-bar-track"><div class="rpt-bar-fill" style="width:'+(x[1]/max*100)+'%"></div></div><div class="rpt-bar-val">'+x[1]+'</div></div>').join(''):'<div class="muted">Sin datos</div>')+'</div>';
+}
+function carStats(rows){
+  const from=periodo(),bks=state.bookings.concat(state.hist||[]).filter(b=>b.pickFrom>=from);
+  return CARRIERS.map(cr=>{const rs=rows.filter(x=>x.c.carrierId===cr.id);
+    const dec=bks.reduce((n,b)=>n+(b.declines||[]).filter(d=>d.carrierId===cr.id).length,0)
+      +state.confs.filter(f=>f.carrierId===cr.id&&f.status==='rechazada'&&B(f.bookingId)&&B(f.bookingId).pickFrom>=from).length;
+    return {cr:cr,n:rs.length,teu:rs.reduce((s,x)=>s+teu(x.b),0),conf:kpi(rs,'conf'),ret:kpi(rs,'ret'),ent:kpi(rs,'ent'),prf:kpi(rs,'prf'),dec:dec,forz:rs.filter(x=>x.t.asignado&&!x.t.confirmado).length};});
+}
+function vReportes(){
+  const rows=rpRows(),bks=[...new Set(rows.map(x=>x.b))];
+  const K={conf:kpi(rows,'conf'),ret:kpi(rows,'ret'),ent:kpi(rows,'ent'),prf:kpi(rows,'prf')};
+  const tile=(k,t,sub)=>{const lv=NIVEL[nivel(K[k].v,METAS[k])];return '<div class="rpt-card rp-kpi"><div class="rpt-l">'+t+'</div><div class="rpt-n">'+fmtPct(K[k].v)+'</div>'+
+    '<div class="rp-meta"><span class="cli-badge '+lv[0]+'"><span aria-hidden="true">'+lv[1]+'</span> '+lv[2]+'</span><span>Meta '+METAS[k]+' %</span></div><div class="rp-sub">'+(K[k].d?K[k].n+' de '+K[k].d+' '+sub:'Aún sin contenedores medibles')+'</div></div>';};
+  // por transportista
+  const car=carStats(rows).sort((a,b)=>b.n-a.n);
+  // volumen por semana
+  const byW={};rows.forEach(x=>{const w=weekStart(x.b.pickFrom);(byW[w]=byW[w]||{v:0,teu:0,bk:new Set()}).v++;byW[w].teu+=teu(x.b);byW[w].bk.add(x.b.id);});
+  const ws=Object.keys(byW).map(Number).sort((a,b)=>a-b),weeks=[];
+  if(ws.length)for(let w=ws[0];w<=ws[ws.length-1];w+=7*DAY){const o=byW[w]||{v:0,teu:0,bk:new Set()},lbl=new Date(w).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'2-digit',month:'short'}).replace('.','');
+    weeks.push({l:lbl,v:o.v,tip:'Semana del '+lbl+': '+o.v+' contenedores · '+o.teu+' TEU · '+o.bk.size+' bookings'});}
+  const by=f=>rows.reduce((m,x)=>{const k=f(x);m[k]=(m[k]||0)+1;return m;},{});
+  const tot=rows.length,teus=rows.reduce((s,x)=>s+teu(x.b),0);
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Reportes</h1><p class="sc-sub">Cumplimiento, desempeño por transportista y volumen. El período se cuenta por el inicio de la ventana de retiro de cada booking.</p></div>'+
+   '<button class="btn-p btn-green inl" data-act="xlsx">Descargar Excel</button></div>'+
+   '<div class="htabs rp-per" role="group" aria-label="Período">'+PERIODOS.map(p=>'<button class="htab'+(ui.rp===p[0]?' active':'')+'" data-act="rp" data-v="'+p[0]+'" aria-pressed="'+(ui.rp===p[0])+'">'+p[1]+'</button>').join('')+
+   '<span class="muted rp-cnt">'+bks.length+' bookings · '+tot+' contenedores · '+teus+' TEU</span></div>'+
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Cumplimiento</h2></div><div class="rp-kpis">'+
+    tile('conf','Confirmados ≤ 1 h','confirmados a tiempo')+tile('ret','Retiro en ventana','retirados a tiempo')+tile('ent','Entrega en ventana','entregados a tiempo')+tile('prf','Pruebas completas','con EIR retiro, sello y EIR entrega')+
+    '<div class="rpt-card rp-kpi rp-na"><div class="rpt-l">No disponible aún</div><div class="rp-sub"><b>Incidencias por cada 100 contenedores</b> y <b>conciliación semanal</b>: el prototipo todavía no registra incidencias ni el cierre de conciliación. Hay que agregarlos para medirlos.</div></div></div></div>'+
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Desempeño por transportista</h2></div><div class="tw"><table class="t"><thead><tr><th>Transportista</th><th class="r">Contenedores</th><th class="r">TEU</th><th>Confirmación ≤ 1 h</th><th>Retiro en ventana</th><th>Entrega en ventana</th><th>Pruebas completas</th><th class="r">Rechazos</th><th class="r">Asignados directo</th></tr></thead><tbody>'+
+    car.map(x=>'<tr><td><b>'+esc(x.cr.name)+'</b></td><td class="r num">'+x.n+'</td><td class="r num">'+x.teu+'</td><td>'+celda(x.conf.v,METAS.conf,x.conf.d)+'</td><td>'+celda(x.ret.v,METAS.ret,x.ret.d)+'</td><td>'+celda(x.ent.v,METAS.ent,x.ent.d)+'</td><td>'+celda(x.prf.v,METAS.prf,x.prf.d)+'</td><td class="r num">'+x.dec+'</td><td class="r num">'+x.forz+'</td></tr>').join('')+
+    '</tbody></table></div><p class="muted rp-note">Debajo de cada porcentaje, cuántos contenedores se pudieron medir. Rechazos: «No puedo» del transportista más confirmaciones rechazadas por DP World. Asignados directo: DP World los asignó porque no confirmó a tiempo.</p></div>'+
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Volumen y tendencia</h2></div><div class="grid2">'+
+    '<div class="panel"><div class="rpt-sec-title">Contenedores por semana</div>'+(weeks.length?barsSvg(weeks):'<div class="empty">Sin datos en el período.</div>')+'</div>'+
+    '<div class="panel">'+hbars('Por naviera',by(x=>x.b.naviera))+hbars('Por terminal de entrega',by(x=>x.b.delLoc.split(' · ')[0]))+hbars('Por tamaño',by(x=>x.b.size))+'</div></div></div>'+
+   '<div class="rp-tip" id="rptip" hidden></div></section>';
+}
+/* exportación a Excel (SheetJS, la misma librería que usa Control de Horas) */
+function loadXLSX(){return window.XLSX?Promise.resolve(window.XLSX):new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';sc.onload=()=>res(window.XLSX);sc.onerror=rej;document.head.appendChild(sc);});}
+const fx=t=>t?new Date(t).toLocaleString('sv-SE',{timeZone:'America/Panama',hour12:false}).slice(0,16):'';
+function rpSheets(){
+  const rows=rpRows(),per=(PERIODOS.find(p=>p[0]===ui.rp)||[])[1],yn=(m)=>m.ev?(m.ok?'Sí':'No'):'—';
+  const res=[['DP World · Last Mile · Reporte de cumplimiento'],['Período',per,'Generado',fx(Date.now())],[],['Indicador','Valor %','Medidos','A tiempo / completos','Meta %','Estado']];
+  [['conf','Confirmados ≤ 1 h'],['ret','Retiro en ventana'],['ent','Entrega en ventana'],['prf','Pruebas completas']].forEach(k=>{const v=kpi(rows,k[0]);res.push([k[1],v.v,v.d,v.n,METAS[k[0]],NIVEL[nivel(v.v,METAS[k[0]])][2]]);});
+  res.push([],['No disponible aún','Incidencias por cada 100 contenedores; conciliación semanal (no se registran todavía)']);
+  const car=[['Transportista','Contenedores','TEU','Confirmación ≤1 h %','Retiro en ventana %','Entrega en ventana %','Pruebas completas %','Rechazos','Asignados directo']];
+  carStats(rows).forEach(x=>car.push([x.cr.name,x.n,x.teu,x.conf.v,x.ret.v,x.ent.v,x.prf.v,x.dec,x.forz]));
+  const byW={};rows.forEach(x=>{const w=weekStart(x.b.pickFrom);(byW[w]=byW[w]||{c:0,teu:0,b:new Set()}).c++;byW[w].teu+=teu(x.b);byW[w].b.add(x.b.id);});
+  const sem=[['Semana (lunes)','Bookings','Contenedores','TEU']].concat(Object.keys(byW).map(Number).sort((a,b)=>a-b).map(w=>[fx(w).slice(0,10),byW[w].b.size,byW[w].c,byW[w].teu]));
+  const det=[['Booking','Naviera','Tamaño','#','Contenedor','Transportista','Estado','Publicado','Confirmado','Min. a confirmar','Confirmado ≤1 h','Retiro desde','Retiro hasta','Retiro real','Retiro en ventana','Entrega desde','Entrega hasta','Entrega real','Entrega en ventana','Pruebas (de 3)','Pruebas completas','Terminal','Mercancía']];
+  rows.forEach(x=>{const b=x.b,c=x.c,t=x.t;det.push([b.ref,b.naviera,b.size,c.seq,c.number,CN[c.carrierId]||'',LBL[c.status],fx(t.publicado),fx(t.confirmado),x.conf.min===null?'':Math.round(x.conf.min),yn(x.conf),fx(b.pickFrom),fx(b.pickTo),fx(t.retiro),yn(x.ret),fx(b.delFrom),fx(b.delTo),fx(t.entregado),yn(x.ent),x.prf.ev?x.prf.n:'',yn(x.prf),b.delLoc,(b.cargo||{}).desc||'']);});
+  return {res:res,car:car,sem:sem,det:det,per:per};
+}
+function bajar(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);}
+async function exportXLSX(){
+  const d=rpSheets(),name='LastMile_Reporte_'+({'30':'30dias','90':'90dias','mes':'mes','todo':'todo'}[ui.rp]||ui.rp)+'_'+fx(Date.now()).slice(0,10);
+  try{
+    const X=await loadXLSX(),wb=X.utils.book_new();
+    [['Resumen',d.res,[30,12,10,20,8,12]],['Por transportista',d.car,[30,13,6,19,19,19,19,10,17]],['Por semana',d.sem,[16,10,13,8]],['Detalle contenedores',d.det,[18,12,8,4,16,28,22,17,17,10,10,17,17,17,10,17,17,17,10,9,10,30,34]]].forEach(sh=>{
+      const ws=X.utils.aoa_to_sheet(sh[1]);ws['!cols']=sh[2].map(w=>({wch:w}));X.utils.book_append_sheet(wb,ws,sh[0]);});
+    bajar(new Blob([X.write(wb,{type:'array',bookType:'xlsx'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),name+'.xlsx');toast('Excel descargado: '+name+'.xlsx');
+  }catch(e){
+    // sin acceso a la librería: CSV del detalle (se abre en Excel)
+    const csv='\ufeff'+d.det.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+    bajar(new Blob([csv],{type:'text/csv'}),name+'.csv');
+    toast('Sin conexión a la librería de Excel: se descargó el detalle en CSV.',true);
+  }
+}
+
 /* ===== detail ===== */
 function detail(id){
   const b=B(id), r=ui.role;
@@ -478,7 +645,8 @@ async function submitNew(){
   if(big){err.textContent=big.name+' pesa más de '+MAX_MB+' MB.';return;}
   const skus=Array.from(document.querySelectorAll('#skus .skurow')).map(r=>{const i=r.querySelectorAll('input');return {sku:i[0].value.trim(),d:i[1].value.trim(),q:parseInt(i[2].value,10)||0};}).filter(x=>x.sku||x.d);
   const s=state.settings, nav=v('nv');
-  const b={id:uid('b'),ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],containers:mkContainers(qty,'publicado',null,nav)};
+  const b={id:uid('b'),ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],declines:[],containers:mkContainers(qty,'publicado',null,nav)};
+  b.containers.forEach(c=>stamp(c,'publicado',b.publishedAt));
   let saved=true;
   try{await Promise.all(files.map(f=>FILES.put(b.id+'/'+f.name,f)));}catch(e){saved=false;}
   state.bookings.push(b);
@@ -499,7 +667,7 @@ function sendConfirm(id){
   const b=B(id),n=openCount(b),q=parseInt(document.getElementById('cq').value,10);
   if(!(q>=1&&q<=n)){document.getElementById('cErr').textContent='Indica entre 1 y '+n+' contenedores.';return;}
   const f={id:uid('f'),bookingId:id,carrierId:ui.carrier,qty:q,units:parseInt(document.getElementById('cu').value,10)||null,note:document.getElementById('cnote').value.trim(),at:Date.now(),status:'pendiente'};
-  b.containers.filter(c=>c.status==='publicado').slice(0,q).forEach(c=>{c.status='confirmado';c.carrierId=ui.carrier;c.confId=f.id;});
+  b.containers.filter(c=>c.status==='publicado').slice(0,q).forEach(c=>{c.status='confirmado';c.carrierId=ui.carrier;c.confId=f.id;stamp(c,'confirmado');});
   state.confs.push(f);log(CN[ui.carrier]+' confirmó '+q+' contenedores de '+b.ref);
   closeModal();commit();toast('Confirmación enviada. Queda pendiente de aprobación de DP World.');
 }
@@ -529,7 +697,7 @@ function doAdv(bid,cid,to){
   if(to==='bodega'){c.seal=g('seal');c.loaded=parseInt(g('box'),10)||null;log('Bodega selló '+c.number+' en '+c.rampa+' y lo pasó al buffer');c.ramp=null;c.rampa=null;}
   const fi=document.getElementById('fx-file');
   if(st.proof){const file=fi&&fi.files&&fi.files[0];const name=file?file.name:(st.proof.replace(/\W+/g,'_')+'_'+(c.number||c.seq).toString().replace(/\W/g,'')+'.pdf');if(file){FILES.put(b.id+'/'+c.id+'/'+name,file).catch(()=>{});}c.proofs.push({type:st.proof,name:name,by:OWNER[to]});}
-  c.status=to;
+  c.status=to;stamp(c,to);
   log((to==='bodega'?'Bodega':CN[c.carrierId])+' marcó '+st.t.toLowerCase()+' · '+b.ref+' #'+c.seq+(c.number?' ('+c.number+')':''));
   closeModal();commit();toast(st.t+' registrado. '+(to==='retiro'?'Ya aparece en la cola de rampas de bodega.':'El cliente ya lo ve.'));
 }
@@ -550,7 +718,7 @@ function render(){
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
-  v.innerHTML=ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  v.innerHTML=ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
   window.scrollTo(0,sy);
   tickClocks();
 }
@@ -583,6 +751,8 @@ document.addEventListener('click',e=>{
      c.ramp=to;log('Bodega: '+c.number+' → '+RST[to].l.toLowerCase());closeModal();commit();toast(c.number+': '+RST[to].l+'.');break;}
    case 'seal':advForm(t.dataset.b,t.dataset.c,'bodega');break;
    case 'doc':downloadDoc(t.dataset.k,t.dataset.n,t.dataset.r);break;
+   case 'rp':ui.rp=t.dataset.v;save();render();break;
+   case 'xlsx':exportXLSX();break;
    case 'new':ov.dataset.detail='';newBooking();break;
    case 'addsku':addSku();break;
    case 'rmsku':t.parentElement.remove();break;
@@ -591,25 +761,25 @@ document.addEventListener('click',e=>{
    case 'detail':ov.dataset.detail=t.dataset.id;detail(t.dataset.id);break;
    case 'confirm':ov.dataset.detail='';confirmForm(t.dataset.id);break;
    case 'sendConfirm':sendConfirm(t.dataset.id);break;
-   case 'decline':{const b=B(t.dataset.id);
-     if(b.mode==='directo'){b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.expLogged=false;log(CN[ui.carrier]+' rechazó '+b.ref+' · pasó a modo abierto, reloj reiniciado');toast('Rechazado. El booking se abrió a los demás transportistas.');}
+   case 'decline':{const b=B(t.dataset.id);(b.declines=b.declines||[]).push({carrierId:ui.carrier,at:Date.now()});
+     if(b.mode==='directo'){b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.containers.filter(c=>c.status==='publicado').forEach(c=>stamp(c,'publicado',b.publishedAt));b.expLogged=false;log(CN[ui.carrier]+' rechazó '+b.ref+' · pasó a modo abierto, reloj reiniciado');toast('Rechazado. El booking se abrió a los demás transportistas.');}
      else{b.hidden.push(ui.carrier);log(CN[ui.carrier]+' indicó que no puede cubrir '+b.ref);toast('Listo, ya no verás este booking.');}
      commit();break;}
    case 'approve':case 'reject':{const f=state.confs.find(x=>x.id===t.dataset.id),b=B(f.bookingId);
-     b.containers.filter(c=>c.confId===f.id&&c.status==='confirmado').forEach(c=>{if(a==='approve')c.status='asignado';else{c.status='publicado';c.carrierId=null;c.confId=null;}});
+     b.containers.filter(c=>c.confId===f.id&&c.status==='confirmado').forEach(c=>{if(a==='approve'){c.status='asignado';stamp(c,'asignado');}else{c.status='publicado';c.carrierId=null;c.confId=null;if(c.t)delete c.t.confirmado;}});
      f.status=a==='approve'?'aprobada':'rechazada';
      log('DP World '+(a==='approve'?'aprobó':'rechazó')+' '+f.qty+' cont. de '+b.ref+' para '+CN[f.carrierId]);
      commit();toast(a==='approve'?'Aprobado. '+CN[f.carrierId]+' ya puede operar.':'Rechazado. Los contenedores vuelven a publicarse.',a!=='approve');break;}
    case 'force':{const b=B(t.dataset.id),cid=document.getElementById('asg-'+b.id).value,n=openCount(b);
-     b.containers.filter(c=>c.status==='publicado').forEach(c=>{c.status='asignado';c.carrierId=cid;});
+     b.containers.filter(c=>c.status==='publicado').forEach(c=>{c.status='asignado';c.carrierId=cid;stamp(c,'asignado');});
      log('DP World asignó directo '+n+' cont. de '+b.ref+' a '+CN[cid]);commit();toast(n+' contenedores asignados a '+CN[cid]+'.');break;}
-   case 'reopen':{const b=B(t.dataset.id);b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.hidden=[];b.expLogged=false;log('DP World reabrió '+b.ref+' a todos · nuevo plazo de 1 h');commit();toast('Reabierto a todos los transportistas por 1 h.');break;}
+   case 'reopen':{const b=B(t.dataset.id);b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.containers.filter(c=>c.status==='publicado').forEach(c=>stamp(c,'publicado',b.publishedAt));b.hidden=[];b.expLogged=false;log('DP World reabrió '+b.ref+' a todos · nuevo plazo de 1 h');commit();toast('Reabierto a todos los transportistas por 1 h.');break;}
    case 'mode':state.settings.mode=t.dataset.v;log('Modo de publicación: '+(t.dataset.v==='directo'?'directo a preferido':'abierto'));commit();break;
    case 'adv':ov.dataset.detail='';advForm(t.dataset.b,t.dataset.c,t.dataset.to);break;
    case 'load':ov.dataset.detail='';advForm(t.dataset.b,t.dataset.c,'bodega');break;
    case 'doAdv':doAdv(t.dataset.b,t.dataset.c,t.dataset.to);break;
    case 'bulk':{const b=B(t.dataset.b),to=t.dataset.to;const cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status===t.dataset.from);
-     cs.forEach(c=>{c.status=to;if(STEP[to].proof)c.proofs.push({type:STEP[to].proof,name:STEP[to].proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
+     cs.forEach(c=>{c.status=to;stamp(c,to);if(STEP[to].proof)c.proofs.push({type:STEP[to].proof,name:STEP[to].proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
      log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+LBL[to].toLowerCase());commit();toast(cs.length+' contenedores actualizados a «'+LBL[to]+'».');break;}
    case 'reset':state=seed();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
@@ -618,16 +788,21 @@ document.addEventListener('change',e=>{
   const t=e.target, a=t.dataset&&t.dataset.act;
   if(a==='carrier'){ui.carrier=t.value;save();render();}
   else if(a==='pref'){state.settings.preferred=t.value;log('Proveedor preferido: '+CN[t.value]);commit();}
-  else if(a==='fix'){const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c);const old=c.status;c.status=t.value;
+  else if(a==='fix'){const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c);const old=c.status;c.status=t.value;stamp(c,t.value);
     if(IDX[t.value]===0){c.carrierId=null;c.confId=null;}
     if(IDX[t.value]>=IDX.retiro&&!c.number){c.number=cnum(b.naviera);}
     if(IDX[t.value]>=IDX.asignado&&!c.carrierId){c.carrierId=b.directTo||state.settings.preferred;}
     c.rampa=null;c.ramp=t.value==='retiro'?'ESPERA_RAMPA':null;
     log('DP World corrigió '+b.ref+' #'+c.seq+': '+LBL[old]+' → '+LBL[t.value]);commit();toast('Estado corregido.');}
   else if(a==='reassign'){const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c);
-    if(!t.value){c.carrierId=null;c.status='publicado';c.confId=null;}else{c.carrierId=t.value;c.confId=null;if(IDX[c.status]<2)c.status='asignado';}
+    if(!t.value){c.carrierId=null;c.status='publicado';c.confId=null;}else{c.carrierId=t.value;c.confId=null;if(IDX[c.status]<2){c.status='asignado';stamp(c,'asignado');}}
     log('DP World asignó '+b.ref+' #'+c.seq+' a '+(CN[t.value]||'nadie'));commit();toast('Contenedor reasignado.');}
 });
+function tipShow(e){const el=e.target.closest&&e.target.closest('[data-tip]'),tip=document.getElementById('rptip');if(!tip)return;
+  if(!el){tip.hidden=true;return;}tip.textContent=el.dataset.tip;tip.hidden=false;
+  const r=el.getBoundingClientRect(),x=e.clientX||r.left+r.width/2,y=e.clientY||r.top;
+  tip.style.left=Math.min(window.innerWidth-tip.offsetWidth-8,Math.max(8,x-tip.offsetWidth/2))+'px';tip.style.top=Math.max(8,y-tip.offsetHeight-12)+'px';}
+document.addEventListener('pointermove',tipShow);document.addEventListener('focusin',tipShow);
 document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.bkr')){if(d.open)ui.open[d.dataset.key]=1;else delete ui.open[d.dataset.key];save();}},true);
 document.getElementById('lgForm').addEventListener('submit',e=>{
   e.preventDefault();

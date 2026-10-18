@@ -126,5 +126,15 @@ Colores de estado: verde = completado/OK, ámbar = pendiente/espera, rojo = venc
 - `docs/Descripcion_Funciones_Coordinador_Last_Mile.docx`: funciones del coordinador manual (20 pasos), perfil, comparativo con la app e indicadores.
 - Comparativo de acciones que requieren una persona: **17 tipos sin app frente a 4 con app** (aprobar, incidencias, conciliación, indicadores).
 
+## Reportería (admin)
+Sección **Reportes** del admin, con filtro de período (30 días, 90 días, este mes, todo; se cuenta por el inicio de la ventana de retiro):
+- **Cumplimiento** contra meta, con semáforo (✓ Cumple / ▲ Bajo meta, hasta 5 puntos bajo la meta / ✕ Crítico): confirmados ≤ 1 h, retiro en ventana, entrega en ventana, pruebas completas (EIR retiro, foto del sello y EIR entrega).
+- **Desempeño por transportista**: contenedores, TEU, los mismos cuatro indicadores, rechazos y asignaciones directas por no confirmar a tiempo.
+- **Volumen y tendencia**: contenedores por semana y desglose por naviera, terminal y tamaño.
+- **Excel** con cuatro hojas: Resumen, Por transportista, Por semana y Detalle por contenedor.
+
+Para medir, cada contenedor guarda la fecha y hora en que llegó a cada estado (`c.t`). En Supabase equivale a una tabla de eventos de estado o a columnas de timestamp en `operaciones`. El prototipo trae unas 11 semanas de historial de ejemplo archivado, que solo se usa en Reportes.
+Incidencias y conciliación semanal todavía no se capturan; la pantalla lo indica en lugar de inventar cifras.
+
 ## KPIs propuestos
 Bookings confirmados ≤ 1 h (≥ 95 %), retiro en ventana (≥ 98 %), entrega en ventana (100 %), pruebas completas (100 %), incidencias por cada 100 contenedores, conciliación semanal a tiempo.
