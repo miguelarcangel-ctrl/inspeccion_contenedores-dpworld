@@ -104,6 +104,9 @@ Hoy existen `cliente` y `supervisor`. Hay que agregar `transportista` (solo dato
 ### Pendiente de seguridad (importante)
 Las políticas RLS actuales son `Allow all ... TO anon` y las contraseñas de `clientes` se guardan en texto plano. Antes de exponer la app a transportistas externos hay que pasar a Supabase Auth y escribir políticas RLS por rol. Sin eso, el muro de confidencialidad (el transportista no ve la carga y el cliente no ve al subcontratista) no se cumple a nivel de datos.
 
+### Evidencias (fotos, EIR, sello)
+Se guardan en el bucket privado `evidencias` de Supabase Storage (carpetas `fotos/`, `sello/`, `eir/` y `pdf/`), con borrado automático por antigüedad: 30 días las fotos, la foto del sello y los EIR; 365 días el PDF de inspección. La tabla solo guarda la ruta. Ver `supabase/README_retencion.md`.
+
 ### Orden sugerido
 1. Tablas `transportistas`, `bookings` y `confirmaciones`, más las columnas nuevas en `operaciones`.
 2. Vista **Cliente**: crear booking y ver su estado (reutilizando el login de clientes actual).

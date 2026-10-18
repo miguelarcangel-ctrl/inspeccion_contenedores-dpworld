@@ -177,7 +177,7 @@ function dbToOp(r){
 }
 function opToDb(op){
   var insp=null;
-  if(op.inspeccion){insp={result:op.inspeccion.result,inspector:op.inspeccion.inspector,tipoContenedor:op.inspeccion.tipoContenedor,comentarios:op.inspeccion.comentarios,fecha:op.inspeccion.fecha,answers:op.inspeccion.answers};}
+  if(op.inspeccion){insp={result:op.inspeccion.result,inspector:op.inspeccion.inspector,tipoContenedor:op.inspeccion.tipoContenedor,comentarios:op.inspeccion.comentarios,fecha:op.inspeccion.fecha,answers:op.inspeccion.answers};evidToDb(op.inspeccion,insp);}
   return {id:op.id,bodega:op.bodega,rampa:op.rampa||null,tipo:op.tipo,contenedor:op.contenedor,tipo_contenedor:op.tipoContenedor||null,cliente_nombre:op.cliente||null,cliente_id:op.clienteId||null,transportista:op.transportista||null,estado:op.estado,inspeccion_completa:op.inspeccionCompleta||false,inspeccion:insp,log_ops:op.log||[],sello:op.sello||null,inicio_op:op.inicioOp||null,matricula:op.matricula||null,conductor:op.conductor||null,flags:op.flags||[],actualizado_en:new Date().toISOString()};
 }
 async function dbInit(){
@@ -211,6 +211,83 @@ function setupRealtime(){
     })
     .subscribe();
 }
+// ═══ EVIDENCIAS (Supabase Storage, bucket privado) ═══
+// Fotos y PDF van al bucket; en operaciones.inspeccion solo se guarda la ruta.
+// La retención (30 días fotos / 365 días PDF) la aplica la purga programada:
+// ver supabase/retencion_evidencias.sql
+var EVID_BUCKET='evidencias';
+function esDataUrl(v){return typeof v==='string'&&v.indexOf('data:')===0;}
+function evidToDb(src,dst){
+  var f={};for(var k in (src.itemFotos||{})){var v=src.itemFotos[k];if(v&&!esDataUrl(v))f[k]=v;}
+  dst.itemFotos=f;
+  dst.globalFotos=(src.globalFotos||[]).filter(function(v){return v&&!esDataUrl(v);});
+  ['pdf','fotosPurgadas','pdfPurgado'].forEach(function(k){if(src[k])dst[k]=src[k];});
+}
+function evidRuta(op,carpeta,nombre){
+  var d=new Date(),p=function(n){return String(n).padStart(2,'0');};
+  return carpeta+'/'+d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+'/'+op.id+'/'+nombre;
+}
+function comprimirFoto(file){
+  // JPEG de máx. 1600 px por lado: ~200-400 KB por foto
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      var k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');
+      c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',0.72));
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);var r=new FileReader();r.onload=function(ev){res(ev.target.result);};r.onerror=rej;r.readAsDataURL(file);};
+    img.src=url;
+  });
+}
+async function subirEvidencia(ruta,blob,tipo){
+  var r=await sb.storage.from(EVID_BUCKET).upload(ruta,blob,{contentType:tipo,upsert:true});
+  if(r.error)throw r.error;
+  return ruta;
+}
+async function subirFotosInsp(op,insp){
+  // Reemplaza cada data URL por su ruta en Storage. Devuelve cuántas fallaron.
+  var fallos=0,tareas=[];
+  function subir(v,nombre,poner){
+    if(!esDataUrl(v))return;
+    tareas.push(fetch(v).then(function(r){return r.blob();})
+      .then(function(b){return subirEvidencia(evidRuta(op,'fotos',nombre),b,'image/jpeg');})
+      .then(poner).catch(function(){fallos++;}));
+  }
+  Object.keys(insp.itemFotos||{}).forEach(function(k){subir(insp.itemFotos[k],k+'.jpg',function(r){insp.itemFotos[k]=r;});});
+  (insp.globalFotos||[]).forEach(function(v,i){subir(v,'general-'+(i+1)+'.jpg',function(r){insp.globalFotos[i]=r;});});
+  await Promise.all(tareas);
+  return fallos;
+}
+async function descargarEvidencia(ruta){
+  var r=await sb.storage.from(EVID_BUCKET).download(ruta);
+  return r.error?null:r.data;
+}
+async function fotoADataUrl(v){
+  if(!v||esDataUrl(v))return v||null;
+  var b=await descargarEvidencia(v);if(!b)return null;
+  return new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.onerror=function(){res(null);};fr.readAsDataURL(b);});
+}
+async function inspConFotos(insp){
+  var c=Object.assign({},insp,{itemFotos:{}});
+  var ks=Object.keys(insp.itemFotos||{});
+  var vs=await Promise.all(ks.map(function(k){return fotoADataUrl(insp.itemFotos[k]);}));
+  ks.forEach(function(k,i){if(vs[i])c.itemFotos[k]=vs[i];});
+  c.globalFotos=(await Promise.all((insp.globalFotos||[]).map(fotoADataUrl))).filter(Boolean);
+  return c;
+}
+function pdfNombre(op){return 'Inspeccion_'+op.contenedor+'_'+op.bodega+'.pdf';}
+async function archivarEvidencias(op,fotosLocales,doShare){
+  // 1) fotos a Storage  2) PDF (con las fotos locales) a Storage  3) guardar rutas  4) compartir si se pidió
+  var insp=op.inspeccion,fallos=await subirFotosInsp(op,insp),pdf=null;
+  try{pdf=await generarPDFInspeccion(op,Object.assign({},insp,fotosLocales));}catch(e){}
+  if(pdf){try{insp.pdf=await subirEvidencia(evidRuta(op,'pdf',pdfNombre(op)),pdf,'application/pdf');}catch(e){fallos++;}}
+  saveOp(op);
+  if(fallos)showToast('Sin conexión a Storage: '+fallos+' archivo(s) no se respaldaron',false,true);
+  if(doShare){if(pdf)await compartirPDF(pdf,op);else showToast('Error generando PDF');}
+}
+
 function saveOp(op){
   op.actualizadoEn=new Date().toISOString();
   var idx=_opsCache.findIndex(function(o){return o.id===op.id;});
@@ -1229,9 +1306,7 @@ function triggerCam(opId, itemId) {
   inp.type='file'; inp.accept='image/*'; inp.capture='environment';
   inp.onchange = function(e) {
     var f = e.target.files[0]; if(!f) return;
-    var rd = new FileReader();
-    rd.onload = function(ev) { inspIP[itemId]=ev.target.result; updIPh(itemId); };
-    rd.readAsDataURL(f);
+    comprimirFoto(f).then(function(u) { inspIP[itemId]=u; updIPh(itemId); });
   };
   inp.click();
 }
@@ -1249,11 +1324,7 @@ function delIPh(itemId) { delete inspIP[itemId]; updIPh(itemId); }
 
 function addGF(e) {
   var files = Array.prototype.slice.call(e.target.files);
-  var promises = files.map(function(f) {
-    return new Promise(function(res) {
-      var r = new FileReader(); r.onload = function(ev) { res(ev.target.result); }; r.readAsDataURL(f);
-    });
-  });
+  var promises = files.map(comprimirFoto);
   Promise.all(promises).then(function(res) { inspGP = inspGP.concat(res); renderGFGrid(); e.target.value=''; });
 }
 function renderGFGrid() {
@@ -1288,21 +1359,44 @@ function saveInsp(opId, doShare) {
   op.log.push({ev:'Inspeccion: '+(result==='apto'?'APTO':result==='no-apto'?'NO APTO':'PARCIAL')+' - '+(inspector||'--'),ts:new Date().toISOString()});
   saveOp(op);inspA={};
   logBit('Inspeccion: '+result,opId,{result:result,inspector:inspector});
-  if(!doShare){
-    closeMod();refresh();
-    showToast(result==='apto'?'Inspeccion APTO - listo para cargue':'Inspeccion NO APTO',result!=='no-apto');
-    return op;
-  }
-  closeMod(); refresh();
-  showToast('Generando PDF...');
-  buildAndSharePDF(op);
+  closeMod();refresh();
+  if(doShare)showToast('Generando PDF...');
+  else showToast(result==='apto'?'Inspeccion APTO - listo para cargue':'Inspeccion NO APTO',result!=='no-apto');
+  archivarEvidencias(op,{itemFotos:Object.assign({},insp.itemFotos),globalFotos:insp.globalFotos.slice()},doShare);
   return op;
 }
 
 async function buildAndSharePDF(op) {
+  // Desde el historial: con las fotos de Storage; si ya se purgaron, el PDF archivado
   try {
+    var insp=op.inspeccion||{};
+    if(insp.fotosPurgadas&&insp.pdf){
+      var guardado=await descargarEvidencia(insp.pdf);
+      if(guardado){await compartirPDF(guardado,op);return;}
+    }
+    showToast('Generando PDF...');
+    var blob=await generarPDFInspeccion(op,await inspConFotos(insp));
+    if(insp.fotosPurgadas)showToast('Las fotos ya se eliminaron por retencion',false,true);
+    await compartirPDF(blob,op);
+  } catch(e) { showToast(e&&e.message==='PDF no disponible'?'PDF no disponible':'Error generando PDF'); }
+}
+async function compartirPDF(blob,op){
+  var fname = pdfNombre(op);
+  if(navigator.share && navigator.canShare) {
+    var file = new File([blob], fname, {type:'application/pdf'});
+    if(navigator.canShare({files:[file]})) {
+      try { await navigator.share({title:'Inspeccion '+op.contenedor, files:[file]}); showToast('PDF compartido', true); return; }
+      catch(e) { if(e&&e.name==='AbortError') return; }
+    }
+  }
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download=fname; a.click();
+  URL.revokeObjectURL(url); showToast('PDF descargado', true);
+}
+async function generarPDFInspeccion(op, insp) {
+  {
     var jsPDF = window.jspdf && window.jspdf.jsPDF;
-    if(!jsPDF) { showToast('PDF no disponible'); return; }
+    if(!jsPDF) throw new Error('PDF no disponible');
     var doc = new jsPDF({unit:'mm', format:'a4'});
     var W=210, M=14, y=0;
     var navy=[26,16,96], green=[0,195,137], white=[255,255,255], gray=[90,96,117], lg=[240,241,245], red=[232,0,61];
@@ -1315,8 +1409,10 @@ async function buildAndSharePDF(op) {
       var _li=await new Promise(function(res,rej){var i=new Image();i.onload=function(){res(i);};i.onerror=rej;i.src=_lu;});
       _logoAR=(_li.naturalWidth||1)/(_li.naturalHeight||1);
       var _lc=document.createElement('canvas');
-      _lc.width=_li.naturalWidth;_lc.height=_li.naturalHeight;
-      _lc.getContext('2d').drawImage(_li,0,0);
+      // 200 px de alto bastan para 18 mm (~280 ppp); el original sin comprimir pesaba ~4,7 MB en el PDF
+      var _ls=Math.min(1,200/(_li.naturalHeight||1));
+      _lc.width=Math.round(_li.naturalWidth*_ls);_lc.height=Math.round(_li.naturalHeight*_ls);
+      _lc.getContext('2d').drawImage(_li,0,0,_lc.width,_lc.height);
       _logoData=_lc.toDataURL('image/png');
       URL.revokeObjectURL(_lu);
     }catch(e){}
@@ -1324,14 +1420,14 @@ async function buildAndSharePDF(op) {
     doc.setFillColor(255,255,255); doc.rect(0,0,W,30,'F');
     doc.setFillColor.apply(doc,navy); doc.rect(0,29.5,W,0.5,'F');
     var _tx=M;
-    if(_logoData){var _lh=18,_lw=_lh*_logoAR;doc.addImage(_logoData,'PNG',M,(30-_lh)/2,_lw,_lh);_tx=M+_lw+5;}
+    if(_logoData){var _lh=18,_lw=_lh*_logoAR;doc.addImage(_logoData,'PNG',M,(30-_lh)/2,_lw,_lh,undefined,'FAST');_tx=M+_lw+5;}
     doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor.apply(doc,navy);
     doc.text('DP WORLD PANAMA', _tx, 11);
     doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(62,60,144);
     doc.text('FORMULARIO DE INSPECCION DE CONTENEDORES - SL-02-007', _tx, 17);
     doc.setTextColor(130,130,150); doc.setFontSize(6.5);
     doc.text('Generado: '+new Date().toLocaleString('es-PA')+' - '+op.bodega, _tx, 23);
-    var insp = op.inspeccion;
+    insp = insp || op.inspeccion;
     var bc = insp&&insp.result==='apto' ? green : insp&&insp.result==='no-apto' ? red : [200,150,0];
     doc.setFillColor.apply(doc,bc); doc.roundedRect(W-M-34,8,34,14,3,3,'F');
     doc.setTextColor.apply(doc,white); doc.setFont('helvetica','bold'); doc.setFontSize(10);
@@ -1374,19 +1470,8 @@ async function buildAndSharePDF(op) {
     if(insp&&insp.globalFotos&&insp.globalFotos.length>0){doc.addPage();y=14;var cols=3,iw=(W-M*2-8)/cols,ih=iw*.75;for(var gi=0;gi<insp.globalFotos.length;gi++){var gcol=gi%cols,grow=Math.floor(gi/cols);if(gcol===0&&grow>0&&y+ih+5>277){doc.addPage();y=14;}var gx=M+gcol*(iw+4),gfy=y+grow*(ih+5);try{doc.addImage(insp.globalFotos[gi],'JPEG',gx,gfy,iw,ih,undefined,'MEDIUM');}catch(e){}}}
     var pages=doc.getNumberOfPages();
     for(var p=1;p<=pages;p++){doc.setPage(p);doc.setFillColor.apply(doc,navy);doc.rect(0,287,W,10,'F');doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(180,180,200);doc.text('DP World Panama - DAL Colon - SL-02-007',M,293);doc.text('Pag.'+p+'/'+pages,W-M,293,{align:'right'});}
-    var blob = doc.output('blob');
-    var fname = 'Inspeccion_'+op.contenedor+'_'+op.bodega+'.pdf';
-    if(navigator.share && navigator.canShare) {
-      var file = new File([blob], fname, {type:'application/pdf'});
-      if(navigator.canShare({files:[file]})) {
-        await navigator.share({title:'Inspeccion '+op.contenedor, files:[file]});
-        showToast('PDF compartido', true); return;
-      }
-    }
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a'); a.href=url; a.download=fname; a.click();
-    URL.revokeObjectURL(url); showToast('PDF descargado', true);
-  } catch(e) { showToast('Error generando PDF'); }
+    return doc.output('blob');
+  }
 }
 
 // ═══ HISTORIAL ═══
