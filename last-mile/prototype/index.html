@@ -195,9 +195,9 @@ const SHORT={publicado:'Publ.',confirmado:'Conf.',asignado:'Asig.',retiro:'Retir
 const TONE=k=>IDX[k]<=1?'wait':IDX[k]>=6?'on':'tr';
 function prio(b){
   const ct=counts(b),n=b.containers.length;
-  if(ct.publicado+ct.confirmado+ct.asignado>0)return {t:b.pickFrom,end:b.pickTo,l:'Inicio retiro vacío'};
-  if(ct.entregado+ct.devuelto<n)return {t:b.delTo,l:'Entrega lleno hasta'};
-  return {t:b.delTo,l:'Entregado',done:true};
+  if(ct.publicado+ct.confirmado+ct.asignado>0)return {t:b.pickFrom,end:b.pickTo,l:'Retiro vacío'};
+  if(ct.entregado+ct.devuelto<n)return {t:b.delFrom,end:b.delTo,l:'Entrega lleno'};
+  return {t:b.delTo,end:b.delTo,l:'Entregado',done:true};
 }
 function byPrio(list){return list.slice().sort((a,b)=>{const x=prio(a),y=prio(b);return x.done!==y.done?(x.done?1:-1):x.done?y.t-x.t:x.t-y.t;});}
 function rel(t){const m=Math.round((t-Date.now())/MIN),a=Math.abs(m),h=Math.floor(a/60),d=Math.floor(h/24);const v=a<60?a+' min':h<48?h+' h':d+' d';return m<0?'hace '+v:'en '+v;}
@@ -209,12 +209,14 @@ function trk(b){
 }
 function bkRows(sec,list,body,right,alert){
   if(!list.length)return '';
-  return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Prioridad</span><span>Booking</span><div class="trk">'+ST.map(x=>'<span>'+SHORT[x.k]+'</span>').join('')+'</div><span>Estado</span></div>'+
-   byPrio(list).map(b=>{const k=sec+':'+b.id,p=prio(b),now=Date.now(),left=p.t-now,open=p.end&&left<=0;
-    const tone=p.done?'done':(p.end?now>p.end:left<0)?'over':(open||left<24*HOUR)?'soon':'';
+  return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Prioridad · desde / hasta</span><span>Booking</span><div class="trk">'+ST.map(x=>'<span>'+SHORT[x.k]+'</span>').join('')+'</div><span>Estado</span></div>'+
+   byPrio(list).map(b=>{const k=sec+':'+b.id,p=prio(b),now=Date.now(),open=now>=p.t,closed=now>p.end;
+    const tone=p.done?'done':closed?'over':(open||p.t-now<24*HOUR)?'soon':'';
+    const st=closed?'cerrada '+rel(p.end):open?'abierta · cierra '+rel(p.end):'empieza '+rel(p.t);
     return '<details class="bkr'+((alert&&alert(b))?' alert':'')+'" data-key="'+k+'"'+(ui.open[k]?' open':'')+'><summary class="bkr-s">'+
      '<span class="bkr-chev" aria-hidden="true">›</span>'+
-     '<span class="bkr-p '+tone+'"><b>'+(p.done?'Completado':fmt(p.t))+'</b><span>'+(p.done?'':open?(now>p.end?'Ventana de retiro cerrada · '+rel(p.end):'Ventana de retiro abierta · cierra '+rel(p.end)):p.l+' · '+rel(p.t))+'</span></span>'+
+     (p.done?'<span class="bkr-p done"><b>Completado</b><span>Entrega lleno · '+fmt(p.end)+'</span></span>':
+      '<span class="bkr-p '+tone+'"><span class="bkr-pl">'+p.l+'</span><b>'+fmt(p.t)+'</b><span>hasta '+fmt(p.end)+'</span><span class="bkr-st">'+st+'</span></span>')+
      '<span class="bkr-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="bkr-tags"><span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span></span></span>'+
      trk(b)+'<span class="bkr-r">'+right(b)+'</span></summary><div class="bkr-b">'+body(b)+'</div></details>';}).join('')+'</div>';
 }

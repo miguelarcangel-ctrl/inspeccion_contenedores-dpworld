@@ -520,7 +520,7 @@ main.lm-main{padding-block:18px 56px}
 .lm footer .wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
 /* filas de booking desplegables: prioridad · booking · tracking (8 etapas, .pip-d de la raíz) · estado */
 .lm .bkl{background:var(--card);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden}
-.lm .bkl-h,.lm .bkr-s{display:grid;grid-template-columns:16px minmax(150px,190px) minmax(160px,1fr) minmax(250px,1.6fr) minmax(130px,auto);gap:12px;align-items:center;padding:9px 14px}
+.lm .bkl-h,.lm .bkr-s{display:grid;grid-template-columns:16px minmax(170px,200px) minmax(160px,1fr) minmax(250px,1.6fr) minmax(130px,auto);gap:12px;align-items:center;padding:9px 14px}
 .lm .bkl-h{padding-block:8px 6px;border-bottom:1px solid var(--b1);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3)}
 .lm .bkl-h .trk span{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:.5px;text-align:center}
 .lm .bkl-h>span:last-child,.lm .bkr-r{justify-self:end;text-align:right}
@@ -537,7 +537,10 @@ main.lm-main{padding-block:18px 56px}
 .lm .bkr-p{display:grid;gap:1px;min-width:0}
 .lm .bkr-p b{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.3px;font-variant-numeric:tabular-nums}
 .lm .bkr-p span{font-size:11px;color:var(--t3)}
-.lm .bkr-p.over b,.lm .bkr-p.over span{color:#ff6680}
+.lm .bkr-p .bkr-pl{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
+.lm .bkr-p .bkr-st{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;color:var(--t2)}
+.lm .bkr-p.over b,.lm .bkr-p.over .bkr-st{color:#ff6680}
+.lm .bkr-p.soon .bkr-st{color:var(--amber)}
 .lm .bkr-p.soon b{color:var(--amber)}
 .lm .bkr-p.done b{color:var(--green)}
 .lm .bkr-id{display:grid;gap:3px;min-width:0}
