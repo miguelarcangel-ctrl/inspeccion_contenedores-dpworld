@@ -569,6 +569,35 @@ main.lm-main{padding-block:18px 56px}
   .lm .bkr-s{grid-template-columns:16px 1fr;grid-template-areas:"c p" "c i" "c r" "c t";row-gap:8px}
   .lm .bkr-chev{grid-area:c;align-self:start}.lm .bkr-p{grid-area:p}.lm .bkr-id{grid-area:i}.lm .trk{grid-area:t}.lm .bkr-r{grid-area:r;justify-self:start;justify-content:flex-start}
 }
+/* reportería (admin): tarjetas .rpt-card de la raíz + semáforo con ícono y texto */
+.lm .rp-per{align-items:center;gap:6px}
+.lm .rp-cnt{font-size:12px;margin-left:auto}
+.lm .rp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px}
+.lm .rp-kpi{display:grid;gap:6px;align-content:start}
+.lm .rp-kpi .rpt-n{font-size:34px}
+.lm .rp-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:11px;color:var(--t3)}
+.lm .rp-sub{font-size:12px;color:var(--t3);line-height:1.4}
+.lm .rp-sub b{color:var(--t2);font-weight:600}
+.lm .rp-na{border-style:dashed;background:transparent}
+.lm .rp-note{font-size:12px;margin-top:2px}
+.lm .rk{display:inline-flex;align-items:baseline;gap:5px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--t)}
+.lm .rk i{font-style:normal;font-size:12px}
+.lm .rk small{font-family:'Barlow',sans-serif;font-size:10px;font-weight:500;color:var(--t3)}
+.lm .rk.on i{color:var(--green)}.lm .rk.wait i{color:var(--amber)}.lm .rk.off i{color:#ff6680}.lm .rk.mute{color:var(--t3)}
+.lm .rp-chart{width:100%;height:auto;display:block;margin-top:6px}
+.lm .rp-chart .bar{fill:#8a88e0}
+.lm .rp-chart .hit{fill:transparent;cursor:default;outline:none}
+.lm .rp-chart .hit:hover,.lm .rp-chart .hit:focus{fill:rgba(255,255,255,.05)}
+.lm .rp-chart .grid{stroke:var(--b0);stroke-width:1}
+.lm .rp-chart .base{stroke:var(--b2);stroke-width:1}
+.lm .rp-chart .ax{fill:var(--t3);font-size:12px;font-family:'Barlow Condensed',sans-serif}
+.lm .rp-chart .lb{fill:var(--t2);font-size:13px;font-weight:700;font-family:'Barlow Condensed',sans-serif}
+.lm .rpt-sec{padding:0 0 10px}
+.lm .rpt-sec-title{color:var(--t3);font-size:11px}
+.lm .rpt-bar-lbl{width:120px;font-size:12px}
+.lm .rpt-bar-fill{background:#8a88e0}
+.lm .rpt-bar-val{font-size:12px;color:var(--t2);width:34px}
+.lm .rp-tip{position:fixed;z-index:300;pointer-events:none;background:var(--raised);border:1px solid var(--b2);color:var(--t);font-size:12px;padding:6px 10px;border-radius:var(--r2);box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:260px}
 /* login por rol (tarjeta de la raíz) y muelle de rampas */
 .lm .lg-demo{margin-top:18px;text-align:center}
 .lm .lg-demo .lg-lbl{display:block;margin-bottom:8px}
