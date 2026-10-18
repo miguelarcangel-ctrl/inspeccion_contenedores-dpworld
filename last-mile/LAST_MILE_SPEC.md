@@ -65,6 +65,8 @@ Last Mile agrega **lo que pasa antes**: el booking del cliente, la publicación 
 - **Retiro de vacío** (transportista) → el contenedor entra solo a la cola (`ESPERA_RAMPA`). Bodega le asigna rampa → `PEND_INSP` → inspección → `P20/P50/P100` → **Cerrar y sellar** (sello, cajas y foto) → `BUFFER_POST`, que es lo que el cliente ve como «Cargado en bodega». Ya no se marca a mano en Last Mile.
 - **En tránsito, entregado lleno y devuelto** los marca el transportista.
 - El admin ve el panel y también Rampas.
+- **Bookings en filas desplegables**, ordenadas por **fecha de prioridad**: la próxima fecha límite (fin de la ventana de retiro mientras queden contenedores sin retirar; luego fin de la ventana de entrega). Los completados van al final. La fecha se pinta en rojo si ya venció y en ámbar si vence en menos de 24 h.
+- Cada fila muestra el **tracking de 8 etapas** (publicado → devuelto) con cuántos contenedores hay en cada una: ✓ verde = etapa superada por todos; ámbar = en espera; azul = en curso; verde = entregado. Al desplegar se ven ventanas, carga, contenedores y acciones.
 
 ### Cambios de datos propuestos (Supabase)
 ```sql

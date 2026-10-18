@@ -43,7 +43,7 @@
 <script>
 (function(){
 'use strict';
-const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v3';
+const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v4';
 const ST=[
  {k:'publicado',l:'Publicado'},
  {k:'confirmado',l:'Confirmado · por aprobar'},
@@ -67,7 +67,8 @@ const PICK=['Patio Maersk · MIT','Patio Hapag · CCT','Depot CMA CGM · Coco So
 const DELIV=['MIT · Manzanillo','CCT · Colón Container Terminal','PPC · Cristóbal'];
 const DRIVERS=['José Batista','Ricardo Morán','Luis Castillo','Edwin Pinzón','Abdiel Quintero','Marcos Rodríguez','Iván Sánchez','Félix Ortega'];
 const PREFIX={'Maersk':'MSKU','Hapag-Lloyd':'HLXU','CMA CGM':'CMAU','MSC':'MEDU','ONE':'ONEU','Evergreen':'EGHU','COSCO':'CSNU'};
-const D=s=>new Date(s).getTime();
+const Date_=s=>new Date(s).getTime(), D=Date_, DAY=24*3600000;
+const SHIFT=Math.round((Date.now()-Date_('2026-10-16T09:00:00-05:00'))/DAY)*DAY;
 const rnd=n=>Math.floor(Math.random()*n);
 const uid=p=>p+Math.random().toString(36).slice(2,8);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -77,7 +78,7 @@ const ago=t=>{const m=Math.round((Date.now()-t)/MIN);if(m<1)return'ahora';if(m<6
 const cnum=nav=>(PREFIX[nav]||'TCKU')+' '+String(100000+rnd(899999))+'-'+rnd(10);
 const plate=()=>'AK'+(1000+rnd(8999));
 
-let state, objUrls={}, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main'};
+let state, objUrls={}, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{}};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
 const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
@@ -105,6 +106,7 @@ function mkContainers(n,status,carrierId,nav,opts){
 }
 function seed(){
   const now=Date.now();
+  const D=x=>Date_(x)+SHIFT;
   const atlas={desc:'Cerveza Atlas lata 355 ml',skus:[{sku:'ATL-355-24',d:'Atlas lata 355 ml · caja 24 u',q:1540}],notes:'Carga a piso, sin pallets. 1.540 cajas por 40\'HC. Colocar 4 bolsas de desecante. No mezclar lotes de producción en un mismo contenedor. Foto al 50 % y con puertas cerradas antes de sellar.'};
   const mixto={desc:'Mixto Balboa / Panamá botella retornable',skus:[{sku:'BAL-330-24',d:'Balboa botella 330 ml · caja 24 u',q:900},{sku:'PAN-330-24',d:'Panamá botella 330 ml · caja 24 u',q:600}],notes:'Balboa al fondo, Panamá hacia la puerta. Separador de cartón entre marcas. Máximo 7 cajas de alto.'};
   const vigor={desc:'Malta Vigor lata 355 ml',skus:[{sku:'VIG-355-24',d:'Malta Vigor lata 355 ml · caja 24 u',q:980}],notes:'Contenedor 20\': 980 cajas. Revisar piso del contenedor (limpio y seco) antes de cargar; rechazar si huele a químico.'};
@@ -130,7 +132,7 @@ function seed(){
     log:[{at:now-3*MIN,t:'Rutas del Caribe confirmó 5 contenedores de MAEU 258741963'},{at:now-6*MIN,t:'Costa Atlántica confirmó 12 contenedores de MAEU 258741963'},{at:now-8*MIN,t:'CERNAC creó ONEU PTY5562018 · 10 × 40\' DV · directo a Costa Atlántica'},{at:now-25*MIN,t:'CERNAC creó MAEU 258741963 · 21 × 40\' HC · publicado abierto'},{at:now-72*MIN,t:'CERNAC creó HLCU COL2610458 · 8 × 40\' HC · publicado abierto'}]};
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify({state:state,ui:ui}));}catch(e){}}
-function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;ui=Object.assign(ui,r.ui||{});return;}}catch(e){}state=seed();}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};return;}}catch(e){}state=seed();}
 function log(t){state.log.unshift({at:Date.now(),t:t});state.log=state.log.slice(0,60);}
 
 /* derived */
@@ -188,6 +190,35 @@ const freeRamps=()=>Array.from({length:RAMPS},(_,i)=>'R'+(i+1)).filter(r=>!rampO
 const cola=()=>allC().filter(x=>rs(x.c)==='ESPERA_RAMPA');
 function rampBadge(c){const k=rs(c);return '<span class="cli-badge '+RST[k].p+'">'+(c.rampa?c.rampa+' · ':'')+RST[k].l+'</span>';}
 
+/* filas de booking: prioridad + tracking */
+const SHORT={publicado:'Publ.',confirmado:'Conf.',asignado:'Asig.',retiro:'Retiro',bodega:'Bodega',transito:'Tráns.',entregado:'Entreg.',devuelto:'Dev.'};
+const TONE=k=>IDX[k]<=1?'wait':IDX[k]>=6?'on':'tr';
+function prio(b){
+  const ct=counts(b),n=b.containers.length;
+  if(ct.publicado+ct.confirmado+ct.asignado>0)return {t:b.pickTo,l:'Retiro vacío hasta'};
+  if(ct.entregado+ct.devuelto<n)return {t:b.delTo,l:'Entrega lleno hasta'};
+  return {t:b.delTo,l:'Entregado',done:true};
+}
+function byPrio(list){return list.slice().sort((a,b)=>{const x=prio(a),y=prio(b);return x.done!==y.done?(x.done?1:-1):x.done?y.t-x.t:x.t-y.t;});}
+function rel(t){const m=Math.round((t-Date.now())/MIN),a=Math.abs(m),h=Math.floor(a/60),d=Math.floor(h/24);const v=a<60?a+' min':h<48?h+' h':d+' d';return m<0?'hace '+v:'en '+v;}
+function trk(b){
+  const ct=counts(b),n=b.containers.length,mx=Math.max.apply(null,b.containers.map(c=>IDX[c.status]));
+  return '<div class="trk" role="img" aria-label="'+esc(ST.filter(x=>ct[x.k]).map(x=>x.l+': '+ct[x.k]).join(' · '))+'">'+ST.map((x,i)=>{
+    const done=b.containers.every(c=>IDX[c.status]>i)&&!ct[x.k], cur=ct[x.k]>0;
+    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(x.l)+': '+ct[x.k]+'">'+(done?'✓':cur?ct[x.k]:'')+'</span></span>';}).join('')+'</div>';
+}
+function bkRows(sec,list,body,right,alert){
+  if(!list.length)return '';
+  return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Prioridad</span><span>Booking</span><div class="trk">'+ST.map(x=>'<span>'+SHORT[x.k]+'</span>').join('')+'</div><span>Estado</span></div>'+
+   byPrio(list).map(b=>{const k=sec+':'+b.id,p=prio(b),left=p.t-Date.now();
+    const tone=p.done?'done':left<0?'over':left<24*HOUR?'soon':'';
+    return '<details class="bkr'+((alert&&alert(b))?' alert':'')+'" data-key="'+k+'"'+(ui.open[k]?' open':'')+'><summary class="bkr-s">'+
+     '<span class="bkr-chev" aria-hidden="true">›</span>'+
+     '<span class="bkr-p '+tone+'"><b>'+(p.done?'Completado':fmt(p.t))+'</b><span>'+(p.done?'':p.l+' · '+rel(p.t))+'</span></span>'+
+     '<span class="bkr-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="bkr-tags"><span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span></span></span>'+
+     trk(b)+'<span class="bkr-r">'+right(b)+'</span></summary><div class="bkr-b">'+body(b)+'</div></details>';}).join('')+'</div>';
+}
+
 /* attention badges */
 function attention(){
   const a={cliente:0,bodega:0,transportista:0,admin:0};
@@ -211,12 +242,11 @@ function renderRoles(){
 function vCliente(){
   let pr=0,asg=0,ruta=0,ent=0;
   state.bookings.forEach(b=>b.containers.forEach(c=>{const i=IDX[c.status];if(i<=1)pr++;else if(i===2)asg++;else if(i<=5)ruta++;else ent++;}));
-  const list=state.bookings.slice().sort((a,b)=>b.createdAt-a.createdAt);
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Mis bookings</h1><p class="sc-sub">Cervecería Nacional · Transporte de contenedores operado por DP World. Crea el booking y sigue cada contenedor en vivo.</p></div><button class="btn-p btn-green inl" data-act="new">+ Nuevo booking</button></div>'+
   '<div class="stats"><div class="sbox"><div class="sn sa">'+pr+'</div><div class="sl2">Programando</div></div><div class="sbox"><div class="sn en">'+asg+'</div><div class="sl2">Transporte asignado</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
-  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Bookings</h2><span class="psect-cnt">'+list.length+'</span></div><div class="cards">'+list.map(b=>
+  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('cli',state.bookings,b=>
    '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Transportista <strong>DP World</strong></span></div>'+bar(b)+'</div>'+
-   '<div class="bk-foot">'+stagePill(b,'cliente')+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></article>').join('')+'</div></div></section>';
+   '<div class="bk-foot">'+stagePill(b,'cliente')+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></article>',b=>stagePill(b,'cliente'))+'</div></section>';
 }
 
 /* ===== BODEGA ===== */
@@ -227,16 +257,17 @@ function vBodega(){
     if(cs.some(c=>c.rampa))inR.push(b);
     if(ct.publicado+ct.confirmado+ct.asignado>0)coming.push(b);
     if(ct.bodega)done.push(b);});
-  const rows=(b,f,lbl)=>'<div class="tw"><table class="t" style="min-width:0"><thead><tr><th>#</th><th>Contenedor</th><th>Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+
-    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td>'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c)+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
+  const rows=(b,f,lbl)=>'<div class="tw"><table class="t" style="min-width:0"><thead><tr><th>#</th><th>Contenedor</th><th class="hide-sm">Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+
+    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td class="hide-sm">'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c)+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
   const card=(b,mode)=>{
     const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');
     const head=mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola de rampa</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' aún sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' cargados y sellados</span>';
     const t=mode==='cola'?rows(b,c=>c.status==='retiro'&&!c.rampa,'Asignar rampa'):mode==='rampa'?rows(b,c=>c.status==='retiro'&&c.rampa,'Abrir rampa'):mode==='done'?rows(b,c=>c.status==='bodega','Ver'):'';
-    return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b,head)+cargoHtml(b)+t+'</div></article>';
+    return '<article class="bk">'+windows(b)+'<div class="bk-main">'+cargoHtml(b)+t+'</div></article>';
   };
   const n=(arr,f)=>arr.reduce((s,b)=>s+b.containers.filter(f).length,0);
-  const sec=(title,cnt,arr,mode,empty)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+title+'</h2><span class="psect-cnt">'+cnt+'</span></div>'+(arr.length?'<div class="cards">'+arr.map(b=>card(b,mode)).join('')+'</div>':'<div class="empty">'+empty+'</div>')+'</div>';
+  const head=(b,mode)=>{const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');return mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' sellados</span>';};
+  const sec=(title,cnt,arr,mode,empty)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+title+'</h2><span class="psect-cnt">'+cnt+'</span></div>'+(arr.length?bkRows('bo'+mode,arr,b=>card(b,mode),b=>head(b,mode)):'<div class="empty">'+empty+'</div>')+'</div>';
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bookings de bodega</h1><p class="sc-sub">Lo que viene a la bodega y qué cargar en cada contenedor. Los vacíos que retira el transportista entran solos a la cola de rampas; «Cargado en bodega» se marca al sellar en Rampas.</p></div><button class="btn-p btn-green inl" data-act="sec" data-k="rampas">Ir a rampas</button></div>'+
    sec('En cola de rampa · vacíos retirados',n(q,c=>c.status==='retiro'&&!c.rampa),q,'cola','No hay vacíos esperando rampa.')+
    sec('En rampa · inspección y carga',n(inR,c=>c.status==='retiro'&&c.rampa),inR,'rampa','No hay contenedores en rampa.')+
@@ -325,9 +356,9 @@ function vTrans(){
        return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status,c)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
      (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+'</div></article>';};
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">'+esc(CN[me])+'</h1><p class="sc-sub">Bookings para transporte bajo bandera DP World. Confirma disponibilidad de equipo dentro de 1 hora; DP World aprueba antes de quedar en firme.</p></div></div>'+
-   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Disponibles para confirmar</h2><span class="psect-cnt">'+avail.length+'</span></div>'+(avail.length?'<div class="cards">'+avail.map(availCard).join('')+'</div>':'<div class="empty">No hay bookings publicados para ti en este momento.</div>')+'</div>'+
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Disponibles para confirmar</h2><span class="psect-cnt">'+avail.length+'</span></div>'+(avail.length?bkRows('tav',avail,availCard,b=>clock(b)||'<span class="cli-badge mute">Sin cubrir '+openCount(b)+'</span>',expired):'<div class="empty">No hay bookings publicados para ti en este momento.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Esperando aprobación de DP World</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Booking</th><th>Tamaño</th><th>Contenedores</th><th>Enviado</th><th>Nota</th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td class="mono">'+esc(b.ref)+'</td><td>'+esc(b.size)+'</td><td class="num">'+f.qty+'</td><td>'+ago(f.at)+'</td><td>'+esc(f.note||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada pendiente de aprobación.</div>')+'</div>'+
-   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Mis operaciones</h2><span class="psect-cnt">'+mine.length+'</span></div>'+(mine.length?'<div class="cards">'+mine.map(mineCard).join('')+'</div>':'<div class="empty">Sin contenedores asignados todavía.</div>')+'</div></section>';
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Mis operaciones</h2><span class="psect-cnt">'+mine.length+'</span></div>'+(mine.length?bkRows('tmi',mine,mineCard,b=>'<span class="cli-badge mute">'+b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado).length+' tuyos</span>'):'<div class="empty">Sin contenedores asignados todavía.</div>')+'</div></section>';
 }
 function statusPill(k,c){if(k==='retiro'&&c&&c.rampa)return '<span class="cli-badge tr">En bodega · '+RST[c.ramp].l+'</span>';const i=IDX[k];const cls=i===0?'wait':i===1?'wait':i>=6?'on':'tr';return '<span class="cli-badge '+cls+'">'+esc(LBL[k])+'</span>';}
 
@@ -341,14 +372,16 @@ function vAdmin(){
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Panel DP World</h1><p class="sc-sub">Tu único trabajo manual: aprobar lo que confirman los transportistas y actuar si un booking vence sin cubrir.</p></div></div>'+
   '<div class="stats"><div class="sbox"><div class="sn '+(pend.length?'sa':'sl')+'">'+pend.length+'</div><div class="sl2">Por aprobar</div></div><div class="sbox"><div class="sn '+(exp.length?'er':'sl')+'">'+exp.length+'</div><div class="sl2">Vencidos sin cubrir</div></div><div class="sbox"><div class="sn sa">'+open+'</div><div class="sl2">Cont. publicados</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Aprobaciones pendientes</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Unidades</th><th>Enviado</th><th>Nota</th><th></th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td><span class="mono">'+esc(b.ref)+'</span><br><span class="muted" style="font-size:12.5px">retiro desde '+fmt(b.pickFrom)+'</span></td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td class="num">'+(f.units||'—')+'</td><td>'+ago(f.at)+'</td><td style="max-width:240px">'+esc(f.note||'—')+'</td><td class="r"><div class="acts" style="justify-content:flex-end"><button class="btn-p btn-red inl" data-act="reject" data-id="'+f.id+'">Rechazar</button><button class="btn-p btn-green inl" data-act="approve" data-id="'+f.id+'">Aprobar</button></div></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Sin confirmaciones por aprobar.</div>')+'</div>'+
-  (exp.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Alertas · vencieron sin cubrir</h2><span class="psect-cnt">'+exp.length+'</span></div><div class="cards">'+exp.map(b=>'<article class="bk alert">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]):'Abierto')+'</strong></span></div></div><div class="bk-foot">'+clock(b)+'<div class="acts"><select id="asg-'+b.id+'" aria-label="Transportista">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select><button class="btn-p btn-green inl" data-act="force" data-id="'+b.id+'">Asignar directo</button><button class="btn-p btn-navy inl" data-act="reopen" data-id="'+b.id+'">Reabrir 1 h a todos</button></div></div></article>').join('')+'</div></div>':'')+
+  (exp.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Alertas · vencieron sin cubrir</h2><span class="psect-cnt">'+exp.length+'</span></div>'+bkRows('aex',exp,b=>'<article class="bk alert">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]):'Abierto')+'</strong></span></div></div><div class="bk-foot">'+clock(b)+'<div class="acts"><select id="asg-'+b.id+'" aria-label="Transportista">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select><button class="btn-p btn-green inl" data-act="force" data-id="'+b.id+'">Asignar directo</button><button class="btn-p btn-navy inl" data-act="reopen" data-id="'+b.id+'">Reabrir 1 h a todos</button></div></div></article>',b=>'<span class="cli-badge off">Vencido</span>',()=>true)+'</div>':'')+
   '<div class="grid2"><div class="panel"><h2 class="psect-title">Publicación de nuevos bookings</h2><div class="row"><div class="htabs" role="group" aria-label="Modo"><button class="htab'+(s.mode==='directo'?' active':'')+'" data-act="mode" data-v="directo" aria-pressed="'+(s.mode==='directo')+'">Directo a preferido</button><button class="htab'+(s.mode==='abierto'?' active':'')+'" data-act="mode" data-v="abierto" aria-pressed="'+(s.mode==='abierto')+'">Abierto · primero que confirma</button></div></div>'+
    '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
    '<p class="muted" style="margin:0;font-size:13.5px">Si el preferido rechaza, el booking pasa solo a modo abierto y el reloj de 1 h reinicia.</p></div>'+
    '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Chasis</th><th>Activos</th></tr></thead><tbody>'+CARRIERS.map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td>'+esc(c.chassis)+'</td><td class="num">'+active(c.id)+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
-  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings</h2><span class="psect-cnt">'+state.bookings.length+'</span></div><div class="tw"><table class="t"><thead><tr><th>Booking</th><th>Tamaño</th><th>Retiro vacío</th><th>Entrega lleno</th><th>Transportistas</th><th>Estado</th><th></th></tr></thead><tbody>'+
-   state.bookings.slice().sort((a,b)=>a.pickFrom-b.pickFrom).map(b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
-    return '<tr><td class="mono">'+esc(b.ref)+'</td><td class="num">'+b.qty+' × '+esc(b.size)+'</td><td>'+fmt(b.pickFrom)+'</td><td>'+fmt(b.delFrom)+'</td><td><div class="chips">'+(Object.keys(by).map(k=>'<span class="chip">'+esc(CN[k].split(' ').slice(-2).join(' '))+' · '+by[k]+'</span>').join('')||'<span class="muted">—</span>')+'</div></td><td>'+stagePill(b,'admin')+'</td><td class="r"><button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver</button></td></tr>';}).join('')+'</tbody></table></div></div>'+
+  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
+    return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]||''):'Abierto')+'</strong></span></div>'+
+     '<div><span class="flbl">Transportistas</span><div class="chips">'+(Object.keys(by).map(k=>'<span class="chip">'+esc(CN[k])+' · '+by[k]+'</span>').join('')||'<span class="muted">Sin asignar</span>')+'</div></div>'+bar(b)+'</div>'+
+     '<div class="bk-foot">'+(clock(b)||stagePill(b,'admin'))+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></article>';},
+    b=>stagePill(b,'admin'),expired)+'</div>'+
   '<div class="panel"><h2 class="psect-title">Actividad</h2><div class="log">'+state.log.slice(0,12).map(l=>'<div><span class="muted num">'+hm(l.at)+'</span><span>'+esc(l.t)+'</span></div>').join('')+'</div></div></section>';
 }
 
@@ -371,7 +404,7 @@ function detail(id){
 /* ===== forms ===== */
 function toLocalInput(t){const d=new Date(t-new Date(t).getTimezoneOffset()*MIN);return d.toISOString().slice(0,16);}
 function newBooking(){
-  const base=D('2026-10-16T07:00:00-05:00');
+  const base=D('2026-10-16T07:00:00-05:00')+SHIFT;
   openModal('<div class="sh-h"><div><span class="flbl">Cervecería Nacional</span><h3 class="mtitle">Nuevo booking</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
   '<form class="sh-b form" id="nbForm" novalidate>'+
   '<fieldset><legend>Ventanas</legend><div class="fgrid">'+
@@ -556,6 +589,7 @@ document.addEventListener('change',e=>{
     if(!t.value){c.carrierId=null;c.status='publicado';c.confId=null;}else{c.carrierId=t.value;c.confId=null;if(IDX[c.status]<2)c.status='asignado';}
     log('DP World asignó '+b.ref+' #'+c.seq+' a '+(CN[t.value]||'nadie'));commit();toast('Contenedor reasignado.');}
 });
+document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.bkr')){if(d.open)ui.open[d.dataset.key]=1;else delete ui.open[d.dataset.key];save();}},true);
 document.getElementById('lgForm').addEventListener('submit',e=>{
   e.preventDefault();
   const u=document.getElementById('lg-user').value.trim().toLowerCase(),pw=document.getElementById('lg-pass').value,err=document.getElementById('lg-err'),usr=USERS[u];
