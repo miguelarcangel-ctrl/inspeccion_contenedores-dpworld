@@ -104,7 +104,11 @@ Las políticas RLS actuales son `Allow all ... TO anon` y las contraseñas de `c
 6. Supabase Auth + RLS por rol.
 
 ## Marca
-Skill de marca DP World. Colores tomados del logo real: grafito #0F0F19, verde #00E68C, rojo #FF2261, con degradados rojo→rosa, verde→menta y grafito→gris. Logos oficiales en `assets/`. UI minimalista, con modo claro y oscuro.
+Misma línea gráfica que Control de Rampas y las demás apps DP World: tema oscuro único con los tokens de `:root` (`--bg #0d0b28`, `--surf #16143d`, `--card #1e1c50`, `--primary #3E3C90`, `--green #00C389`, `--red #E8003D`, `--amber #f5a20b`, `--blue #0099e6`), Barlow Condensed para títulos, etiquetas y botones (en mayúsculas) y Barlow para el cuerpo, radios `--r 10px` / `--r2 6px`, y cabecera blanca con el logo.
+
+Colores de estado: verde = completado/OK, ámbar = pendiente/espera, rojo = vencido/error, azul = en curso/tránsito.
+
+**Una sola hoja de estilos:** `dpworld.css` (raíz del repo) la comparten `index.html` y `prototype/index.html`. El prototipo reutiliza las clases de Rampas (`.hdr`, `.tabs/.tab`, `.stats/.sbox`, `.psect-*`, `.btn-p`, `.cli-badge`, `.abox`, `.flbl/.fin`, `.htab`, `.mclose`, `.toast`); lo exclusivo de Last Mile está al final de la hoja, bajo `.lm`. Al integrar el módulo en `index.html` basta con envolver sus vistas en un contenedor `.lm`: no hay que copiar CSS.
 
 ## Documentos de apoyo
 - `docs/Descripcion_Funciones_Coordinador_Last_Mile.docx`: funciones del coordinador manual (20 pasos), perfil, comparativo con la app e indicadores.
