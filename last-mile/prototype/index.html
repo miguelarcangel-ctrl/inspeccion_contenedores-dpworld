@@ -78,7 +78,7 @@ const ago=t=>{const m=Math.round((Date.now()-t)/MIN);if(m<1)return'ahora';if(m<6
 const cnum=nav=>(PREFIX[nav]||'TCKU')+' '+String(100000+rnd(899999))+'-'+rnd(10);
 const plate=()=>'AK'+(1000+rnd(8999));
 
-let state, objUrls={}, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{}};
+let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{}};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
 const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
@@ -131,6 +131,31 @@ function seed(){
            {id:'f2',bookingId:'b1',carrierId:'c3',qty:5,units:5,note:'Podemos cubrir 5 el sábado en la mañana.',at:now-3*MIN,status:'pendiente'}],
     log:[{at:now-3*MIN,t:'Rutas del Caribe confirmó 5 contenedores de MAEU 258741963'},{at:now-6*MIN,t:'Costa Atlántica confirmó 12 contenedores de MAEU 258741963'},{at:now-8*MIN,t:'CERNAC creó ONEU PTY5562018 · 10 × 40\' DV · directo a Costa Atlántica'},{at:now-25*MIN,t:'CERNAC creó MAEU 258741963 · 21 × 40\' HC · publicado abierto'},{at:now-72*MIN,t:'CERNAC creó HLCU COL2610458 · 8 × 40\' HC · publicado abierto'}]};
 }
+/* archivos adjuntos: IndexedDB del navegador (sobreviven a recargas; localStorage no alcanza para PDF) */
+const FILES=(()=>{let db=null;
+  const open=()=>db||(db=new Promise((res,rej)=>{const r=indexedDB.open('dpw-lastmile-archivos',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}));
+  const tx=(modo,fn)=>open().then(d=>new Promise((res,rej)=>{const t=d.transaction('f',modo),q=fn(t.objectStore('f'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);}));
+  return {put:(k,v)=>tx('readwrite',st=>st.put(v,k)),get:k=>tx('readonly',st=>st.get(k)),clear:()=>tx('readwrite',st=>st.clear())};})();
+const MAX_MB=10;
+const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+function samplePdf(lines){
+  // PDF mínimo (una página, Helvetica) para los documentos de los datos de ejemplo
+  const t=x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7e]/g,'-').replace(/[\\()]/g,'\\$&');
+  const body='BT /F1 18 Tf 56 740 Td ('+t(lines[0])+') Tj /F1 11 Tf'+lines.slice(1).map(l=>' 0 -24 Td ('+t(l)+') Tj').join('')+' ET';
+  const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Length '+body.length+' >>\nstream\n'+body+'\nendstream'];
+  let out='%PDF-1.4\n';const offs=objs.map((o,i)=>{const at=out.length;out+=(i+1)+' 0 obj\n'+o+'\nendobj\n';return at;});
+  const xref=out.length;
+  out+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n'+offs.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')+'trailer\n<< /Size '+(objs.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+  return new Blob([out],{type:'application/pdf'});
+}
+async function downloadDoc(key,name,ref){
+  let blob=null;try{blob=await FILES.get(key);}catch(e){}
+  if(!blob){blob=samplePdf(['DP World · Last Mile','Documento de ejemplo: '+name,'Booking: '+ref,'Generado por el prototipo: el archivo original no se subió en esta demo.']);name=name.replace(/\.[^.]+$/,'')+'_ejemplo.pdf';}
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
+}
+
 function save(){try{localStorage.setItem(KEY,JSON.stringify({state:state,ui:ui}));}catch(e){}}
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};return;}}catch(e){}state=seed();}
 function log(t){state.log.unshift({at:Date.now(),t:t});state.log=state.log.slice(0,60);}
@@ -173,7 +198,9 @@ function windows(b){
     '<div><span class="flbl">Entrega lleno</span><span class="t">'+fmt(b.delFrom)+' → '+fmt(b.delTo)+'</span><span class="loc">'+esc(b.delLoc)+'</span></div></div>';
 }
 function idRow(b,extra){return '<div class="bk-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span>'+(extra||'')+'</div>';}
-function docsHtml(list){if(!list||!list.length)return'<span class="muted">Sin documentos</span>';return '<div class="docs">'+list.map(n=>objUrls[n]?'<a class="doc" href="'+objUrls[n]+'" target="_blank" rel="noopener">'+esc(n)+'</a>':'<span class="doc">'+esc(n)+'</span>').join('')+'</div>';}
+const dlIcon='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function docBtn(key,name,ref,label){return '<button type="button" class="doc" data-act="doc" data-k="'+esc(key)+'" data-n="'+esc(name)+'" data-r="'+esc(ref)+'" title="Descargar '+esc(name)+'">'+dlIcon+esc(label||name)+'</button>';}
+function docsHtml(b){const list=b.docs||[];if(!list.length)return'<span class="muted">Sin documentos</span>';return '<div class="docs">'+list.map(n=>docBtn(b.id+'/'+n,n,b.ref)).join('')+'</div>';}
 function cargoHtml(b,full){
   const c=b.cargo||{};
   return '<div class="cargo"><div class="row" style="justify-content:space-between"><span class="flbl">Detalle de carga · solo bodega y DP World</span></div>'+
@@ -339,7 +366,7 @@ function vTrans(){
     const ex=expired(b);
     return '<article class="bk'+(ex?' alert':'')+'">'+windows(b)+'<div class="bk-main">'+idRow(b,b.mode==='directo'?'<span class="cli-badge tr">Directo para ti</span>':'<span class="cli-badge mute">Abierto</span>')+
      '<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Cliente <strong>Cuenta DP World</strong></span></div>'+
-     '<div><span class="flbl">Documentos operativos</span>'+docsHtml(b.docs)+'</div>'+
+     '<div><span class="flbl">Documentos operativos</span>'+docsHtml(b)+'</div>'+
      '<div class="lock">🔒 Detalle de mercancía reservado a bodega.</div></div>'+
      '<div class="bk-foot">'+clock(b)+'<div class="acts">'+(ex?'<span class="muted">Plazo vencido · DP World decide</span>':'<button class="btn-p btn-red inl" data-act="decline" data-id="'+b.id+'">No puedo</button><button class="btn-p btn-green inl" data-act="confirm" data-id="'+b.id+'">Confirmar disponibilidad</button>')+'</div></div></article>';};
   const mineCard=b=>{
@@ -347,6 +374,7 @@ function vTrans(){
     const by={};cs.forEach(c=>{by[c.status]=(by[c.status]||0)+1;});
     const bulk=[['bodega','transito','Salió de bodega → En tránsito'],['transito','entregado','Entregado lleno'],['entregado','devuelto','Devuelto']].filter(x=>by[x[0]]).map(x=>'<button class="btn-p btn-navy inl" data-act="bulk" data-b="'+b.id+'" data-from="'+x[0]+'" data-to="'+x[1]+'">'+by[x[0]]+' × '+x[2]+'</button>').join('');
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b,'<span class="cli-badge mute">'+cs.length+' tuyos</span>')+
+     '<div><span class="flbl">Documentos operativos</span>'+docsHtml(b)+'</div>'+
      '<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Chofer · placa</th><th>Estado</th><th>Pruebas</th><th></th></tr></thead><tbody>'+cs.map(c=>{
        let act='';
        if(c.status==='asignado')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="retiro">Retiro de vacío</button>';
@@ -381,6 +409,7 @@ function vAdmin(){
    '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Chasis</th><th>Activos</th></tr></thead><tbody>'+CARRIERS.map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td>'+esc(c.chassis)+'</td><td class="num">'+active(c.id)+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]||''):'Abierto')+'</strong></span></div>'+
+     '<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div>'+
      '<div><span class="flbl">Transportistas</span><div class="chips">'+(Object.keys(by).map(k=>'<span class="chip">'+esc(CN[k])+' · '+by[k]+'</span>').join('')||'<span class="muted">Sin asignar</span>')+'</div></div>'+bar(b)+'</div>'+
      '<div class="bk-foot">'+(clock(b)||stagePill(b,'admin'))+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></article>';},
     b=>stagePill(b,'admin'),expired)+'</div>'+
@@ -392,13 +421,13 @@ function detail(id){
   const b=B(id), r=ui.role;
   const isAdmin=r==='admin';
   const body='<div class="sh-h"><div><span class="flbl">'+(r==='cliente'?'Transportista: DP World':'Booking')+'</span><h3 class="mtitle">'+esc(b.ref)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
-  '<div class="sh-b"><div class="bk" style="box-shadow:none">'+windows(b)+'<div class="bk-main">'+idRow(b,stagePill(b,r))+bar(b)+'<div><span class="flbl">Documentos</span>'+docsHtml(b.docs)+'</div></div></div>'+
+  '<div class="sh-b"><div class="bk" style="box-shadow:none">'+windows(b)+'<div class="bk-main">'+idRow(b,stagePill(b,r))+bar(b)+'<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div></div></div>'+
   (r!=='transportista'?cargoHtml(b):'')+
   '<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Estado</th><th>Chofer</th><th>Placa</th>'+(isAdmin?'<th>Transportista real</th>':'')+'<th>Sello</th><th>Pruebas</th></tr></thead><tbody>'+
   b.containers.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por asignar</span>')+'</td><td>'+(isAdmin?'<select data-act="fix" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Corregir estado">'+ST.map(s=>'<option value="'+s.k+'"'+(s.k===c.status?' selected':'')+'>'+esc(s.l)+'</option>').join('')+'</select>':(r==='cliente'&&IDX[c.status]<=1?'<span class="cli-badge wait">Programando</span>':statusPill(c.status,c)))+'</td>'+
     '<td>'+(c.driver?esc(c.driver)+(r==='cliente'?' <span class="muted" style="font-size:12px">· DP World</span>':''):'<span class="muted">—</span>')+'</td><td>'+(c.plate?esc(c.plate):'<span class="muted">—</span>')+'</td>'+
     (isAdmin?'<td>'+(IDX[c.status]<=2?'<select data-act="reassign" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Transportista"><option value="">— Sin asignar —</option>'+CARRIERS.map(k=>'<option value="'+k.id+'"'+(k.id===c.carrierId?' selected':'')+'>'+esc(k.name)+'</option>').join('')+'</select>':esc(CN[c.carrierId]||'—'))+'</td>':'')+
-    '<td class="mono">'+(esc(c.seal)||'<span class="muted">—</span>')+'</td><td style="font-size:12.5px">'+(c.proofs.length?c.proofs.map(p=>(objUrls[p.name]?'<a href="'+objUrls[p.name]+'" target="_blank" rel="noopener">':'<span>')+esc(p.type)+(objUrls[p.name]?'</a>':'</span>')).join('<br>'):'<span class="muted">—</span>')+'</td></tr>').join('')+
+    '<td class="mono">'+(esc(c.seal)||'<span class="muted">—</span>')+'</td><td style="font-size:12.5px">'+(c.proofs.length?'<div class="docs">'+c.proofs.map(p=>docBtn(b.id+'/'+c.id+'/'+p.name,p.name,b.ref,p.type)).join('')+'</div>':'<span class="muted">—</span>')+'</td></tr>').join('')+
   '</tbody></table></div>'+(isAdmin?'<p class="muted" style="margin:0;font-size:13px">Como admin puedes dividir el booking por contenedor (columna Transportista real) y corregir cualquier estado.</p>':'')+'</div>';
   openModal(body,false);
 }
@@ -421,7 +450,8 @@ function newBooking(){
    '<label class="f"><span class="flbl">Tamaño de contenedor</span><select class="fin" id="sz">'+SIZES.map(z=>'<option'+(z==='40\' HC'?' selected':'')+'>'+esc(z)+'</option>').join('')+'</select></label>'+
    '<label class="f"><span class="flbl">Cantidad</span><input class="fin" type="number" id="qt" min="1" max="60" value="12" required></label>'+
    '<label class="f"><span class="flbl">Naviera</span><select class="fin" id="nv">'+NAVIERAS.map(n=>'<option>'+esc(n)+'</option>').join('')+'</select></label></div>'+
-   '<label class="f"><span class="flbl">Documentos (booking, release)</span><input class="fin" type="file" id="dc" multiple></label></fieldset>'+
+   '<label class="f"><span class="flbl">Booking (PDF)</span><input class="fin" type="file" id="dcb" accept=".pdf,application/pdf"></label>'+
+   '<label class="f"><span class="flbl">Otros documentos · release, instrucciones (PDF o foto)</span><input class="fin" type="file" id="dc" multiple accept=".pdf,application/pdf,image/*"></label></fieldset>'+
   '<fieldset class="wh"><legend>Detalle de carga · solo para bodega</legend><p class="lock" style="margin:0">🔒 El transportista no ve esta sección.</p>'+
    '<label class="f"><span class="flbl">Descripción de la mercancía</span><input class="fin" id="cd" value="Cerveza Atlas lata 355 ml"></label>'+
    '<div class="f"><span class="flbl">SKU por contenedor</span><div id="skus" style="display:grid;gap:6px"></div><button type="button" class="link" data-act="addsku" style="justify-self:start">+ Agregar SKU</button></div>'+
@@ -431,7 +461,7 @@ function newBooking(){
   addSku('ATL-355-24','Atlas lata 355 ml · caja 24 u',1540);
 }
 function addSku(s,d,q){const w=document.getElementById('skus');if(!w)return;const r=document.createElement('div');r.className='skurow';r.innerHTML='<input placeholder="SKU" class="mono" value="'+esc(s||'')+'" aria-label="SKU"><input class="d" placeholder="Descripción" value="'+esc(d||'')+'" aria-label="Descripción"><input type="number" placeholder="Cajas" value="'+(q||'')+'" aria-label="Cajas por contenedor"><button type="button" class="mclose" data-act="rmsku" aria-label="Quitar">×</button>';w.appendChild(r);}
-function submitNew(){
+async function submitNew(){
   const v=id=>document.getElementById(id).value.trim();
   const err=document.getElementById('nbErr');
   const ref=v('rf').toUpperCase(), qty=parseInt(v('qt'),10);
@@ -441,14 +471,20 @@ function submitNew(){
   if(!(pt>pf)){err.textContent='El fin del retiro de vacío debe ser posterior al inicio.';return;}
   if(!(dt>df)){err.textContent='El fin de la entrega lleno debe ser posterior al inicio.';return;}
   if(df<pf){err.textContent='La entrega lleno no puede empezar antes del retiro de vacío.';return;}
-  const files=Array.from(document.getElementById('dc').files||[]);
-  files.forEach(f=>{try{objUrls[f.name]=URL.createObjectURL(f);}catch(e){}});
+  const bkPdf=(document.getElementById('dcb').files||[])[0];
+  if(bkPdf&&!isPdf(bkPdf)){err.textContent='El booking debe ser un archivo PDF.';return;}
+  const files=(bkPdf?[bkPdf]:[]).concat(Array.from(document.getElementById('dc').files||[])).filter((f,i,a)=>a.findIndex(x=>x.name===f.name)===i);
+  const big=files.find(f=>f.size>MAX_MB*1048576);
+  if(big){err.textContent=big.name+' pesa más de '+MAX_MB+' MB.';return;}
   const skus=Array.from(document.querySelectorAll('#skus .skurow')).map(r=>{const i=r.querySelectorAll('input');return {sku:i[0].value.trim(),d:i[1].value.trim(),q:parseInt(i[2].value,10)||0};}).filter(x=>x.sku||x.d);
   const s=state.settings, nav=v('nv');
   const b={id:uid('b'),ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],containers:mkContainers(qty,'publicado',null,nav)};
+  let saved=true;
+  try{await Promise.all(files.map(f=>FILES.put(b.id+'/'+f.name,f)));}catch(e){saved=false;}
   state.bookings.push(b);
   log('CERNAC creó '+ref+' · '+qty+' × '+b.size+' · '+(b.mode==='directo'?'directo a '+CN[b.directTo]:'publicado abierto'));
   closeModal();commit();toast('Booking '+ref+' recibido. DP World está programando el transporte.');
+  if(!saved)toast('Este navegador no permitió guardar los adjuntos.',true);
 }
 function confirmForm(id){
   const b=B(id),n=openCount(b),me=CARRIERS.find(c=>c.id===ui.carrier);
@@ -492,7 +528,7 @@ function doAdv(bid,cid,to){
   if(to==='retiro'){c.number=g('num').toUpperCase();c.driver=g('drv');c.plate=g('plt').toUpperCase();c.ramp='ESPERA_RAMPA';c.rampa=null;}
   if(to==='bodega'){c.seal=g('seal');c.loaded=parseInt(g('box'),10)||null;log('Bodega selló '+c.number+' en '+c.rampa+' y lo pasó al buffer');c.ramp=null;c.rampa=null;}
   const fi=document.getElementById('fx-file');
-  if(st.proof){const file=fi&&fi.files&&fi.files[0];const name=file?file.name:(st.proof.replace(/\W+/g,'_')+'_'+(c.number||c.seq).toString().replace(/\W/g,'')+'.pdf');if(file){try{objUrls[name]=URL.createObjectURL(file);}catch(e){}}c.proofs.push({type:st.proof,name:name,by:OWNER[to]});}
+  if(st.proof){const file=fi&&fi.files&&fi.files[0];const name=file?file.name:(st.proof.replace(/\W+/g,'_')+'_'+(c.number||c.seq).toString().replace(/\W/g,'')+'.pdf');if(file){FILES.put(b.id+'/'+c.id+'/'+name,file).catch(()=>{});}c.proofs.push({type:st.proof,name:name,by:OWNER[to]});}
   c.status=to;
   log((to==='bodega'?'Bodega':CN[c.carrierId])+' marcó '+st.t.toLowerCase()+' · '+b.ref+' #'+c.seq+(c.number?' ('+c.number+')':''));
   closeModal();commit();toast(st.t+' registrado. '+(to==='retiro'?'Ya aparece en la cola de rampas de bodega.':'El cliente ya lo ve.'));
@@ -546,6 +582,7 @@ document.addEventListener('click',e=>{
      if(to==='ESPERA_RAMPA')c.rampa=null;
      c.ramp=to;log('Bodega: '+c.number+' → '+RST[to].l.toLowerCase());closeModal();commit();toast(c.number+': '+RST[to].l+'.');break;}
    case 'seal':advForm(t.dataset.b,t.dataset.c,'bodega');break;
+   case 'doc':downloadDoc(t.dataset.k,t.dataset.n,t.dataset.r);break;
    case 'new':ov.dataset.detail='';newBooking();break;
    case 'addsku':addSku();break;
    case 'rmsku':t.parentElement.remove();break;
@@ -574,7 +611,7 @@ document.addEventListener('click',e=>{
    case 'bulk':{const b=B(t.dataset.b),to=t.dataset.to;const cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status===t.dataset.from);
      cs.forEach(c=>{c.status=to;if(STEP[to].proof)c.proofs.push({type:STEP[to].proof,name:STEP[to].proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
      log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+LBL[to].toLowerCase());commit();toast(cs.length+' contenedores actualizados a «'+LBL[to]+'».');break;}
-   case 'reset':state=seed();objUrls={};expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
+   case 'reset':state=seed();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });
 document.addEventListener('change',e=>{

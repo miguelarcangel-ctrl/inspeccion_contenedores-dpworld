@@ -508,7 +508,10 @@ main.lm-main{padding-block:18px 56px}
 .lm .err{color:#ff6680;font-size:13px;font-weight:600}
 .lm .docs{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .lm .doc{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--b0);border:1px solid var(--b1);display:inline-flex;gap:5px;align-items:center;color:var(--t2);text-decoration:none}
-.lm a.doc:hover{border-color:var(--b2);color:var(--t)}
+.lm button.doc{cursor:pointer;font-family:inherit;white-space:nowrap}
+.lm .doc svg{width:13px;height:13px;flex:none;color:var(--green)}
+.lm :is(a,button).doc:hover{border-color:var(--b2);color:var(--t)}
+.lm button.doc:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 
 /* avisos: .toast de la raíz, apilados */
 .lm #toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));display:grid;justify-items:center;gap:8px;z-index:400;width:min(460px,calc(100vw - 28px))}
