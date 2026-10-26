@@ -345,22 +345,23 @@ input[type=file]{display:none}
 .sup-only{display:none}
 
 /* ── LOGIN ── */
-.lg-err{background:rgba(220,0,50,.06);border:1px solid rgba(220,0,50,.2);color:#c0002a;font-size:12px;font-weight:600;padding:9px 12px;border-radius:7px;margin-bottom:14px;display:none;text-align:left}
+.lg-err{background:#FEE;border:1px solid #FCC;color:#E8003D;font-size:.78rem;font-weight:600;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none;text-align:left}
 .lg-err.show{display:block}
-.lg-fg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;text-align:left}
-.lg-lbl{font-size:10px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:1px}
-.lg-in{border:1.5px solid #ddd;border-radius:7px;padding:11px 12px;font-family:'Barlow',sans-serif;font-size:14px;color:#1a1760;background:#fff;width:100%;transition:border-color .2s}
-.lg-in:focus{outline:none;border-color:var(--primary);background:#f8f8ff}
-.lg-in::placeholder{color:#bbb}
-.lg-btn{width:100%;background:var(--primary);color:#fff;border:none;border-radius:7px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;margin-top:4px}
-.lg-btn:hover{background:var(--pk)}
-.login-footer{font-size:10px;color:#bbb;margin-top:18px;letter-spacing:.04em;text-align:center}
+.lg-fg{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left}
+.lg-lbl{font-size:.65rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.07em}
+.lg-in{border:1.5px solid #E2E8F0;border-radius:10px;padding:12px 14px;font-family:'Barlow',sans-serif;font-size:.9rem;font-weight:500;color:#1B1B2F;background:#F8F9FC;width:100%;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.lg-in:focus{outline:none;border-color:#1A1060;background:#fff;box-shadow:0 0 0 3px rgba(26,16,96,.08)}
+.lg-in::placeholder{color:#94A3B8}
+.lg-btn{width:100%;background:#1A1060;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);margin-top:8px}
+.lg-btn:hover{background:#2A1F8F}
+.login-footer{font-size:.65rem;color:#94A3B8;margin-top:16px;letter-spacing:.07em;text-align:center}
 .login-logo{text-align:center;margin-bottom:20px}
-.login-logo img{height:70px;margin:0 auto;display:block;object-fit:contain}
-.login-sub{font-size:.7rem;color:var(--primary);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
-.login-ref{font-size:.68rem;color:#999;margin-top:4px;letter-spacing:.03em}
-.login-card{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.35);display:flex;flex-direction:column}
-#vlogin{position:fixed;inset:0;background:var(--pk);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999}
+.login-logo img{height:48px;width:auto;margin:0 auto 6px;display:block;object-fit:contain}
+.login-sub{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:#1A1060;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.login-ref{font-size:.72rem;color:#64748B;margin-top:4px}
+.login-card{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(26,16,96,.14);display:flex;flex-direction:column;animation:lgUp .3s ease}
+@keyframes lgUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+#vlogin{position:fixed;inset:0;background:linear-gradient(135deg,#1A1060 0%,#2D1B8E 50%,#1A1060 100%);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999}
 .hdr-user{display:flex;align-items:center;gap:8px}
 .hdr-role{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(62,60,144,.1);color:var(--primary);border:1px solid rgba(62,60,144,.2)}
 .hdr-logout{background:#f4f4f7;border:1px solid #ddd;color:#555;padding:5px 10px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
@@ -374,8 +375,8 @@ input[type=file]{display:none}
   <div class="login-card">
     <div class="login-logo">
       <img src="https://raw.githubusercontent.com/miguelarcangel-ctrl/cotizador-dpworld/main/logo_white.png" alt="DP World">
-      <div class="login-sub">3PL PANAM&#193; &middot; CONTROL DE RAMPAS</div>
-      <div class="login-ref">SL-02-007 &middot; DAL Col&#243;n Logistics Park</div>
+      <div class="login-sub">Control de Rampas</div>
+      <div class="login-ref">SL-02-007 &middot; DAL Col&#243;n Logistics Park &middot; Panam&#225;</div>
     </div>
     <div class="lg-err" id="lg-err">Usuario o contrase&#241;a incorrectos</div>
     <div class="lg-fg">
