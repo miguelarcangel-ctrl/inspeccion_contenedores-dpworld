@@ -43,7 +43,7 @@
 <script>
 (function(){
 'use strict';
-const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v5';
+const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v6';
 const ST=[
  {k:'publicado',l:'Publicado'},
  {k:'confirmado',l:'Confirmado · por aprobar'},
@@ -79,11 +79,11 @@ const ago=t=>{const m=Math.round((Date.now()-t)/MIN);if(m<1)return'ahora';if(m<6
 const cnum=nav=>(PREFIX[nav]||'TCKU')+' '+String(100000+rnd(899999))+'-'+rnd(10);
 const plate=()=>'AK'+(1000+rnd(8999));
 
-let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90'};
+let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90',calW:0};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
 const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
-const SECTIONS={cliente:[['main','Mis bookings']],transportista:[['main','Bookings']],bodega:[['main','Bookings'],['rampas','Rampas']],admin:[['main','Panel'],['rampas','Rampas'],['reportes','Reportes']]};
+const SECTIONS={cliente:[['main','Mis bookings'],['cal','Calendario']],transportista:[['main','Bookings'],['cal','Calendario']],bodega:[['main','Bookings'],['cal','Calendario'],['rampas','Rampas']],admin:[['main','Panel'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes']]};
 
 /* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
 const RAMPS=6, BUFFER=16;
@@ -133,7 +133,13 @@ function seed(){
   B4.containers.forEach((c,i)=>c.seq=i+1);
   const B5={id:'b5',ref:'ONEU PTY5562018',naviera:'ONE',size:'40\' DV',qty:10,pickFrom:D('2026-10-17T07:00:00-05:00'),pickTo:D('2026-10-19T12:00:00-05:00'),pickLoc:PICK[4],delFrom:D('2026-10-21T06:00:00-05:00'),delTo:D('2026-10-21T18:00:00-05:00'),delLoc:DELIV[1],docs:['Booking_ONEU_PTY5562018.pdf'],cargo:mixto,createdAt:now-9*MIN,publishedAt:now-8*MIN,mode:'directo',directTo:'c1',hidden:[]};
   B5.containers=mkContainers(10,'publicado',null,'ONE');
-  b.push(B5,B1,B2,B3,B4);
+  const B6={id:'b6',ref:'CSNU SHA4471026',naviera:'COSCO',size:'40\' HC',qty:6,pickFrom:D('2026-10-17T07:00:00-05:00'),pickTo:D('2026-10-18T12:00:00-05:00'),pickLoc:PICK[1],delFrom:D('2026-10-20T06:00:00-05:00'),delTo:D('2026-10-20T20:00:00-05:00'),delLoc:DELIV[1],docs:['Booking_CSNU_SHA4471026.pdf'],cargo:atlas,createdAt:now-2*DAY,publishedAt:now-2*DAY+HOUR,mode:'directo',directTo:'c1',hidden:[]};
+  B6.containers=mkContainers(6,'asignado','c1','COSCO');
+  B6.containers.slice(0,4).forEach(c=>c.cita={at:D('2026-10-17T08:00:00-05:00'),by:'c1'});
+  B6.containers[0].turno={at:D('2026-10-17T10:00:00-05:00'),rampa:'R1',dur:2};B6.containers[1].turno={at:D('2026-10-17T10:00:00-05:00'),rampa:'R3',dur:2};
+  B3.containers.slice(3).forEach(c=>c.cita={at:B3.pickFrom+2*HOUR,by:'c2'});
+  B3.containers[3].turno={at:B3.pickFrom+4*HOUR,rampa:'R2',dur:2};B3.containers[4].turno={at:B3.pickFrom+5*HOUR,rampa:'R4',dur:2};
+  b.push(B5,B1,B2,B3,B4,B6);
   b.forEach(backfill);
   return {settings:{mode:'abierto',preferred:'c1'},bookings:b,hist:seedHistory(now,{atlas:atlas,mixto:mixto,vigor:vigor}),
     confs:[{id:'f1',bookingId:'b1',carrierId:'c1',qty:12,units:12,note:'12 cabezales con chasis 40\' disponibles desde vie 06:00.',at:now-6*MIN,status:'pendiente'},
@@ -310,7 +316,7 @@ function attention(){
 }
 function renderRoles(){
   const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
-  const badge={bodega:{rampas:cola().length},admin:{main:attention().admin}}[ui.role]||{};
+  const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin}}[ui.role]||{};
   nav.hidden=secs.length<2;
   nav.innerHTML=secs.length<2?'':secs.map(x=>'<button class="tab'+(ui.sec===x[0]?' active':'')+'" role="tab" aria-selected="'+(ui.sec===x[0])+'" data-act="sec" data-k="'+x[0]+'">'+x[1]+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   document.getElementById('hdr-role').textContent=ui.role==='transportista'?CN[ui.carrier]:(USERS[ui.user]||{}).n||ui.role;
@@ -337,7 +343,7 @@ function vBodega(){
     if(ct.publicado+ct.confirmado+ct.asignado>0)coming.push(b);
     if(ct.bodega)done.push(b);});
   const rows=(b,f,lbl)=>'<div class="tw"><table class="t" style="min-width:0"><thead><tr><th>#</th><th>Contenedor</th><th class="hide-sm">Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+
-    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td class="hide-sm">'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c)+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
+    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td class="hide-sm">'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c)+(c.turno?' <span class="muted">· turno '+c.turno.rampa+' '+fmt(c.turno.at)+'</span>':'')+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
   const card=(b,mode)=>{
     const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');
     const head=mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola de rampa</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' aún sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' cargados y sellados</span>';
@@ -464,6 +470,134 @@ function vAdmin(){
      '<div class="bk-foot">'+(clock(b)||stagePill(b,'admin'))+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></article>';},
     b=>stagePill(b,'admin'),expired)+'</div>'+
   '<div class="panel"><h2 class="psect-title">Actividad</h2><div class="log">'+state.log.slice(0,12).map(l=>'<div><span class="muted num">'+hm(l.at)+'</span><span>'+esc(l.t)+'</span></div>').join('')+'</div></div></section>';
+}
+
+/* ===== CALENDARIO: semana por horas (hora de Panamá) ===== */
+const CAL_H0=5,CAL_H1=22,CAL_PX=44;
+const dayStart=t=>{const d=new Date(t-5*HOUR);return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())+5*HOUR;};
+const toPa=t=>new Date(t-5*HOUR).toISOString().slice(0,16);          // valor para datetime-local en hora de Panamá
+const fromPa=v=>v?Date.parse(v+':00Z')+5*HOUR:NaN;
+const calWeek=()=>weekStart(Date.now())+(ui.calW||0)*7*DAY;
+const shortCN=id=>CN[id]?CN[id].split(' ').slice(-2).join(' '):'';
+function sinCita(){const me=ui.carrier,o=[];state.bookings.forEach(b=>b.containers.forEach(c=>{if(c.carrierId===me&&c.status==='asignado'&&!c.cita)o.push({b:b,c:c});}));return o;}
+function sinTurno(){const o=[];state.bookings.forEach(b=>b.containers.forEach(c=>{if(c.cita&&!c.turno&&(c.status==='asignado'||c.status==='retiro'))o.push({b:b,c:c});}));return o;}
+function calScope(){
+  const me=ui.carrier,r=ui.role;
+  return state.bookings.map(b=>({b:b,cs:r==='transportista'?b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado):b.containers,
+    avail:r==='transportista'&&openCount(b)>0&&(b.mode==='abierto'||b.directTo===me)&&b.hidden.indexOf(me)<0})).filter(x=>r!=='transportista'||x.cs.length||x.avail);
+}
+function calEvents(scope){
+  const ev=[];
+  scope.forEach(x=>{const g={};x.cs.forEach(c=>{
+    if(c.cita){const k='c'+c.cita.at;(g[k]=g[k]||{type:'cita',at:c.cita.at,dur:HOUR,b:x.b,cs:[]}).cs.push(c);}
+    if(c.turno){const k='t'+c.turno.at+c.turno.rampa;(g[k]=g[k]||{type:'turno',at:c.turno.at,dur:c.turno.dur*HOUR,rampa:c.turno.rampa,b:x.b,cs:[]}).cs.push(c);}});
+    Object.keys(g).forEach(k=>ev.push(g[k]));});
+  ev.forEach(e=>{e.done=e.cs.every(c=>IDX[c.status]>=(e.type==='cita'?IDX.retiro:IDX.bodega));});
+  return ev;
+}
+function calLayout(items){
+  // eventos que se solapan en el mismo día van lado a lado
+  items.sort((a,b)=>a.s-b.s||b.z-a.z);
+  items.forEach((it,i)=>{const used=items.slice(0,i).filter(o=>o.z>it.s&&o.s<it.z).map(o=>o.col);let c=0;while(used.indexOf(c)>=0)c++;it.col=c;});
+  items.forEach(it=>{it.n=1+Math.max(...items.filter(o=>o.z>it.s&&o.s<it.z).map(o=>o.col));});
+  return items;
+}
+function vCal(){
+  const ws=calWeek(),we=ws+7*DAY,now=Date.now(),r=ui.role,scope=calScope(),today=dayStart(now);
+  const inWk=(a,z)=>z>ws&&a<we, px=t=>Math.max(0,Math.min(100,(t-ws)/(7*DAY)*100));
+  const rows=scope.filter(x=>inWk(x.b.pickFrom,x.b.pickTo)||inWk(x.b.delFrom,x.b.delTo)).sort((a,b)=>a.b.pickFrom-b.b.pickFrom);
+  const ev=calEvents(scope).filter(e=>inWk(e.at,e.at+e.dur));
+  const days=Array.from({length:7},(_,i)=>ws+i*DAY);
+  const dl=t=>new Date(t).toLocaleDateString('es-PA',{timeZone:'America/Panama',weekday:'short',day:'numeric'}).replace(/\./g,'');
+  const range=new Date(ws).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'numeric',month:'short'})+' – '+new Date(we-DAY).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'numeric',month:'short',year:'numeric'});
+  const win=(a,z,cls,lbl)=>inWk(a,z)?'<span class="cal-win '+cls+'" style="left:'+px(a)+'%;width:'+Math.max(1,px(z)-px(a))+'%"><span>'+esc(lbl)+'</span></span>':'';
+  const lane=rows.length?rows.map(x=>'<button type="button" class="cal-row" data-act="calbk" data-id="'+x.b.id+'" title="'+esc(x.b.ref+' · retiro '+fmt(x.b.pickFrom)+' → '+fmt(x.b.pickTo)+' · entrega '+fmt(x.b.delFrom)+' → '+fmt(x.b.delTo))+'">'+
+    win(x.b.pickFrom,x.b.pickTo,'ret','Retiro · '+x.b.ref+' · '+x.b.qty+' × '+x.b.size)+win(x.b.delFrom,x.b.delTo,'ent','Entrega · '+x.b.ref)+'</button>').join(''):'<div class="cal-none">Sin ventanas esta semana</div>';
+  const cols=days.map(d=>{
+    const items=calLayout(ev.filter(e=>e.at<d+DAY&&e.at+e.dur>d).map(e=>({e:e,s:Math.max(e.at,d),z:Math.min(e.at+e.dur,d+DAY)})));
+    const blocks=items.map(it=>{const e=it.e,hs=Math.min(CAL_H1-.5,Math.max(CAL_H0,(it.s-d)/HOUR)),hz=Math.max(hs+.5,Math.min(CAL_H1,(it.z-d)/HOUR));
+      const n=e.cs.length,who=(r==='bodega'||r==='admin')&&e.cs[0].carrierId?' · '+shortCN(e.cs[0].carrierId):'';
+      const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':'Turno '+e.rampa);
+      const t2=e.b.ref+' · '+(e.type==='turno'&&n===1&&e.cs[0].number?e.cs[0].number:n+' cont.')+who;
+      return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'" data-r="'+(e.rampa||'')+'" title="'+esc(t1+' · '+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+t2)+'">'+
+        '<b>'+(e.done?'✓ ':'')+hm(e.at)+' '+esc(e.type==='cita'?'Retiro':r==='cliente'?'Carga':e.rampa)+'</b><span>'+esc(t2)+'</span></button>';}).join('');
+    const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
+    return '<div class="cal-day'+(d===today?' today':'')+'">'+blocks+nowLine+'</div>';}).join('');
+  // pendientes por rol
+  let pend='';
+  if(r==='transportista'){const sc=sinCita(),by={};sc.forEach(x=>{(by[x.b.id]=by[x.b.id]||{b:x.b,n:0}).n++;});const l=Object.keys(by).map(k=>by[k]).sort((a,b)=>a.b.pickFrom-b.b.pickFrom);
+    pend='<div class="panel cal-pend"><div class="rpt-sec-title">Por agendar · retiros sin hora</div>'+(l.length?l.map(x=>'<div class="cal-pend-row"><span><b class="mono">'+esc(x.b.ref)+'</b> · '+x.n+' cont. · ventana '+fmt(x.b.pickFrom)+' → '+fmt(x.b.pickTo)+'</span><button class="btn-p btn-green inl" data-act="agenda" data-id="'+x.b.id+'">Agendar retiro</button></div>').join(''):'<div class="muted">Todos tus contenedores asignados tienen hora de retiro.</div>')+'</div>';}
+  if(r==='bodega'){const st=sinTurno(),by={};st.forEach(x=>{(by[x.b.id]=by[x.b.id]||{b:x.b,n:0,at:x.c.cita.at}).n++;});const l=Object.keys(by).map(k=>by[k]).sort((a,b)=>a.at-b.at);
+    pend='<div class="panel cal-pend"><div class="rpt-sec-title">Por asignar · llegadas sin turno de rampa</div>'+(l.length?l.map(x=>'<div class="cal-pend-row"><span><b class="mono">'+esc(x.b.ref)+'</b> · '+x.n+' cont. · retiro '+fmt(x.at)+'</span><button class="btn-p btn-green inl" data-act="turnos" data-id="'+x.b.id+'">Asignar turno</button></div>').join(''):'<div class="muted">Todas las llegadas tienen turno de rampa.</div>')+'</div>';}
+  const hint={cliente:'Ventanas de tus bookings, horas de retiro programadas y turnos de carga en bodega.',transportista:'Agenda la hora de retiro dentro de cada ventana. Toca una ventana o una cita para agendar o reprogramar.',bodega:'Llegadas de vacíos y turnos de rampa. Toca una llegada para asignar rampa y hora.',admin:'Vista completa de ventanas, citas de retiro y turnos de rampa.'}[r];
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+hint+'</p></div></div>'+pend+
+   '<div class="cal-bar"><div class="htabs"><button class="htab" data-act="calw" data-v="-1" aria-label="Semana anterior">‹ Anterior</button><button class="htab'+(ui.calW?'':' active')+'" data-act="calw" data-v="0">Hoy</button><button class="htab" data-act="calw" data-v="1" aria-label="Semana siguiente">Siguiente ›</button></div>'+
+   '<span class="cal-range">'+range+'</span><span class="cal-legend"><span><i class="lg-ret"></i>Ventana de retiro</span><span><i class="lg-ent"></i>Ventana de entrega</span><span><i class="lg-cita"></i>'+(r==='cliente'?'Retiro programado':'Cita de retiro')+'</span><span><i class="lg-turno"></i>'+(r==='cliente'?'Carga en bodega':'Turno de rampa')+'</span><span>✓ hecho</span></span></div>'+
+   '<div class="cal-scroll"><div class="cal" style="--cal-h:'+((CAL_H1-CAL_H0)*CAL_PX)+'px;--cal-px:'+CAL_PX+'px">'+
+    '<div class="cal-head"><span></span>'+days.map(d=>'<span class="'+(d===today?'today':'')+'">'+dl(d)+'</span>').join('')+'</div>'+
+    '<div class="cal-lane"><div class="cal-lane-lbl">Ventanas</div><div class="cal-lane-body">'+lane+'</div></div>'+
+    '<div class="cal-grid"><div class="cal-hours">'+Array.from({length:CAL_H1-CAL_H0},(_,i)=>'<span>'+String(CAL_H0+i).padStart(2,'0')+':00</span>').join('')+'</div>'+cols+'</div>'+
+   '</div></div><p class="muted" style="font-size:12px">Horario visible 05:00–22:00, hora de Panamá. Las ventanas que pasan de una semana a otra se cortan en el borde.</p></section>';
+}
+function agendaForm(bid,at0){
+  const b=B(bid),me=ui.carrier,mine=b.containers.filter(c=>c.carrierId===me&&c.status==='asignado');
+  const sin=mine.filter(c=>!c.cita),grp=at0?mine.filter(c=>c.cita&&c.cita.at===+at0):[];
+  const citas={};mine.forEach(c=>{if(c.cita)citas[c.cita.at]=(citas[c.cita.at]||0)+1;});
+  const def=at0?+at0:Math.min(b.pickTo-HOUR,Math.max(b.pickFrom,Math.ceil(Date.now()/HOUR)*HOUR));
+  const edit=grp.length>0;
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · '+b.qty+' × '+esc(b.size)+'</span><h3 class="mtitle">'+(edit?'Reprogramar retiro':'Agendar retiro')+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="abox inf">Ventana de retiro: <b>'+fmt(b.pickFrom)+' → '+fmt(b.pickTo)+'</b> · '+esc(b.pickLoc)+'</div>'+
+   (Object.keys(citas).length?'<div><span class="flbl">Citas agendadas</span><div class="chips">'+Object.keys(citas).sort().map(t=>'<button type="button" class="chip" data-act="agenda" data-id="'+b.id+'" data-at="'+t+'">'+fmt(+t)+' · '+citas[t]+' cont.</button>').join('')+'</div></div>':'')+
+   (edit||sin.length?'<div class="fgrid">'+(edit?'':'<label class="f"><span class="flbl">Contenedores (sin hora: '+sin.length+')</span><input class="fin" type="number" id="ag-n" min="1" max="'+sin.length+'" value="'+sin.length+'"></label>')+
+     '<label class="f"><span class="flbl">Hora de retiro (Panamá)</span><input class="fin" type="datetime-local" id="ag-t" step="900" min="'+toPa(b.pickFrom)+'" max="'+toPa(b.pickTo)+'" value="'+toPa(def)+'"></label></div>'+
+     (edit?'<div class="abox warn">Si cambias la hora, los turnos de rampa de estos '+grp.length+' contenedores se liberan para que bodega los reasigne.</div>':'')
+    :'<div class="abox suc">Todos tus contenedores de este booking ya tienen hora de retiro. Toca una cita para reprogramarla.</div>')+
+   '<div class="err" id="ag-err"></div></div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cerrar</button>'+
+   (edit?'<button class="btn-p btn-red inl" data-act="citaDel" data-id="'+b.id+'" data-at="'+at0+'">Quitar cita</button>':'')+
+   (edit||sin.length?'<button class="btn-p btn-green inl" data-act="citaSave" data-id="'+b.id+'" data-at="'+(at0||'')+'">'+(edit?'Guardar cambio':'Agendar')+'</button>':'')+'</div>',true);
+}
+function citaSave(bid,at0){
+  const b=B(bid),me=ui.carrier,err=document.getElementById('ag-err'),t=fromPa(document.getElementById('ag-t').value);
+  if(!(t>=b.pickFrom&&t<=b.pickTo)){err.textContent='La hora debe estar dentro de la ventana de retiro ('+fmt(b.pickFrom)+' → '+fmt(b.pickTo)+').';return;}
+  const mine=b.containers.filter(c=>c.carrierId===me&&c.status==='asignado');
+  let cs;
+  if(at0){cs=mine.filter(c=>c.cita&&c.cita.at===+at0);}
+  else{const n=parseInt(document.getElementById('ag-n').value,10),sin=mine.filter(c=>!c.cita);if(!(n>=1&&n<=sin.length)){err.textContent='Indica entre 1 y '+sin.length+' contenedores.';return;}cs=sin.slice(0,n);}
+  let freed=0;cs.forEach(c=>{if(c.turno&&at0&&t!==+at0){delete c.turno;freed++;}c.cita={at:t,by:me};});
+  log(CN[me]+(at0?' reprogramó':' agendó')+' retiro de '+cs.length+' cont. de '+b.ref+' para '+fmt(t)+(freed?' · '+freed+' turno(s) liberados':''));
+  closeModal();commit();toast('Retiro '+(at0?'reprogramado':'agendado')+': '+fmt(t)+' · '+cs.length+' cont.'+(freed?' Bodega reasignará '+freed+' turno(s).':''));
+}
+function turnoList(bid){
+  const b=B(bid),cs=b.containers.filter(c=>c.cita&&(c.status==='asignado'||c.status==='retiro'));
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · '+esc(CN[cs[0]&&cs[0].carrierId]||'')+'</span><h3 class="mtitle">Turnos de rampa</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form">'+(cs.length?'<div class="tw"><table class="t" style="min-width:0"><thead><tr><th>#</th><th>Contenedor</th><th>Retiro</th><th>Turno</th><th></th></tr></thead><tbody>'+
+    cs.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por retirar</span>')+'</td><td>'+fmt(c.cita.at)+'</td><td>'+(c.turno?'<span class="cli-badge on">'+c.turno.rampa+' · '+hm(c.turno.at)+'</span>':'<span class="cli-badge wait">Sin turno</span>')+'</td><td class="r"><button class="btn-p '+(c.turno?'btn-navy':'btn-green')+' inl" data-act="turnoPick" data-b="'+b.id+'" data-c="'+c.id+'">'+(c.turno?'Cambiar':'Asignar')+'</button></td></tr>').join('')+'</tbody></table></div>'
+    :'<div class="abox inf">Este booking todavía no tiene citas de retiro. Los turnos se asignan cuando el transportista agenda la hora de retiro.</div>')+
+   cargoHtml(b)+'</div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cerrar</button></div>',true);
+}
+function turnoForm(bid,cid){
+  const b=B(bid),c=b.containers.find(x=>x.id===cid),cur=c.turno;
+  const def=cur?cur.at:Math.ceil((c.cita.at+HOUR)/HOUR)*HOUR;
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · contenedor '+c.seq+(c.number?' · '+esc(c.number):'')+'</span><h3 class="mtitle">'+(cur?'Cambiar turno':'Asignar turno de rampa')+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="abox inf">Retiro agendado: <b>'+fmt(c.cita.at)+'</b> · entrega lleno hasta '+fmt(b.delTo)+'</div>'+
+   '<div class="fgrid"><label class="f"><span class="flbl">Rampa</span><select class="fin" id="tu-r">'+Array.from({length:RAMPS},(_,i)=>'R'+(i+1)).map(r=>'<option'+(cur&&cur.rampa===r?' selected':'')+'>'+r+'</option>').join('')+'</select></label>'+
+   '<label class="f"><span class="flbl">Inicio (Panamá)</span><input class="fin" type="datetime-local" id="tu-t" step="900" value="'+toPa(def)+'"></label>'+
+   '<label class="f"><span class="flbl">Duración</span><select class="fin" id="tu-d">'+[1,2,3,4].map(h=>'<option value="'+h+'"'+((cur?cur.dur:2)===h?' selected':'')+'>'+h+' h</option>').join('')+'</select></label></div>'+
+   cargoHtml(b)+'<div class="err" id="tu-err"></div></div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="turnos" data-id="'+b.id+'">Volver</button>'+
+   (cur?'<button class="btn-p btn-red inl" data-act="turnoDel" data-b="'+b.id+'" data-c="'+c.id+'">Quitar turno</button>':'')+
+   '<button class="btn-p btn-green inl" data-act="turnoSave" data-b="'+b.id+'" data-c="'+c.id+'">Guardar turno</button></div>',true);
+}
+function turnoSave(bid,cid){
+  const b=B(bid),c=b.containers.find(x=>x.id===cid),err=document.getElementById('tu-err');
+  const r=document.getElementById('tu-r').value,t=fromPa(document.getElementById('tu-t').value),dur=parseInt(document.getElementById('tu-d').value,10);
+  if(!(t>0)){err.textContent='Indica la hora de inicio.';return;}
+  if(t<c.cita.at){err.textContent='El turno empieza antes del retiro agendado ('+fmt(c.cita.at)+'): el contenedor todavía no habrá llegado.';return;}
+  let choque=null;state.bookings.forEach(ob=>ob.containers.forEach(oc=>{if(oc!==c&&oc.turno&&oc.turno.rampa===r&&IDX[oc.status]<IDX.bodega&&oc.turno.at<t+dur*HOUR&&oc.turno.at+oc.turno.dur*HOUR>t)choque={b:ob,c:oc};}));
+  if(choque){err.textContent=r+' está ocupada de '+hm(choque.c.turno.at)+' a '+hm(choque.c.turno.at+choque.c.turno.dur*HOUR)+' ('+choque.b.ref+' #'+choque.c.seq+'). Elige otra rampa u hora.';return;}
+  c.turno={at:t,rampa:r,dur:dur};
+  log('Bodega asignó turno '+r+' '+fmt(t)+' ('+dur+' h) a '+b.ref+' #'+c.seq);
+  commit();turnoList(b.id);toast('Turno '+r+' · '+fmt(t)+' asignado.');
+  if(t+dur*HOUR>b.delTo-3*HOUR)toast('Atención: el turno termina cerca del cierre de la entrega ('+fmt(b.delTo)+').',true);
 }
 
 /* ===== REPORTES (admin) ===== */
@@ -718,7 +852,7 @@ function render(){
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
-  v.innerHTML=ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  v.innerHTML=ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
   window.scrollTo(0,sy);
   tickClocks();
 }
@@ -753,6 +887,21 @@ document.addEventListener('click',e=>{
    case 'doc':downloadDoc(t.dataset.k,t.dataset.n,t.dataset.r);break;
    case 'rp':ui.rp=t.dataset.v;save();render();break;
    case 'xlsx':exportXLSX();break;
+   case 'calw':ui.calW=t.dataset.v==='0'?0:(ui.calW||0)+parseInt(t.dataset.v,10);save();render();break;
+   case 'agenda':ov.dataset.detail='';agendaForm(t.dataset.id,t.dataset.at||null);break;
+   case 'citaSave':citaSave(t.dataset.id,t.dataset.at||null);break;
+   case 'citaDel':{const b=B(t.dataset.id),cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status==='asignado'&&c.cita&&c.cita.at===+t.dataset.at);
+     cs.forEach(c=>{delete c.cita;delete c.turno;});log(CN[ui.carrier]+' quitó la cita de retiro de '+cs.length+' cont. de '+b.ref);closeModal();commit();toast('Cita quitada.');break;}
+   case 'turnos':ov.dataset.detail='';turnoList(t.dataset.id);break;
+   case 'turnoPick':turnoForm(t.dataset.b,t.dataset.c);break;
+   case 'turnoSave':turnoSave(t.dataset.b,t.dataset.c);break;
+   case 'turnoDel':{const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c);delete c.turno;log('Bodega quitó el turno de '+b.ref+' #'+c.seq);commit();turnoList(b.id);toast('Turno quitado.');break;}
+   case 'calbk':case 'calev':{const b=B(t.dataset.b||t.dataset.id),r=ui.role;ov.dataset.detail='';
+     if(r==='transportista'){if(b.containers.some(c=>c.carrierId===ui.carrier&&c.status==='asignado'))agendaForm(b.id,a==='calev'&&t.dataset.type==='cita'?t.dataset.at:null);
+       else if(openCount(b)&&b.containers.every(c=>c.carrierId!==ui.carrier))confirmForm(b.id);else{ov.dataset.detail=b.id;detail(b.id);}}
+     else if(r==='bodega'){turnoList(b.id);}
+     else{ov.dataset.detail=b.id;detail(b.id);}
+     break;}
    case 'new':ov.dataset.detail='';newBooking();break;
    case 'addsku':addSku();break;
    case 'rmsku':t.parentElement.remove();break;

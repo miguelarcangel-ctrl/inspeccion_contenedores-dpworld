@@ -126,6 +126,16 @@ Colores de estado: verde = completado/OK, ámbar = pendiente/espera, rojo = venc
 - `docs/Descripcion_Funciones_Coordinador_Last_Mile.docx`: funciones del coordinador manual (20 pasos), perfil, comparativo con la app e indicadores.
 - Comparativo de acciones que requieren una persona: **17 tipos sin app frente a 4 con app** (aprobar, incidencias, conciliación, indicadores).
 
+## Calendario (cliente, transportista, bodega y admin)
+Semana por horas (05:00–22:00, hora de Panamá), con navegación anterior / Hoy / siguiente:
+- **Franja de ventanas**: retiro de vacío y entrega de lleno de cada booking sobre la línea de tiempo de la semana.
+- **Cita de retiro** (transportista): hora exacta de retiro, obligatoriamente dentro de la ventana; se agenda para N contenedores y se puede reprogramar o quitar. Si cambia, los turnos de rampa de esos contenedores se liberan.
+- **Turno de rampa** (bodega): rampa, inicio y duración por contenedor con cita. Se rechaza si la rampa ya está ocupada en ese horario o si empieza antes del retiro agendado; avisa si termina cerca del cierre de la entrega.
+- **Cliente**: solo consulta, como «Retiro programado» y «Carga en bodega» (sin nombre del subcontratista). **Admin**: vista completa.
+- Pendientes con contador en la pestaña: retiros sin hora (transportista) y llegadas sin turno (bodega).
+
+Datos: `contenedor.cita = {at, by}` y `contenedor.turno = {at, rampa, dur}`. En Supabase: columnas `cita_retiro`, `turno_rampa`, `turno_inicio`, `turno_duracion` en `operaciones` (o tabla `citas`), con una restricción que impida turnos solapados en la misma rampa.
+
 ## Reportería (admin)
 Sección **Reportes** del admin, con filtro de período (30 días, 90 días, este mes, todo; se cuenta por el inicio de la ventana de retiro):
 - **Cumplimiento** contra meta, con semáforo (✓ Cumple / ▲ Bajo meta, hasta 5 puntos bajo la meta / ✕ Crítico): confirmados ≤ 1 h, retiro en ventana, entrega en ventana, pruebas completas (EIR retiro, foto del sello y EIR entrega).

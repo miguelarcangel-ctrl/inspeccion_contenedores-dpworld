@@ -599,6 +599,50 @@ main.lm-main{padding-block:18px 56px}
 .lm .rpt-bar-fill{background:#8a88e0}
 .lm .rpt-bar-val{font-size:12px;color:var(--t2);width:34px}
 .lm .rp-tip{position:fixed;z-index:300;pointer-events:none;background:var(--raised);border:1px solid var(--b2);color:var(--t);font-size:12px;padding:6px 10px;border-radius:var(--r2);box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:260px}
+/* calendario: semana por horas. Retiro = violeta #8a88e0, rampa = naranja #d9682f (validados contra --surf/--card) */
+.lm .cal-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.lm .cal-range{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.lm .cal-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--t2);margin-left:auto}
+.lm .cal-legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.lm .lg-ret{background:rgba(138,136,224,.3);border:1px solid #8a88e0}
+.lm .lg-ent{background:rgba(255,255,255,.06);border:1px dashed var(--b2)}
+.lm .lg-cita{background:rgba(138,136,224,.32);border-left:3px solid #8a88e0}
+.lm .lg-turno{background:rgba(217,104,47,.32);border-left:3px solid #d9682f}
+.lm .cal-scroll{overflow-x:auto;border:1px solid var(--b1);border-radius:var(--r);background:var(--card)}
+.lm .cal{min-width:780px}
+@media (max-width:560px){.lm .cal{min-width:900px}}
+.lm .cal-head,.lm .cal-grid{display:grid;grid-template-columns:52px repeat(7,minmax(0,1fr))}
+.lm .cal-head{border-bottom:1px solid var(--b1);position:sticky;top:0;background:var(--card);z-index:3}
+.lm .cal-head span{padding:9px 6px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--t3)}
+.lm .cal-head span.today{color:var(--t);background:rgba(62,60,144,.25)}
+.lm .cal-lane{display:grid;grid-template-columns:52px 1fr;border-bottom:1px solid var(--b1)}
+.lm .cal-lane-lbl{font-size:8px;font-weight:700;letter-spacing:.3px;overflow:hidden;text-transform:uppercase;color:var(--t3);padding:8px 4px;writing-mode:horizontal-tb}
+.lm .cal-lane-body{padding:4px 0;background-image:linear-gradient(to right,var(--b0) 1px,transparent 1px);background-size:calc(100%/7) 100%}
+.lm .cal-row{position:relative;display:block;width:100%;height:26px;border:0;background:transparent;cursor:pointer;padding:0}
+.lm .cal-row:hover{background:var(--b0)}
+.lm .cal-row:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
+.lm .cal-win{position:absolute;top:4px;height:18px;border-radius:4px;overflow:hidden;display:flex;align-items:center}
+.lm .cal-win span{font-size:11px;font-weight:600;color:var(--t);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm .cal-win.ret{background:rgba(138,136,224,.3);border:1px solid #8a88e0}
+.lm .cal-win.ent{background:rgba(255,255,255,.06);border:1px dashed var(--b2)}
+.lm .cal-none{padding:6px 10px;font-size:12px;color:var(--t3)}
+.lm .cal-hours span{display:block;height:var(--cal-px);font-size:10px;color:var(--t3);text-align:right;padding:2px 6px 0 0;font-family:'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums}
+.lm .cal-day{position:relative;height:var(--cal-h);border-left:1px solid var(--b0);background-image:linear-gradient(to bottom,var(--b0) 1px,transparent 1px);background-size:100% var(--cal-px)}
+.lm .cal-day.today{background-color:rgba(62,60,144,.12)}
+.lm .cal-ev{position:absolute;display:flex;flex-direction:column;gap:1px;text-align:left;border:0;border-left:3px solid;border-radius:5px;padding:3px 6px;overflow:hidden;cursor:pointer;color:var(--t);font-family:'Barlow',sans-serif;z-index:1}
+.lm .cal-ev b{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm .cal-ev span{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm .cal-ev.cita{background:rgba(138,136,224,.32);border-left-color:#8a88e0}
+.lm .cal-ev.turno{background:rgba(217,104,47,.32);border-left-color:#d9682f}
+.lm .cal-ev.done{opacity:.55}
+.lm .cal-ev:hover{filter:brightness(1.2);z-index:2}
+.lm .cal-ev:focus-visible{outline:2px solid var(--green);outline-offset:1px;z-index:2}
+.lm .cal-now{position:absolute;left:0;right:0;height:2px;background:rgba(255,255,255,.75);z-index:2;pointer-events:none}
+.lm .cal-now::before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:#fff}
+.lm .cal-pend{gap:8px}
+.lm .cal-pend-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--b0);font-size:13px}
+.lm .cal-pend-row:first-of-type{border-top:0}
+.lm button.chip{cursor:pointer;color:var(--t);font-family:'Barlow Condensed',sans-serif}
 /* login por rol (tarjeta de la raíz) y muelle de rampas */
 .lm .lg-demo{margin-top:18px;text-align:center}
 .lm .lg-demo .lg-lbl{display:block;margin-bottom:8px}
