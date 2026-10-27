@@ -39,6 +39,20 @@
 <div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="toasts" aria-live="polite"></div>
 <div id="vlogin" hidden>
+  <div class="lg-map" aria-hidden="true"><svg id="lgMap"></svg></div>
+  <div class="lg-hero"><div class="lg-kick">DP World · Last Mile</div><h1 class="lg-h1"><span>Conectamos</span> <span>cada entrega</span> <em>contigo.</em></h1><p class="lg-lead">Del patio a la rampa y al puerto: cada contenedor, en vivo.</p></div>
+  <svg class="lg-scene" viewBox="0 0 1400 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect y="118" width="1400" height="32" fill="#0b0924"/><rect y="117" width="1400" height="2" fill="#00C389" opacity=".6"/>
+    <path d="M0 134h1400" stroke="rgba(255,255,255,.18)" stroke-dasharray="18 14"/>
+    <g fill="#2a2770"><rect x="60" y="74" width="54" height="22"/><rect x="60" y="96" width="54" height="22"/><rect x="116" y="96" width="54" height="22" fill="#3E3C90"/><rect x="116" y="74" width="54" height="22" fill="#00C389" opacity=".75"/><rect x="172" y="96" width="54" height="22" fill="#f5a20b" opacity=".75"/></g>
+    <path d="M290 118V24M350 118V24M270 26h150M400 26v22" stroke="#8a88e0" stroke-width="5" fill="none"/>
+    <rect x="388" y="48" width="26" height="12" fill="#00C389"><animate attributeName="y" values="48;80;48" dur="5s" repeatCount="indefinite"/></rect>
+    <g><path d="M1040 104h300l-24 20h-256z" fill="#2a2770"/><g fill="#3E3C90"><rect x="1080" y="86" width="40" height="18"/><rect x="1122" y="86" width="40" height="18" fill="#00C389" opacity=".8"/><rect x="1164" y="86" width="40" height="18"/><rect x="1206" y="86" width="40" height="18" fill="#f5a20b" opacity=".8"/><rect x="1122" y="68" width="40" height="18"/><rect x="1164" y="68" width="40" height="18" fill="#0099e6" opacity=".8"/></g><rect x="1270" y="70" width="22" height="34" fill="#fff" opacity=".85"/>
+      <animateTransform attributeName="transform" type="translate" values="0 0;60 0;0 0" dur="14s" repeatCount="indefinite"/></g>
+    <g><rect x="0" y="92" width="96" height="26" rx="2" fill="#00C389"/><path d="M14 92v26M28 92v26M42 92v26M56 92v26M70 92v26M84 92v26" stroke="rgba(0,0,0,.25)"/><path d="M100 98h22l10 10v12h-32z" fill="#fff"/><rect x="104" y="101" width="14" height="8" fill="#1A1060"/>
+      <g fill="#0b0924" stroke="#8a88e0" stroke-width="2"><circle cx="18" cy="122" r="7"/><circle cx="36" cy="122" r="7"/><circle cx="84" cy="122" r="7"/><circle cx="118" cy="122" r="7"/></g>
+      <animateTransform attributeName="transform" type="translate" values="-160 0;1500 0" dur="11s" repeatCount="indefinite"/></g>
+  </svg>
   <div class="login-card">
     <div class="login-logo">
       <img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World">
@@ -55,6 +69,7 @@
     <div class="login-footer">🔒 USO INTERNO EXCLUSIVO · DP WORLD PANAMÁ</div>
   </div>
 </div>
+<script src="login-map.js"></script>
 <script>
 (function(){
 'use strict';
@@ -1204,6 +1219,8 @@ function closeModal(){document.getElementById('ov').hidden=true;document.getElem
 function toast(t,bad){const el=document.createElement('div');el.className='toast show '+(bad?'bad':'ok');el.textContent=t;document.getElementById('toasts').appendChild(el);setTimeout(()=>el.remove(),4200);}
 
 /* ===== render ===== */
+let lgAnim=null;
+const lgPlay=()=>{if(!window.lmMap)return;if(lgAnim)lgAnim();else{lgAnim=lmMap(document.getElementById('lgMap'));if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.querySelector('.lg-scene').pauseAnimations();}};
 let expSeen=new Set();
 function menu(open){
   const d=document.getElementById('drawer'),o=document.getElementById('drawerOv'),b=document.querySelector('.hdr-burger');
@@ -1226,7 +1243,7 @@ function accordion(root){
 function render(){
   const lg=document.getElementById('vlogin');
   lg.hidden=!!ui.auth;
-  if(!ui.auth){document.getElementById('lg-demo').innerHTML=state.users.filter(x=>x.active!==false).map(x=>x.u).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
+  if(!ui.auth){lgPlay();document.getElementById('lg-demo').innerHTML=state.users.filter(x=>x.active!==false).map(x=>x.u).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
   if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
   applyTheme();
   renderRoles();
