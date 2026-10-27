@@ -9,15 +9,23 @@
 <body class="lm">
 <div class="hdr">
   <div class="hdr-l">
+    <button type="button" class="hdr-burger" data-act="menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="drawer"><span></span><span></span><span></span></button>
     <div class="hdr-logo"><img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World"></div>
     <div>
       <div class="hdr-title">DP WORLD</div>
-      <div class="hdr-sub">Last Mile</div>
+      <div class="hdr-sub" id="hdr-sub">Last Mile</div>
     </div>
   </div>
   <div class="hdr-user"><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
 </div>
-<div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Secciones" id="roles"></nav></div></div>
+<div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Secciones" id="roles" hidden></nav></div></div>
+<div class="drawer-ov" id="drawerOv" data-act="menuClose" hidden></div>
+<nav class="drawer" id="drawer" aria-label="Menú principal" aria-hidden="true">
+  <div class="drawer-h"><div class="hdr-logo"><img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World"></div><div><div class="hdr-title">DP WORLD</div><div class="hdr-sub">Last Mile</div></div><button type="button" class="mclose" data-act="menuClose" aria-label="Cerrar menú">×</button></div>
+  <div class="drawer-who" id="drawerWho"></div>
+  <div class="drawer-items" id="drawerItems"></div>
+  <div class="drawer-f"><button type="button" class="link" data-act="reset">Reiniciar demo</button><button type="button" class="hdr-logout" data-act="logout">SALIR</button></div>
+</nav>
 <div class="flow gut"><ol id="flow"></ol></div>
 <main class="lm-main gut"><div class="wrap" id="view"></div></main>
 <footer class="gut"><div class="wrap"><span>Prototipo navegable · datos de ejemplo · Bodega DP World</span><button class="link" data-act="reset">Reiniciar demo</button></div></footer>
@@ -43,7 +51,7 @@
 <script>
 (function(){
 'use strict';
-const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v6';
+const MIN=60000, HOUR=3600000, KEY='dpw-lastmile-v8';
 const ST=[
  {k:'publicado',l:'Publicado'},
  {k:'confirmado',l:'Confirmado · por aprobar'},
@@ -57,9 +65,9 @@ const IDX=Object.fromEntries(ST.map((s,i)=>[s.k,i]));
 const LBL=Object.fromEntries(ST.map(s=>[s.k,s.l]));
 const OWNER={retiro:'transportista',bodega:'bodega',transito:'transportista',entregado:'transportista',devuelto:'transportista'};
 const CARRIERS=[
- {id:'c1',name:'Transportes Costa Atlántica',units:14,chassis:'20\' y 40\''},
- {id:'c2',name:'Logística Istmo Cargo',units:9,chassis:'40\' / 40\'HC'},
- {id:'c3',name:'Rutas del Caribe S.A.',units:6,chassis:'20\' y 40\''}];
+ {id:'c1',name:'Transportes Costa Atlántica',units:24,chassis:'20\' y 40\'',reefer:true,docVence:Date.now()+200*24*3600000},
+ {id:'c2',name:'Logística Istmo Cargo',units:9,chassis:'40\' / 40\'HC',reefer:false,docVence:Date.now()+40*24*3600000},
+ {id:'c3',name:'Rutas del Caribe S.A.',units:6,chassis:'20\' y 40\'',reefer:false,docVence:Date.now()-5*24*3600000,docNota:'Póliza de seguro de carga vencida'}];
 const CN=Object.fromEntries(CARRIERS.map(c=>[c.id,c.name]));
 const SIZES=['20\' DV','40\' DV','40\' HC','20\' RF','40\' RF'];
 const NAVIERAS=['Maersk','Hapag-Lloyd','CMA CGM','MSC','ONE','Evergreen','COSCO'];
@@ -79,7 +87,7 @@ const ago=t=>{const m=Math.round((Date.now()-t)/MIN);if(m<1)return'ahora';if(m<6
 const cnum=nav=>(PREFIX[nav]||'TCKU')+' '+String(100000+rnd(899999))+'-'+rnd(10);
 const plate=()=>'AK'+(1000+rnd(8999));
 
-let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90',calW:0};
+let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90',calW:0,secOpen:{}};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
 const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
@@ -139,10 +147,15 @@ function seed(){
   B6.containers[0].turno={at:D('2026-10-17T10:00:00-05:00'),rampa:'R1',dur:2};B6.containers[1].turno={at:D('2026-10-17T10:00:00-05:00'),rampa:'R3',dur:2};
   B3.containers.slice(3).forEach(c=>c.cita={at:B3.pickFrom+2*HOUR,by:'c2'});
   B3.containers[3].turno={at:B3.pickFrom+4*HOUR,rampa:'R2',dur:2};B3.containers[4].turno={at:B3.pickFrom+5*HOUR,rampa:'R4',dur:2};
+  B1.containers.filter(c=>c.confId==='f1').forEach(c=>{c.status='asignado';stamp(c,'asignado',now-6*MIN);});
+  B6.pickFrom=Math.floor((now-6*HOUR)/HOUR)*HOUR;B6.containers.slice(4).forEach(c=>c.cita={at:B6.pickFrom+HOUR,by:'c1'});
   b.push(B5,B1,B2,B3,B4,B6);
   b.forEach(backfill);
-  return {settings:{mode:'abierto',preferred:'c1'},bookings:b,hist:seedHistory(now,{atlas:atlas,mixto:mixto,vigor:vigor}),
-    confs:[{id:'f1',bookingId:'b1',carrierId:'c1',qty:12,units:12,note:'12 cabezales con chasis 40\' disponibles desde vie 06:00.',at:now-6*MIN,status:'pendiente'},
+  const hist=seedHistory(now,{atlas:atlas,mixto:mixto,vigor:vigor});
+  const MOT={t:['Avisó: falla mecánica del cabezal','Avisó: sin chofer disponible','Avisó: sin chasis del tamaño'],dp:['No se presentó a la cita','Chofer o unidad no cumple'],c:['Naviera canceló el booking','Cambio de buque']};
+  const incid=hist.filter((x,i)=>i%5===2).map((x,i)=>{const ty=['t','dp','c','t'][i%4],cid=ty==='c'?null:(i%3===0?'c3':i%3===1?'c2':'c3');return {type:ty==='c'?'c':'dp',origen:ty==='t'?'t':ty==='dp'?'dp':'c',carrierId:cid,bookingId:x.id,ref:x.ref,n:1+(i%3),motivo:MOT[ty][i%MOT[ty].length],at:x.pickFrom-(ty==='c'?20:4)*HOUR};});
+  return {settings:{mode:'abierto',preferred:'c1',auto:{on:true,perf:95,revert:15,noShowH:3,reopenMin:30,tel:'+507 6000-0000'}},bookings:b,hist:hist,incid:incid,
+    confs:[{id:'f1',bookingId:'b1',carrierId:'c1',qty:12,units:12,note:'12 cabezales con chasis 40\' disponibles desde vie 06:00.',at:now-6*MIN,status:'auto'},
            {id:'f2',bookingId:'b1',carrierId:'c3',qty:5,units:5,note:'Podemos cubrir 5 el sábado en la mañana.',at:now-3*MIN,status:'pendiente'}],
     log:[{at:now-3*MIN,t:'Rutas del Caribe confirmó 5 contenedores de MAEU 258741963'},{at:now-6*MIN,t:'Costa Atlántica confirmó 12 contenedores de MAEU 258741963'},{at:now-8*MIN,t:'CERNAC creó ONEU PTY5562018 · 10 × 40\' DV · directo a Costa Atlántica'},{at:now-25*MIN,t:'CERNAC creó MAEU 258741963 · 21 × 40\' HC · publicado abierto'},{at:now-72*MIN,t:'CERNAC creó HLCU COL2610458 · 8 × 40\' HC · publicado abierto'}]};
 }
@@ -213,12 +226,12 @@ function seedHistory(now,cargos){
 }
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify({state:state,ui:ui}));}catch(e){}}
-function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;state.hist=state.hist||[];ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};return;}}catch(e){}state=seed();}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;state.hist=state.hist||[];state.incid=state.incid||[];state.settings.auto=state.settings.auto||{on:true,perf:95,revert:15,noShowH:3,reopenMin:30,tel:'+507 6000-0000'};ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};ui.secOpen=ui.secOpen||{};return;}}catch(e){}state=seed();}
 function log(t){state.log.unshift({at:Date.now(),t:t});state.log=state.log.slice(0,60);}
 
 /* derived */
 const B=id=>state.bookings.find(x=>x.id===id);
-const deadline=b=>b.publishedAt+HOUR;
+const deadline=b=>b.publishedAt+(b.slaMin||60)*MIN;
 const openCount=b=>b.containers.filter(c=>c.status==='publicado').length;
 const expired=b=>openCount(b)>0&&Date.now()>deadline(b);
 function counts(b){const o={};ST.forEach(s=>o[s.k]=0);b.containers.forEach(c=>o[c.status]++);return o;}
@@ -311,27 +324,41 @@ function attention(){
     b.containers.forEach(c=>{if(c.status==='retiro')a.bodega++;});
     if(openCount(b)&&!expired(b)&&(b.mode==='abierto'||b.directTo===ui.carrier)&&b.hidden.indexOf(ui.carrier)<0)a.transportista++;
     if(expired(b))a.admin++;});
-  a.admin+=state.confs.filter(f=>f.status==='pendiente').length;
+  a.admin+=state.confs.filter(f=>f.status==='pendiente').length+noShows().length;
   return a;
 }
 function renderRoles(){
   const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
   const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin}}[ui.role]||{};
-  nav.hidden=secs.length<2;
+  nav.hidden=true;
+  const ico={main:'<path d="M3 4h10M3 8h10M3 12h7"/>',cal:'<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',rampas:'<path d="M2 13V5l6-3 6 3v8"/><path d="M5 13V8h6v5"/>',reportes:'<path d="M3 13V8M8 13V3M13 13V6"/>'};
+  document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><svg viewBox="0 0 16 16" aria-hidden="true">'+ico[x[0]]+'</svg><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
+  const cur=(secs.find(x=>x[0]===ui.sec)||secs[0]||[])[1];
+  document.getElementById('hdr-sub').textContent='Last Mile'+(cur?' · '+cur:'');
+  const tot=Object.keys(badge).reduce((n,k)=>n+(badge[k]||0),0),bg=document.querySelector('.hdr-burger');
+  bg.classList.toggle('has-badge',tot>0);bg.dataset.n=tot||'';
   nav.innerHTML=secs.length<2?'':secs.map(x=>'<button class="tab'+(ui.sec===x[0]?' active':'')+'" role="tab" aria-selected="'+(ui.sec===x[0])+'" data-act="sec" data-k="'+x[0]+'">'+x[1]+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   document.getElementById('hdr-role').textContent=ui.role==='transportista'?CN[ui.carrier]:(USERS[ui.user]||{}).n||ui.role;
+  document.getElementById('drawerWho').innerHTML='<span class="flbl">Sesión</span><b>'+esc(document.getElementById('hdr-role').textContent)+'</b>';
   const steps=[['cliente','Cliente crea booking'],['transportista','Transportista confirma ≤ 1 h'],['admin','DP World aprueba'],['transportista','Retiro de vacío → cola de rampa'],['bodega','Rampa: inspección, carga y sello'],['transportista','Entrega lleno y devuelve'],['cliente','Cliente ve todo bajo DP World']];
   document.getElementById('flow').innerHTML=steps.map((s,i)=>'<li class="'+(s[0]===ui.role?'on':'')+'"><b>'+(i+1)+'</b>'+s[1]+'</li>').join('');
 }
 /* ===== CLIENTE ===== */
+function cliSecs(body){
+  // bookings del cliente separados por avance, cada grupo ordenado por prioridad
+  const prog=[],op=[],done=[];
+  state.bookings.forEach(b=>{const c=counts(b);if(c.entregado+c.devuelto===b.containers.length)done.push(b);else if(c.publicado+c.confirmado>0)prog.push(b);else op.push(b);});
+  const sec=(t,k,l,e)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+t+'</h2><span class="psect-cnt">'+l.length+'</span></div>'+(l.length?bkRows(k,l,body,b=>stagePill(b,'cliente')):'<div class="empty">'+e+'</div>')+'</div>';
+  return sec('Programando transporte','clip',prog,'Nada por programar.')+sec('En operación','clio',op,'Sin bookings en operación.')+sec('Completados','clid',done,'Aún no hay bookings completados.');
+}
 function vCliente(){
   let pr=0,asg=0,ruta=0,ent=0;
   state.bookings.forEach(b=>b.containers.forEach(c=>{const i=IDX[c.status];if(i<=1)pr++;else if(i===2)asg++;else if(i<=5)ruta++;else ent++;}));
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Mis bookings</h1><p class="sc-sub">Cervecería Nacional · Transporte de contenedores operado por DP World. Crea el booking y sigue cada contenedor en vivo.</p></div><button class="btn-p btn-green inl" data-act="new">+ Nuevo booking</button></div>'+
   '<div class="stats"><div class="sbox"><div class="sn sa">'+pr+'</div><div class="sl2">Programando</div></div><div class="sbox"><div class="sn en">'+asg+'</div><div class="sl2">Transporte asignado</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
-  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('cli',state.bookings,b=>
+  cliSecs(b=>
    '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Transportista <strong>DP World</strong></span></div>'+bar(b)+'</div>'+
-   '<div class="bk-foot">'+stagePill(b,'cliente')+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></article>',b=>stagePill(b,'cliente'))+'</div></section>';
+   '<div class="bk-foot">'+stagePill(b,'cliente')+'<div class="acts">'+(b.containers.some(c=>IDX[c.status]<=IDX.asignado)?'<button class="btn-p btn-red inl" data-act="cliCancel" data-id="'+b.id+'">Cancelar contenedores</button>':'')+'<button class="btn-p btn-navy inl" data-act="detail" data-id="'+b.id+'">Ver contenedores</button></div></div></article>')+'</section>';
 }
 
 /* ===== BODEGA ===== */
@@ -440,7 +467,7 @@ function vTrans(){
        else if(c.status==='entregado')act='<button class="btn-p btn-navy inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="devuelto">Devuelto</button>';
        else act='<span class="cli-badge on">Cerrado</span>';
        return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status,c)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
-     (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+'</div></article>';};
+     (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+(cs.some(c=>c.status==='asignado')?(()=>{const tel=state.settings.auto.tel,num=tel.replace(/\D/g,'');return '<div class="contact"><span><b>¿Problema con este viaje?</b> Comunícate con coordinación de DP World y lo resolvemos.</span><span class="acts"><a class="btn-p btn-navy inl" href="tel:'+esc(tel.replace(/[^+\d]/g,''))+'">Llamar '+esc(tel)+'</a><a class="btn-p btn-green inl" href="https://wa.me/'+num+'?text='+encodeURIComponent('Hola DP World, sobre el booking '+b.ref+': ')+'" target="_blank" rel="noopener">WhatsApp</a></span></div>';})():'')+'</div></article>';};
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">'+esc(CN[me])+'</h1><p class="sc-sub">Bookings para transporte bajo bandera DP World. Confirma disponibilidad de equipo dentro de 1 hora; DP World aprueba antes de quedar en firme.</p></div></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Disponibles para confirmar</h2><span class="psect-cnt">'+avail.length+'</span></div>'+(avail.length?bkRows('tav',avail,availCard,b=>clock(b)||'<span class="cli-badge mute">Sin cubrir '+openCount(b)+'</span>',expired):'<div class="empty">No hay bookings publicados para ti en este momento.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Esperando aprobación de DP World</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Booking</th><th>Tamaño</th><th>Contenedores</th><th>Enviado</th><th>Nota</th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td class="mono">'+esc(b.ref)+'</td><td>'+esc(b.size)+'</td><td class="num">'+f.qty+'</td><td>'+ago(f.at)+'</td><td>'+esc(f.note||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada pendiente de aprobación.</div>')+'</div>'+
@@ -450,19 +477,26 @@ function statusPill(k,c){if(k==='retiro'&&c&&c.rampa)return '<span class="cli-ba
 
 /* ===== ADMIN ===== */
 function vAdmin(){
-  const pend=state.confs.filter(f=>f.status==='pendiente').sort((a,b)=>a.at-b.at);
+  const pend=state.confs.filter(f=>f.status==='pendiente').sort((a,b)=>a.at-b.at),A=state.settings.auto;
+  const autos=state.confs.filter(f=>f.status==='auto'&&Date.now()-f.at<A.revert*MIN&&B(f.bookingId)).sort((a,b)=>b.at-a.at),ns=noShows();
   const exp=state.bookings.filter(expired);
   let open=0,ruta=0,ent=0;state.bookings.forEach(b=>b.containers.forEach(c=>{const i=IDX[c.status];if(i===0)open++;else if(i>=3&&i<=5)ruta++;else if(i>=6)ent++;}));
   const s=state.settings;
   const active=id=>state.bookings.reduce((n,b)=>n+b.containers.filter(c=>c.carrierId===id&&IDX[c.status]>=2&&IDX[c.status]<=5).length,0);
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Panel DP World</h1><p class="sc-sub">Tu único trabajo manual: aprobar lo que confirman los transportistas y actuar si un booking vence sin cubrir.</p></div></div>'+
   '<div class="stats"><div class="sbox"><div class="sn '+(pend.length?'sa':'sl')+'">'+pend.length+'</div><div class="sl2">Por aprobar</div></div><div class="sbox"><div class="sn '+(exp.length?'er':'sl')+'">'+exp.length+'</div><div class="sl2">Vencidos sin cubrir</div></div><div class="sbox"><div class="sn sa">'+open+'</div><div class="sl2">Cont. publicados</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
-  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Aprobaciones pendientes</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Unidades</th><th>Enviado</th><th>Nota</th><th></th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td><span class="mono">'+esc(b.ref)+'</span><br><span class="muted" style="font-size:12.5px">retiro desde '+fmt(b.pickFrom)+'</span></td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td class="num">'+(f.units||'—')+'</td><td>'+ago(f.at)+'</td><td style="max-width:240px">'+esc(f.note||'—')+'</td><td class="r"><div class="acts" style="justify-content:flex-end"><button class="btn-p btn-red inl" data-act="reject" data-id="'+f.id+'">Rechazar</button><button class="btn-p btn-green inl" data-act="approve" data-id="'+f.id+'">Aprobar</button></div></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Sin confirmaciones por aprobar.</div>')+'</div>'+
+  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Aprobadas automáticamente · se pueden revertir</h2><span class="psect-cnt">'+autos.length+'</span></div>'+(autos.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Aprobada</th><th>Revertir hasta</th><th></th></tr></thead><tbody>'+autos.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td class="mono">'+esc(b.ref)+'</td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td>'+ago(f.at)+'</td><td><span class="clock warn"><span>'+Math.max(0,Math.ceil((f.at+A.revert*MIN-Date.now())/MIN))+' min</span></span></td><td class="r"><button class="btn-p btn-red inl" data-act="revert" data-id="'+f.id+'">Revertir</button></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada aprobado automáticamente en los últimos '+A.revert+' min.</div>')+'</div>'+
+  (ns.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Posibles no-show · cita sin retiro hace más de '+A.noShowH+' h</h2><span class="psect-cnt">'+ns.length+'</span></div><div class="tw"><table class="t" style="min-width:0"><thead><tr><th>Transportista</th><th>Booking</th><th>Cita</th><th>Cont.</th><th></th></tr></thead><tbody>'+ns.map(x=>'<tr><td><b>'+esc(CN[x.cid])+'</b></td><td class="mono">'+esc(x.b.ref)+'</td><td><span class="cli-badge off">'+fmt(x.at)+' · '+ago(x.at)+'</span></td><td class="num">'+x.n+'</td><td class="r"><button class="btn-p btn-red inl" data-act="reasign" data-b="'+x.b.id+'" data-c="'+x.cid+'" data-at="'+x.at+'" data-m="No se presentó a la cita">Reasignar</button></td></tr>').join('')+'</tbody></table></div></div>':'')+
+  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Por aprobar · requieren revisión</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Unidades</th><th>Enviado</th><th>Motivo de revisión</th><th></th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td><span class="mono">'+esc(b.ref)+'</span><br><span class="muted" style="font-size:12.5px">retiro desde '+fmt(b.pickFrom)+'</span></td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td class="num">'+(f.units||'—')+'</td><td>'+ago(f.at)+'</td><td style="max-width:300px"><div class="rg-mot">'+((f.motivos&&f.motivos.length?f.motivos:reglas(b,f.carrierId,0).R.filter(r=>!r.pass).map(r=>r.txt)).map(m=>'<span>✕ '+esc(m)+'</span>').join('')||'<span>Aprobación automática apagada</span>')+'</div>'+(f.note?'<div class="muted" style="font-size:12px;margin-top:4px">Nota: '+esc(f.note)+'</div>':'')+'</td><td class="r"><div class="acts" style="justify-content:flex-end"><button class="btn-p btn-red inl" data-act="reject" data-id="'+f.id+'">Rechazar</button><button class="btn-p btn-green inl" data-act="approve" data-id="'+f.id+'">Aprobar</button></div></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Sin confirmaciones por aprobar.</div>')+'</div>'+
   (exp.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Alertas · vencieron sin cubrir</h2><span class="psect-cnt">'+exp.length+'</span></div>'+bkRows('aex',exp,b=>'<article class="bk alert">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]):'Abierto')+'</strong></span></div></div><div class="bk-foot">'+clock(b)+'<div class="acts"><select id="asg-'+b.id+'" aria-label="Transportista">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select><button class="btn-p btn-green inl" data-act="force" data-id="'+b.id+'">Asignar directo</button><button class="btn-p btn-navy inl" data-act="reopen" data-id="'+b.id+'">Reabrir 1 h a todos</button></div></div></article>',b=>'<span class="cli-badge off">Vencido</span>',()=>true)+'</div>':'')+
+  '<div class="panel"><h2 class="psect-title">Aprobación automática</h2><div class="row"><div class="htabs" role="group" aria-label="Aprobación automática"><button class="htab'+(A.on?' active':'')+'" data-act="autoOn" data-v="1" aria-pressed="'+A.on+'">Encendida · por excepción</button><button class="htab'+(A.on?'':' active')+'" data-act="autoOn" data-v="0" aria-pressed="'+!A.on+'">Apagada · todo manual</button></div></div>'+
+   '<div class="fgrid">'+[['perf','Desempeño mínimo (%)',50,100],['revert','Minutos para revertir',0,120],['noShowH','No-show: horas después de la cita',1,24],['reopenMin','Minutos para confirmar al republicar',10,60]].map(x=>'<label class="f"><span class="flbl">'+x[1]+'</span><input class="fin" type="number" data-act="autoSet" data-k="'+x[0]+'" min="'+x[2]+'" max="'+x[3]+'" value="'+A[x[0]]+'"></label>').join('')+
+   '<label class="f"><span class="flbl">Teléfono / WhatsApp de coordinación</span><input class="fin" type="tel" data-act="telSet" value="'+esc(A.tel)+'"></label></div>'+
+   '<p class="muted" style="margin:0;font-size:13px">Se aprueba sola si: documentos vigentes · capacidad disponible en la ventana · desempeño de 90 días sobre el mínimo · equipo compatible · carga general · máx. 2 transportistas por booking. Si falla alguna, pasa a «Por aprobar» con el motivo.</p></div>'+
   '<div class="grid2"><div class="panel"><h2 class="psect-title">Publicación de nuevos bookings</h2><div class="row"><div class="htabs" role="group" aria-label="Modo"><button class="htab'+(s.mode==='directo'?' active':'')+'" data-act="mode" data-v="directo" aria-pressed="'+(s.mode==='directo')+'">Directo a preferido</button><button class="htab'+(s.mode==='abierto'?' active':'')+'" data-act="mode" data-v="abierto" aria-pressed="'+(s.mode==='abierto')+'">Abierto · primero que confirma</button></div></div>'+
    '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
    '<p class="muted" style="margin:0;font-size:13.5px">Si el preferido rechaza, el booking pasa solo a modo abierto y el reloj de 1 h reinicia.</p></div>'+
-   '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Chasis</th><th>Activos</th></tr></thead><tbody>'+CARRIERS.map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td>'+esc(c.chassis)+'</td><td class="num">'+active(c.id)+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
+   '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Activos</th><th>Documentos</th></tr></thead><tbody>'+CARRIERS.map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td class="num">'+active(c.id)+'</td><td>'+(c.docVence>Date.now()?'<span class="cli-badge on">Hasta '+fmtDia(c.docVence)+'</span>':'<span class="cli-badge off">Vencidos</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]||''):'Abierto')+'</strong></span></div>'+
      '<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div>'+
@@ -490,10 +524,16 @@ function calEvents(scope){
   const ev=[];
   scope.forEach(x=>{const g={};x.cs.forEach(c=>{
     if(c.cita){const k='c'+c.cita.at;(g[k]=g[k]||{type:'cita',at:c.cita.at,dur:HOUR,b:x.b,cs:[]}).cs.push(c);}
-    if(c.turno){const k='t'+c.turno.at+c.turno.rampa;(g[k]=g[k]||{type:'turno',at:c.turno.at,dur:c.turno.dur*HOUR,rampa:c.turno.rampa,b:x.b,cs:[]}).cs.push(c);}});
-    Object.keys(g).forEach(k=>ev.push(g[k]));});
+    if(c.turno){const k='t'+c.turno.at;const e=(g[k]=g[k]||{type:'turno',at:c.turno.at,dur:0,rampas:[],b:x.b,cs:[]});e.cs.push(c);e.dur=Math.max(e.dur,c.turno.dur*HOUR);if(e.rampas.indexOf(c.turno.rampa)<0)e.rampas.push(c.turno.rampa);}});
+    Object.keys(g).forEach(k=>{const e=g[k];if(e.rampas){e.rampas.sort((a,b)=>a.slice(1)-b.slice(1));e.rampa=rangoRampas(e.rampas);}ev.push(e);});});
   ev.forEach(e=>{e.done=e.cs.every(c=>IDX[c.status]>=(e.type==='cita'?IDX.retiro:IDX.bodega));});
   return ev;
+}
+function rangoRampas(rs){
+  // R1,R2,R3,R5 → «R1–R3·R5»
+  const n=rs.map(x=>+x.slice(1)),out=[];
+  for(let i=0;i<n.length;){let j=i;while(j+1<n.length&&n[j+1]===n[j]+1)j++;out.push(j>i+1?'R'+n[i]+'–R'+n[j]:j===i+1?'R'+n[i]+'·R'+n[j]:'R'+n[i]);i=j+1;}
+  return out.join('·');
 }
 function calLayout(items){
   // eventos que se solapan en el mismo día van lado a lado
@@ -502,7 +542,24 @@ function calLayout(items){
   items.forEach(it=>{it.n=1+Math.max(...items.filter(o=>o.z>it.s&&o.s<it.z).map(o=>o.col));});
   return items;
 }
+function calPend(){
+  // pendientes por rol (se muestran en la vista semana y en la de día)
+  const r=ui.role;let pend='';
+  if(r==='transportista'){const sc=sinCita(),by={};sc.forEach(x=>{(by[x.b.id]=by[x.b.id]||{b:x.b,n:0}).n++;});const l=Object.keys(by).map(k=>by[k]).sort((a,b)=>a.b.pickFrom-b.b.pickFrom);
+    pend='<div class="panel cal-pend"><div class="rpt-sec-title">Por agendar · retiros sin hora</div>'+(l.length?l.map(x=>'<div class="cal-pend-row"><span><b class="mono">'+esc(x.b.ref)+'</b> · '+x.n+' cont. · ventana '+fmt(x.b.pickFrom)+' → '+fmt(x.b.pickTo)+'</span><button class="btn-p btn-green inl" data-act="agenda" data-id="'+x.b.id+'">Agendar retiro</button></div>').join(''):'<div class="muted">Todos tus contenedores asignados tienen hora de retiro.</div>')+'</div>';}
+  if(r==='bodega'){const st=sinTurno(),by={};st.forEach(x=>{(by[x.b.id]=by[x.b.id]||{b:x.b,n:0,at:x.c.cita.at}).n++;});const l=Object.keys(by).map(k=>by[k]).sort((a,b)=>a.at-b.at);
+    pend='<div class="panel cal-pend"><div class="rpt-sec-title">Por asignar · llegadas sin turno de rampa</div>'+(l.length?l.map(x=>'<div class="cal-pend-row"><span><b class="mono">'+esc(x.b.ref)+'</b> · '+x.n+' cont. · retiro '+fmt(x.at)+'</span><button class="btn-p btn-green inl" data-act="turnos" data-id="'+x.b.id+'">Asignar turno</button></div>').join(''):'<div class="muted">Todas las llegadas tienen turno de rampa.</div>')+'</div>';}
+  return pend;
+}
+function calHint(){
+  return {cliente:'Ventanas de tus bookings, horas de retiro programadas y turnos de carga en bodega.',transportista:'Agenda la hora de retiro dentro de cada ventana. Toca una ventana o una cita para agendar o reprogramar.',bodega:'Llegadas de vacíos y turnos de rampa. Toca una llegada para asignar rampa y hora.',admin:'Vista completa de ventanas, citas de retiro y turnos de rampa.'}[ui.role];
+}
+function calToggle(){
+  // en PC se elige; en celular siempre es la vista de un día
+  return window.innerWidth<640?'':'<div class="htabs" role="group" aria-label="Vista"><button class="htab'+(ui.calView==='dia'?'':' active')+'" data-act="calv" data-v="semana" aria-pressed="'+(ui.calView!=='dia')+'">Semana</button><button class="htab'+(ui.calView==='dia'?' active':'')+'" data-act="calv" data-v="dia" aria-pressed="'+(ui.calView==='dia')+'">Día</button></div>';
+}
 function vCal(){
+  if(window.innerWidth<640||ui.calView==='dia')return vCalDia();
   const ws=calWeek(),we=ws+7*DAY,now=Date.now(),r=ui.role,scope=calScope(),today=dayStart(now);
   const inWk=(a,z)=>z>ws&&a<we, px=t=>Math.max(0,Math.min(100,(t-ws)/(7*DAY)*100));
   const rows=scope.filter(x=>inWk(x.b.pickFrom,x.b.pickTo)||inWk(x.b.delFrom,x.b.delTo)).sort((a,b)=>a.b.pickFrom-b.b.pickFrom);
@@ -517,20 +574,13 @@ function vCal(){
     const items=calLayout(ev.filter(e=>e.at<d+DAY&&e.at+e.dur>d).map(e=>({e:e,s:Math.max(e.at,d),z:Math.min(e.at+e.dur,d+DAY)})));
     const blocks=items.map(it=>{const e=it.e,hs=Math.min(CAL_H1-.5,Math.max(CAL_H0,(it.s-d)/HOUR)),hz=Math.max(hs+.5,Math.min(CAL_H1,(it.z-d)/HOUR));
       const n=e.cs.length,who=(r==='bodega'||r==='admin')&&e.cs[0].carrierId?' · '+shortCN(e.cs[0].carrierId):'';
-      const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':'Turno '+e.rampa);
-      const t2=e.b.ref+' · '+(e.type==='turno'&&n===1&&e.cs[0].number?e.cs[0].number:n+' cont.')+who;
+      const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':(e.rampas.length>1?'Rampas ':'Turno ')+e.rampa);
+      const t2=e.b.ref+' · '+n+' cont.'+who;
       return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'" data-r="'+(e.rampa||'')+'" title="'+esc(t1+' · '+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+t2)+'">'+
         '<b>'+(e.done?'✓ ':'')+hm(e.at)+' '+esc(e.type==='cita'?'Retiro':r==='cliente'?'Carga':e.rampa)+'</b><span>'+esc(t2)+'</span></button>';}).join('');
     const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
     return '<div class="cal-day'+(d===today?' today':'')+'">'+blocks+nowLine+'</div>';}).join('');
-  // pendientes por rol
-  let pend='';
-  if(r==='transportista'){const sc=sinCita(),by={};sc.forEach(x=>{(by[x.b.id]=by[x.b.id]||{b:x.b,n:0}).n++;});const l=Object.keys(by).map(k=>by[k]).sort((a,b)=>a.b.pickFrom-b.b.pickFrom);
-    pend='<div class="panel cal-pend"><div class="rpt-sec-title">Por agendar · retiros sin hora</div>'+(l.length?l.map(x=>'<div class="cal-pend-row"><span><b class="mono">'+esc(x.b.ref)+'</b> · '+x.n+' cont. · ventana '+fmt(x.b.pickFrom)+' → '+fmt(x.b.pickTo)+'</span><button class="btn-p btn-green inl" data-act="agenda" data-id="'+x.b.id+'">Agendar retiro</button></div>').join(''):'<div class="muted">Todos tus contenedores asignados tienen hora de retiro.</div>')+'</div>';}
-  if(r==='bodega'){const st=sinTurno(),by={};st.forEach(x=>{(by[x.b.id]=by[x.b.id]||{b:x.b,n:0,at:x.c.cita.at}).n++;});const l=Object.keys(by).map(k=>by[k]).sort((a,b)=>a.at-b.at);
-    pend='<div class="panel cal-pend"><div class="rpt-sec-title">Por asignar · llegadas sin turno de rampa</div>'+(l.length?l.map(x=>'<div class="cal-pend-row"><span><b class="mono">'+esc(x.b.ref)+'</b> · '+x.n+' cont. · retiro '+fmt(x.at)+'</span><button class="btn-p btn-green inl" data-act="turnos" data-id="'+x.b.id+'">Asignar turno</button></div>').join(''):'<div class="muted">Todas las llegadas tienen turno de rampa.</div>')+'</div>';}
-  const hint={cliente:'Ventanas de tus bookings, horas de retiro programadas y turnos de carga en bodega.',transportista:'Agenda la hora de retiro dentro de cada ventana. Toca una ventana o una cita para agendar o reprogramar.',bodega:'Llegadas de vacíos y turnos de rampa. Toca una llegada para asignar rampa y hora.',admin:'Vista completa de ventanas, citas de retiro y turnos de rampa.'}[r];
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+hint+'</p></div></div>'+pend+
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+calHint()+'</p></div>'+calToggle()+'</div>'+calPend()+
    '<div class="cal-bar"><div class="htabs"><button class="htab" data-act="calw" data-v="-1" aria-label="Semana anterior">‹ Anterior</button><button class="htab'+(ui.calW?'':' active')+'" data-act="calw" data-v="0">Hoy</button><button class="htab" data-act="calw" data-v="1" aria-label="Semana siguiente">Siguiente ›</button></div>'+
    '<span class="cal-range">'+range+'</span><span class="cal-legend"><span><i class="lg-ret"></i>Ventana de retiro</span><span><i class="lg-ent"></i>Ventana de entrega</span><span><i class="lg-cita"></i>'+(r==='cliente'?'Retiro programado':'Cita de retiro')+'</span><span><i class="lg-turno"></i>'+(r==='cliente'?'Carga en bodega':'Turno de rampa')+'</span><span>✓ hecho</span></span></div>'+
    '<div class="cal-scroll"><div class="cal" style="--cal-h:'+((CAL_H1-CAL_H0)*CAL_PX)+'px;--cal-px:'+CAL_PX+'px">'+
@@ -538,6 +588,29 @@ function vCal(){
     '<div class="cal-lane"><div class="cal-lane-lbl">Ventanas</div><div class="cal-lane-body">'+lane+'</div></div>'+
     '<div class="cal-grid"><div class="cal-hours">'+Array.from({length:CAL_H1-CAL_H0},(_,i)=>'<span>'+String(CAL_H0+i).padStart(2,'0')+':00</span>').join('')+'</div>'+cols+'</div>'+
    '</div></div><p class="muted" style="font-size:12px">Horario visible 05:00–22:00, hora de Panamá. Las ventanas que pasan de una semana a otra se cortan en el borde.</p></section>';
+}
+function vCalDia(){
+  const ws=calWeek(),now=Date.now(),r=ui.role,scope=calScope(),today=dayStart(now);
+  if(ui.calD===undefined)ui.calD=Math.max(0,Math.min(6,Math.round((today-ws)/DAY)));
+  const d=ws+ui.calD*DAY,de=d+DAY,ev=calEvents(scope);
+  const evDay=x=>ev.filter(e=>e.at<x+DAY&&e.at+e.dur>x);
+  const strip=Array.from({length:7},(_,i)=>{const x=ws+i*DAY,n=evDay(x).length,lb=new Date(x).toLocaleDateString('es-PA',{timeZone:'America/Panama',weekday:'short'}).replace('.','').slice(0,3);
+    return '<button class="cd-day'+(i===ui.calD?' on':'')+(x===today?' hoy':'')+'" data-act="cald" data-v="'+i+'"><span>'+lb+'</span><b>'+new Date(x-5*HOUR).getUTCDate()+'</b><i>'+(n?'●'.repeat(Math.min(3,n)):'')+'</i></button>';}).join('');
+  const px=t=>Math.max(0,Math.min(100,(t-d)/DAY*100));
+  const wins=[];scope.forEach(x=>{[[x.b.pickFrom,x.b.pickTo,'ret','Retiro'],[x.b.delFrom,x.b.delTo,'ent','Entrega']].forEach(w=>{if(w[1]>d&&w[0]<de)wins.push({b:x.b,a:w[0],z:w[1],cls:w[2],l:w[3]});});});
+  const lane=wins.length?wins.map(w=>'<button class="cd-win" data-act="calbk" data-id="'+w.b.id+'"><span class="cd-wl"><b>'+w.l+'</b> '+esc(w.b.ref)+'</span><span class="cd-wt">'+(w.a<d?'desde ayer':hm(w.a))+' → '+(w.z>de?fmt(w.z):hm(w.z))+'</span><span class="cd-track"><span class="cal-win '+w.cls+'" style="left:'+px(w.a)+'%;width:'+Math.max(2,px(w.z)-px(w.a))+'%"></span></span></button>').join(''):'<div class="cal-none">Sin ventanas este día</div>';
+  const items=calLayout(evDay(d).map(e=>({e:e,s:Math.max(e.at,d),z:Math.min(e.at+e.dur,de)})));
+  const blocks=items.map(it=>{const e=it.e,hs=Math.min(CAL_H1-.5,Math.max(CAL_H0,(it.s-d)/HOUR)),hz=Math.max(hs+.75,Math.min(CAL_H1,(it.z-d)/HOUR)),n=e.cs.length;
+    const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':(e.rampas.length>1?'Rampas ':'Rampa ')+e.rampa);
+    const who=(r==='bodega'||r==='admin')&&e.cs[0].carrierId?' · '+shortCN(e.cs[0].carrierId):'';
+    return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'"><b>'+(e.done?'✓ ':'')+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+esc(t1)+'</b><span>'+esc(e.b.ref+' · '+n+' cont.'+who)+'</span></button>';}).join('');
+  const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
+  const titulo=new Date(d).toLocaleDateString('es-PA',{timeZone:'America/Panama',weekday:'long',day:'numeric',month:'long'});
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+calHint()+'</p></div>'+calToggle()+'</div>'+calPend()+
+   '<div class="cd-strip"><button class="cd-nav" data-act="calw" data-v="-1" aria-label="Semana anterior">‹</button>'+strip+'<button class="cd-nav" data-act="calw" data-v="1" aria-label="Semana siguiente">›</button></div>'+
+   '<div class="cd-title">'+titulo+(d===today?' <span class="cli-badge tr">Hoy</span>':'<button class="htab" data-act="calw" data-v="0">Ir a hoy</button>')+'</div>'+
+   '<div class="panel cd-lane"><div class="rpt-sec-title">Ventanas del día</div>'+lane+'</div>'+
+   '<div class="cal-scroll"><div class="cal-grid cd-grid" style="--cal-h:'+((CAL_H1-CAL_H0)*CAL_PX)+'px;--cal-px:'+CAL_PX+'px"><div class="cal-hours">'+Array.from({length:CAL_H1-CAL_H0},(_,i)=>'<span>'+String(CAL_H0+i).padStart(2,'0')+':00</span>').join('')+'</div><div class="cal-day'+(d===today?' today':'')+'">'+blocks+nowLine+'</div></div></div></section>';
 }
 function agendaForm(bid,at0){
   const b=B(bid),me=ui.carrier,mine=b.containers.filter(c=>c.carrierId===me&&c.status==='asignado');
@@ -612,9 +685,9 @@ function periodo(){
   if(ui.rp==='mes'){const d=new Date(now-5*HOUR);return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)+5*HOUR;}
   return -Infinity;
 }
-function rpRows(){
+function rpRows(fromOverride){
   // una fila por contenedor del período (por inicio de la ventana de retiro), con sus mediciones
-  const from=periodo(),now=Date.now(),out=[];
+  const from=fromOverride!==undefined?fromOverride:periodo(),now=Date.now(),out=[];
   state.bookings.concat(state.hist||[]).forEach(b=>{if(b.pickFrom<from)return;b.containers.forEach(c=>{
     const t=c.t||{},types=c.proofs.map(p=>p.type),i=IDX[c.status];
     const confMin=t.confirmado&&t.publicado?(t.confirmado-t.publicado)/MIN:null;
@@ -676,9 +749,11 @@ function vReportes(){
    '<span class="muted rp-cnt">'+bks.length+' bookings · '+tot+' contenedores · '+teus+' TEU</span></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Cumplimiento</h2></div><div class="rp-kpis">'+
     tile('conf','Confirmados ≤ 1 h','confirmados a tiempo')+tile('ret','Retiro en ventana','retirados a tiempo')+tile('ent','Entrega en ventana','entregados a tiempo')+tile('prf','Pruebas completas','con EIR retiro, sello y EIR entrega')+
-    '<div class="rpt-card rp-kpi rp-na"><div class="rpt-l">No disponible aún</div><div class="rp-sub"><b>Incidencias por cada 100 contenedores</b> y <b>conciliación semanal</b>: el prototipo todavía no registra incidencias ni el cierre de conciliación. Hay que agregarlos para medirlos.</div></div></div></div>'+
-   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Desempeño por transportista</h2></div><div class="tw"><table class="t"><thead><tr><th>Transportista</th><th class="r">Contenedores</th><th class="r">TEU</th><th>Confirmación ≤ 1 h</th><th>Retiro en ventana</th><th>Entrega en ventana</th><th>Pruebas completas</th><th class="r">Rechazos</th><th class="r">Asignados directo</th></tr></thead><tbody>'+
-    car.map(x=>'<tr><td><b>'+esc(x.cr.name)+'</b></td><td class="r num">'+x.n+'</td><td class="r num">'+x.teu+'</td><td>'+celda(x.conf.v,METAS.conf,x.conf.d)+'</td><td>'+celda(x.ret.v,METAS.ret,x.ret.d)+'</td><td>'+celda(x.ent.v,METAS.ent,x.ent.d)+'</td><td>'+celda(x.prf.v,METAS.prf,x.prf.d)+'</td><td class="r num">'+x.dec+'</td><td class="r num">'+x.forz+'</td></tr>').join('')+
+    (()=>{const from=periodo(),inc=(state.incid||[]).filter(x=>x.at>=from),n=inc.reduce((s,x)=>s+x.n,0),v=tot?Math.round(n/tot*1000)/10:null,by=o=>inc.filter(x=>(x.origen||x.type)===o).reduce((s,x)=>s+x.n,0);
+      return '<div class="rpt-card rp-kpi"><div class="rpt-l">Incidencias por cada 100 contenedores</div><div class="rpt-n">'+(v===null?'—':v.toLocaleString('es-PA'))+'</div><div class="rp-sub">'+n+' contenedores afectados: '+by('t')+' avisados por el transportista · '+by('dp')+' detectados por DP World · '+by('c')+' cancelados por el cliente</div></div>';})()+
+    '<div class="rpt-card rp-kpi rp-na"><div class="rpt-l">No disponible aún</div><div class="rp-sub"><b>Conciliación semanal</b>: el prototipo todavía no registra el cierre de conciliación.</div></div></div></div>'+
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Desempeño por transportista</h2></div><div class="tw"><table class="t"><thead><tr><th>Transportista</th><th class="r">Contenedores</th><th class="r">TEU</th><th>Confirmación ≤ 1 h</th><th>Retiro en ventana</th><th>Entrega en ventana</th><th>Pruebas completas</th><th class="r">Rechazos</th><th class="r">Cancelaciones</th><th class="r">Asignados directo</th></tr></thead><tbody>'+
+    car.map(x=>'<tr><td><b>'+esc(x.cr.name)+'</b></td><td class="r num">'+x.n+'</td><td class="r num">'+x.teu+'</td><td>'+celda(x.conf.v,METAS.conf,x.conf.d)+'</td><td>'+celda(x.ret.v,METAS.ret,x.ret.d)+'</td><td>'+celda(x.ent.v,METAS.ent,x.ent.d)+'</td><td>'+celda(x.prf.v,METAS.prf,x.prf.d)+'</td><td class="r num">'+x.dec+'</td><td class="r num">'+(state.incid||[]).filter(i=>i.carrierId===x.cr.id&&i.at>=periodo()&&i.type!=='c').reduce((s,i)=>s+i.n,0)+'</td><td class="r num">'+x.forz+'</td></tr>').join('')+
     '</tbody></table></div><p class="muted rp-note">Debajo de cada porcentaje, cuántos contenedores se pudieron medir. Rechazos: «No puedo» del transportista más confirmaciones rechazadas por DP World. Asignados directo: DP World los asignó porque no confirmó a tiempo.</p></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Volumen y tendencia</h2></div><div class="grid2">'+
     '<div class="panel"><div class="rpt-sec-title">Contenedores por semana</div>'+(weeks.length?barsSvg(weeks):'<div class="empty">Sin datos en el período.</div>')+'</div>'+
@@ -729,7 +804,8 @@ function detail(id){
     '<td>'+(c.driver?esc(c.driver)+(r==='cliente'?' <span class="muted" style="font-size:12px">· DP World</span>':''):'<span class="muted">—</span>')+'</td><td>'+(c.plate?esc(c.plate):'<span class="muted">—</span>')+'</td>'+
     (isAdmin?'<td>'+(IDX[c.status]<=2?'<select data-act="reassign" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Transportista"><option value="">— Sin asignar —</option>'+CARRIERS.map(k=>'<option value="'+k.id+'"'+(k.id===c.carrierId?' selected':'')+'>'+esc(k.name)+'</option>').join('')+'</select>':esc(CN[c.carrierId]||'—'))+'</td>':'')+
     '<td class="mono">'+(esc(c.seal)||'<span class="muted">—</span>')+'</td><td style="font-size:12.5px">'+(c.proofs.length?'<div class="docs">'+c.proofs.map(p=>docBtn(b.id+'/'+c.id+'/'+p.name,p.name,b.ref,p.type)).join('')+'</div>':'<span class="muted">—</span>')+'</td></tr>').join('')+
-  '</tbody></table></div>'+(isAdmin?'<p class="muted" style="margin:0;font-size:13px">Como admin puedes dividir el booking por contenedor (columna Transportista real) y corregir cualquier estado.</p>':'')+'</div>';
+  '</tbody></table></div>'+(isAdmin?(()=>{const by={};b.containers.forEach(c=>{if(c.carrierId&&(c.status==='asignado'||c.status==='confirmado'))by[c.carrierId]=(by[c.carrierId]||0)+1;});const k=Object.keys(by);
+     return k.length?'<div class="row"><span class="flbl">Transportistas con contenedores sin retirar</span>'+k.map(id=>'<button class="btn-p btn-red inl" data-act="reasign" data-b="'+b.id+'" data-c="'+id+'">Cancelar / reasignar · '+esc(CN[id])+' ('+by[id]+')</button>').join('')+'</div>':'';})()+'<p class="muted" style="margin:0;font-size:13px">Como admin puedes dividir el booking por contenedor (columna Transportista real) y corregir cualquier estado.</p>':'')+'</div>';
   openModal(body,false);
 }
 
@@ -788,22 +864,99 @@ async function submitNew(){
   closeModal();commit();toast('Booking '+ref+' recibido. DP World está programando el transporte.');
   if(!saved)toast('Este navegador no permitió guardar los adjuntos.',true);
 }
+/* ===== cancelaciones e incidencias ===== */
+const MOTIVOS={t:['Avisó: falla mecánica del cabezal','Avisó: sin chofer disponible','Avisó: sin chasis del tamaño','Avisó: otro'],
+  dp:['No se presentó a la cita','Ventana por cerrar sin retiro','Chofer o unidad no cumple','No responde','Incidencia de calidad o seguridad','Otro'],
+  c:['Naviera canceló el booking','Cambio de buque / rolado','Reducción de cantidad','Otro']};
+
+function liberar(c){c.status='publicado';c.carrierId=null;c.confId=null;delete c.cita;delete c.turno;stamp(c,'publicado');}
+function republicar(b,quien){const A=state.settings.auto;b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.slaMin=A.reopenMin;b.expLogged=false;if(quien&&b.hidden.indexOf(quien)<0)b.hidden.push(quien);b.containers.filter(c=>c.status==='publicado').forEach(c=>stamp(c,'publicado',b.publishedAt));}
+function noShows(){const A=state.settings.auto,now=Date.now(),o=[];state.bookings.forEach(b=>{const g={};b.containers.forEach(c=>{if(c.status==='asignado'&&c.cita&&now>c.cita.at+A.noShowH*HOUR){const k=c.carrierId+'|'+c.cita.at;(g[k]=g[k]||{b:b,cid:c.carrierId,at:c.cita.at,n:0}).n++;}});Object.keys(g).forEach(k=>o.push(g[k]));});return o;}
+function reasignables(b,cid,at){
+  // del transportista y sin retirar; si viene de un no-show, primero los de esa cita
+  const cs=b.containers.filter(c=>c.carrierId===cid&&(c.status==='asignado'||c.status==='confirmado'));
+  const de=c=>at&&c.cita&&c.cita.at===+at?0:1;
+  return cs.sort((x,y)=>de(x)-de(y));
+}
+function reasignForm(bid,cid,motivo,at){
+  const b=B(bid),cs=reasignables(b,cid,at),nCita=at?cs.filter(c=>c.cita&&c.cita.at===+at).length:0;
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · '+esc(CN[cid])+' · '+cs.length+' cont. sin retirar</span><h3 class="mtitle">Cancelar o reasignar</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">Contenedores</span><input class="fin" type="number" id="rx-n" min="1" max="'+cs.length+'" value="'+(nCita||cs.length)+'"></label>'+(nCita?'<p class="muted" style="grid-column:1/-1;margin:0;font-size:12px">'+nCita+' con cita '+fmt(+at)+' sin retiro (se reasignan primero) de '+cs.length+' sin retirar.</p>':'')+
+   '<label class="f"><span class="flbl">Origen</span><select class="fin" id="rx-o" data-act="rxOrigen"><option value="t"'+(motivo?'':' selected')+'>El transportista avisó (llamada / WhatsApp)</option><option value="dp"'+(motivo?' selected':'')+'>Detectado por DP World</option></select></label>'+
+   '<label class="f"><span class="flbl">Motivo</span><select class="fin" id="rx-m">'+MOTIVOS[motivo?'dp':'t'].map(x=>'<option'+(x===motivo?' selected':'')+'>'+x+'</option>').join('')+'</select></label>'+
+   '<label class="f"><span class="flbl">Qué hacer</span><select class="fin" id="rx-a"><option value="pub">Republicar a todos ('+state.settings.auto.reopenMin+' min)</option>'+CARRIERS.filter(c=>c.id!==cid).map(c=>'<option value="'+c.id+'">Asignar directo a '+esc(c.name)+'</option>').join('')+'</select></label></div>'+
+   '<div class="abox warn">Queda registrado como incidencia de '+esc(CN[cid])+' y cuenta en su desempeño. Se liberan las citas y turnos de esos contenedores y se le notifica.</div><div class="err" id="rx-err"></div></div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Volver</button><button class="btn-p btn-red inl" data-act="reasignDo" data-b="'+b.id+'" data-c="'+cid+'" data-at="'+(at||'')+'">Confirmar</button></div>',true);
+}
+function reasignDo(bid,cid,at){
+  const b=B(bid),cs=reasignables(b,cid,at),n=parseInt(document.getElementById('rx-n').value,10),m=document.getElementById('rx-m').value,a=document.getElementById('rx-a').value;
+  if(!(n>=1&&n<=cs.length)){document.getElementById('rx-err').textContent='Indica entre 1 y '+cs.length+' contenedores.';return;}
+  const sel=cs.slice(0,n);
+  if(a==='pub'){sel.forEach(liberar);republicar(b,cid);}
+  else sel.forEach(c=>{c.carrierId=a;c.confId=null;c.status='asignado';delete c.cita;delete c.turno;stamp(c,'asignado');});
+  const o=document.getElementById('rx-o').value;
+  state.incid.push({type:'dp',origen:o,carrierId:cid,bookingId:b.id,ref:b.ref,n:n,motivo:m,at:Date.now(),destino:a});
+  log('DP World '+(a==='pub'?'republicó':'reasignó a '+CN[a])+' '+n+' cont. de '+b.ref+' quitados a '+CN[cid]+' ('+m+')');
+  closeModal();commit();toast(a==='pub'?'Republicado a todos los transportistas.':'Reasignado a '+CN[a]+'.');
+}
+function cliCancelForm(bid){
+  const b=B(bid),cs=b.containers.filter(c=>IDX[c.status]<=IDX.asignado);
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+'</span><h3 class="mtitle">Cancelar contenedores</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form">'+(cs.length?'<div class="fgrid"><label class="f"><span class="flbl">Contenedores sin retirar: '+cs.length+'</span><input class="fin" type="number" id="kx-n" min="1" max="'+cs.length+'" value="'+cs.length+'"></label>'+
+   '<label class="f"><span class="flbl">Motivo</span><select class="fin" id="kx-m">'+MOTIVOS.c.map(x=>'<option>'+x+'</option>').join('')+'</select></label></div>'+
+   '<div class="abox inf">Solo se cancelan contenedores que aún no se retiraron. Los ya retirados se gestionan como incidencia con DP World.</div><div class="err" id="kx-err"></div>'
+   :'<div class="abox warn">Todos los contenedores ya fueron retirados: cualquier cambio se gestiona como incidencia con DP World.</div>')+
+   '</div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Volver</button>'+(cs.length?'<button class="btn-p btn-red inl" data-act="cliCancelDo" data-id="'+b.id+'">Cancelar contenedores</button>':'')+'</div>',true);
+}
+function cliCancelDo(bid){
+  const b=B(bid),cs=b.containers.filter(c=>IDX[c.status]<=IDX.asignado).sort((x,y)=>IDX[x.status]-IDX[y.status]),n=parseInt(document.getElementById('kx-n').value,10),m=document.getElementById('kx-m').value;
+  if(!(n>=1&&n<=cs.length)){document.getElementById('kx-err').textContent='Indica entre 1 y '+cs.length+' contenedores.';return;}
+  const quitar=cs.slice(0,n),avisar=[...new Set(quitar.map(c=>c.carrierId).filter(Boolean))];
+  b.containers=b.containers.filter(c=>quitar.indexOf(c)<0);b.qty-=n;
+  state.incid.push({type:'c',carrierId:null,bookingId:b.id,ref:b.ref,n:n,motivo:m,at:Date.now()});
+  if(!b.containers.length){state.bookings=state.bookings.filter(x=>x!==b);b.cancelado=true;state.hist.push(b);}
+  log('CERNAC canceló '+n+' cont. de '+b.ref+' ('+m+')'+(avisar.length?' · aviso a '+avisar.map(x=>CN[x]).join(', '):''));
+  closeModal();commit();toast(n+' contenedores cancelados.'+(avisar.length?' Se avisó al transportista.':''));
+}
+
+/* ===== aprobación por excepción ===== */
+const fmtDia=t=>new Date(t).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'numeric',month:'short',year:'numeric'});
+function perf90(cid){const rs=rpRows(Date.now()-90*DAY).filter(x=>x.c.carrierId===cid);return {ret:kpi(rs,'ret').v,ent:kpi(rs,'ent').v,n:rs.length};}
+function reglas(b,cid,q){
+  const cr=CARRIERS.find(c=>c.id===cid),A=state.settings.auto,now=Date.now(),R=[],add=(pass,txt)=>R.push({pass:pass,txt:txt});
+  add(cr.docVence>now,cr.docVence>now?'Documentos vigentes hasta '+fmtDia(cr.docVence):(cr.docNota||'Documentos vencidos')+' desde el '+fmtDia(cr.docVence));
+  const comp=state.bookings.reduce((n,ob)=>n+(ob.pickFrom<b.pickTo&&ob.pickTo>b.pickFrom?ob.containers.filter(c=>c.carrierId===cid&&(c.status==='asignado'||c.status==='confirmado')).length:0),0);
+  add(comp+q<=cr.units,'Capacidad: '+(comp+q)+' de '+cr.units+' cabezales comprometidos en esa ventana'+(comp?' ('+comp+' ya tomados)':''));
+  const p=perf90(cid);
+  add(p.n>0&&p.ret>=A.perf&&p.ent>=A.perf,p.n?'Desempeño 90 días: retiro '+fmtPct(p.ret)+' · entrega '+fmtPct(p.ent)+' (mínimo '+A.perf+' %)':'Sin historial de 90 días');
+  const rf=/RF/.test(b.size);add(!rf||cr.reefer,rf?(cr.reefer?'Equipo refrigerado (genset) disponible':'Booking refrigerado y no tiene genset'):'Equipo '+b.size+' compatible');
+  add(!b.especial,b.especial?'Carga especial ('+b.especial+'): siempre la revisa DP World':'Carga general');
+  const otros=new Set(b.containers.filter(c=>c.carrierId&&c.carrierId!==cid).map(c=>c.carrierId)).size;
+  add(otros+1<=2,'Transportistas en el booking: '+(otros+1)+' (máx. 2)');
+  return {R:R,auto:A.on&&R.every(r=>r.pass),off:!A.on};
+}
+function reglasHtml(rg){
+  return '<div class="rg-box '+(rg.auto?'ok':'rev')+'"><div class="rg-head">'+(rg.auto?'✓ Se aprueba automáticamente':rg.off?'Aprobación automática apagada: la revisa DP World':'▲ Requiere revisión de DP World')+'</div>'+
+    '<ul class="rg-list">'+rg.R.map(r=>'<li class="'+(r.pass?'ok':'no')+'"><i aria-hidden="true">'+(r.pass?'✓':'✕')+'</i>'+esc(r.txt)+'</li>').join('')+'</ul></div>';
+}
 function confirmForm(id){
   const b=B(id),n=openCount(b),me=CARRIERS.find(c=>c.id===ui.carrier);
   openModal('<div class="sh-h"><div><span class="flbl">'+esc(me.name)+'</span><h3 class="mtitle">Confirmar disponibilidad</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
   '<div class="sh-b form">'+idRow(b)+'<div class="bk-meta"><span>Sin cubrir <strong>'+n+'</strong></span><span>Retiro <strong>'+fmt(b.pickFrom)+' → '+fmt(b.pickTo)+'</strong></span></div>'+
   '<div class="fgrid"><label class="f"><span class="flbl">Contenedores que cubres</span><input class="fin" type="number" id="cq" min="1" max="'+n+'" value="'+n+'"></label><label class="f"><span class="flbl">Cabezales con chasis '+esc(b.size)+'</span><input class="fin" type="number" id="cu" min="1" value="'+Math.min(n,me.units)+'"></label></div>'+
   '<label class="f"><span class="flbl">Nota para DP World</span><textarea class="fin" id="cnote" placeholder="Ej. disponibles desde vie 06:00"></textarea></label>'+
-  '<div class="abox inf">DP World aprueba antes de que quede en firme. Si cubres menos de '+n+', el resto sigue publicado.</div><div class="err" id="cErr"></div></div>'+
+  '<div id="rgBox" data-b="'+b.id+'">'+reglasHtml(reglas(b,ui.carrier,n))+'</div><p class="muted" style="font-size:12px;margin:0">Si cubres menos de '+n+', el resto sigue publicado.</p><div class="err" id="cErr"></div></div>'+
   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="sendConfirm" data-id="'+id+'">Enviar confirmación</button></div>',true);
 }
 function sendConfirm(id){
   const b=B(id),n=openCount(b),q=parseInt(document.getElementById('cq').value,10);
   if(!(q>=1&&q<=n)){document.getElementById('cErr').textContent='Indica entre 1 y '+n+' contenedores.';return;}
-  const f={id:uid('f'),bookingId:id,carrierId:ui.carrier,qty:q,units:parseInt(document.getElementById('cu').value,10)||null,note:document.getElementById('cnote').value.trim(),at:Date.now(),status:'pendiente'};
-  b.containers.filter(c=>c.status==='publicado').slice(0,q).forEach(c=>{c.status='confirmado';c.carrierId=ui.carrier;c.confId=f.id;stamp(c,'confirmado');});
-  state.confs.push(f);log(CN[ui.carrier]+' confirmó '+q+' contenedores de '+b.ref);
-  closeModal();commit();toast('Confirmación enviada. Queda pendiente de aprobación de DP World.');
+  const rg=reglas(b,ui.carrier,q);
+  const f={id:uid('f'),bookingId:id,carrierId:ui.carrier,qty:q,units:parseInt(document.getElementById('cu').value,10)||null,note:document.getElementById('cnote').value.trim(),at:Date.now(),status:rg.auto?'auto':'pendiente',motivos:rg.R.filter(r=>!r.pass).map(r=>r.txt)};
+  b.containers.filter(c=>c.status==='publicado').slice(0,q).forEach(c=>{c.status='confirmado';c.carrierId=ui.carrier;c.confId=f.id;stamp(c,'confirmado');if(rg.auto){c.status='asignado';stamp(c,'asignado');}});
+  state.confs.push(f);log(CN[ui.carrier]+' confirmó '+q+' contenedores de '+b.ref+(rg.auto?' · aprobado automáticamente':' · a revisión: '+f.motivos.join('; ')));
+  closeModal();commit();
+  toast(rg.auto?'Aprobado automáticamente. Ya puedes agendar la hora de retiro.':'Enviado a revisión de DP World: '+(f.motivos[0]||'aprobación automática apagada')+'.',!rg.auto);
 }
 const STEP={
   retiro:{t:'Retiro de vacío',fields:[['num','Número de contenedor','text',true],['drv','Chofer','text',true],['plt','Placa del cabezal','text',true]],proof:'EIR retiro'},
@@ -844,6 +997,24 @@ function toast(t,bad){const el=document.createElement('div');el.className='toast
 
 /* ===== render ===== */
 let expSeen=new Set();
+function menu(open){
+  const d=document.getElementById('drawer'),o=document.getElementById('drawerOv'),b=document.querySelector('.hdr-burger');
+  d.classList.toggle('open',open);d.setAttribute('aria-hidden',!open);o.hidden=!open;b.setAttribute('aria-expanded',open);
+  if(open){const a=d.querySelector('.drawer-item.active')||d.querySelector('.drawer-item');if(a)a.focus();}else b.focus();
+}
+/* secciones desplegables: cada .sec con título pasa a <details>; se recuerda qué quedó abierto */
+function accordion(root){
+  const secs=[...root.querySelectorAll('.sec')].filter(x=>x.querySelector(':scope > .psect-hdr'));
+  const hasItems=x=>{const c=x.querySelector(':scope > .psect-hdr .psect-cnt');return !c||c.textContent.trim()!=='0';};
+  const first=secs.findIndex(hasItems);
+  secs.forEach((sec,i)=>{
+    const h=sec.querySelector(':scope > .psect-hdr'),title=h.querySelector('.psect-title').textContent,key=ui.role+'|'+ui.sec+'|'+title;
+    const d=document.createElement('details'),sm=document.createElement('summary'),body=document.createElement('div');
+    d.className='sec sec-acc';d.dataset.key=key;d.open=key in ui.secOpen?ui.secOpen[key]:i===first;
+    sm.className='psect-hdr';while(h.firstChild)sm.appendChild(h.firstChild);sm.insertAdjacentHTML('beforeend','<span class="acc-chev" aria-hidden="true">›</span>');
+    h.remove();body.className='sec-body';while(sec.firstChild)body.appendChild(sec.firstChild);
+    d.append(sm,body);sec.replaceWith(d);});
+}
 function render(){
   const lg=document.getElementById('vlogin');
   lg.hidden=!!ui.auth;
@@ -853,6 +1024,7 @@ function render(){
   const v=document.getElementById('view');
   const sy=window.scrollY;
   v.innerHTML=ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  accordion(v);
   window.scrollTo(0,sy);
   tickClocks();
 }
@@ -872,7 +1044,9 @@ document.addEventListener('click',e=>{
   const a=t.dataset.act, ov=document.getElementById('ov');
   if(['carrier','pref','fix','reassign'].indexOf(a)>=0)return;
   switch(a){
-   case 'sec':closeModal();ui.sec=t.dataset.k;save();render();window.scrollTo(0,0);break;
+   case 'menu':menu(!document.getElementById('drawer').classList.contains('open'));break;
+   case 'menuClose':menu(false);break;
+   case 'sec':closeModal();if(document.getElementById('drawer').classList.contains('open'))menu(false);ui.sec=t.dataset.k;save();render();window.scrollTo(0,0);break;
    case 'demo':document.getElementById('lg-user').value=t.dataset.u;document.getElementById('lg-pass').value='demo';document.getElementById('lg-pass').focus();break;
    case 'logout':closeModal();document.getElementById('toasts').innerHTML='';ui.auth=false;ui.user='';save();render();break;
    case 'rtap':ov.dataset.detail='';rampModal(t.dataset.b,t.dataset.c);break;
@@ -887,7 +1061,17 @@ document.addEventListener('click',e=>{
    case 'doc':downloadDoc(t.dataset.k,t.dataset.n,t.dataset.r);break;
    case 'rp':ui.rp=t.dataset.v;save();render();break;
    case 'xlsx':exportXLSX();break;
-   case 'calw':ui.calW=t.dataset.v==='0'?0:(ui.calW||0)+parseInt(t.dataset.v,10);save();render();break;
+   case 'cliCancel':ov.dataset.detail='';cliCancelForm(t.dataset.id);break;
+   case 'cliCancelDo':cliCancelDo(t.dataset.id);break;
+   case 'reasign':ov.dataset.detail='';reasignForm(t.dataset.b,t.dataset.c,t.dataset.m,t.dataset.at||null);break;
+   case 'reasignDo':reasignDo(t.dataset.b,t.dataset.c,t.dataset.at||null);break;
+   case 'autoOn':state.settings.auto.on=t.dataset.v==='1';log('Aprobación automática '+(state.settings.auto.on?'encendida':'apagada'));commit();break;
+   case 'revert':{const f=state.confs.find(x=>x.id===t.dataset.id),b=B(f.bookingId);
+     b.containers.filter(c=>c.confId===f.id&&IDX[c.status]<IDX.retiro).forEach(liberar);f.status='revertida';
+     log('DP World revirtió la aprobación automática de '+f.qty+' cont. de '+b.ref+' ('+CN[f.carrierId]+')');commit();toast('Revertido. Los contenedores vuelven a publicarse.',true);break;}
+   case 'cald':ui.calD=parseInt(t.dataset.v,10);save();render();break;
+   case 'calw':ui.calW=t.dataset.v==='0'?0:(ui.calW||0)+parseInt(t.dataset.v,10);if(t.dataset.v==='0')delete ui.calD;save();render();break;
+   case 'calv':ui.calView=t.dataset.v;save();render();break;
    case 'agenda':ov.dataset.detail='';agendaForm(t.dataset.id,t.dataset.at||null);break;
    case 'citaSave':citaSave(t.dataset.id,t.dataset.at||null);break;
    case 'citaDel':{const b=B(t.dataset.id),cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status==='asignado'&&c.cita&&c.cita.at===+t.dataset.at);
@@ -933,8 +1117,11 @@ document.addEventListener('click',e=>{
    case 'reset':state=seed();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='telSet'){state.settings.auto.tel=t.value.trim()||state.settings.auto.tel;log('Teléfono de coordinación: '+state.settings.auto.tel);commit();}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='cq'){const box=document.getElementById('rgBox');if(box){const q=parseInt(t.value,10)||0;box.innerHTML=reglasHtml(reglas(B(box.dataset.b),ui.carrier,q));}}});
 document.addEventListener('change',e=>{
   const t=e.target, a=t.dataset&&t.dataset.act;
+  if(a==='autoSet'){const v=parseInt(t.value,10);if(v>=+t.min&&v<=+t.max){state.settings.auto[t.dataset.k]=v;log('Aprobación automática: '+t.dataset.k+' = '+v);commit();}return;}
   if(a==='carrier'){ui.carrier=t.value;save();render();}
   else if(a==='pref'){state.settings.preferred=t.value;log('Proveedor preferido: '+CN[t.value]);commit();}
   else if(a==='fix'){const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c);const old=c.status;c.status=t.value;stamp(c,t.value);
@@ -952,6 +1139,7 @@ function tipShow(e){const el=e.target.closest&&e.target.closest('[data-tip]'),ti
   const r=el.getBoundingClientRect(),x=e.clientX||r.left+r.width/2,y=e.clientY||r.top;
   tip.style.left=Math.min(window.innerWidth-tip.offsetWidth-8,Math.max(8,x-tip.offsetWidth/2))+'px';tip.style.top=Math.max(8,y-tip.offsetHeight-12)+'px';}
 document.addEventListener('pointermove',tipShow);document.addEventListener('focusin',tipShow);
+document.addEventListener('toggle',e=>{const x=e.target;if(x.matches&&x.matches('details.sec-acc')){ui.secOpen[x.dataset.key]=x.open;save();return;}},true);
 document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.bkr')){if(d.open)ui.open[d.dataset.key]=1;else delete ui.open[d.dataset.key];save();}},true);
 document.getElementById('lgForm').addEventListener('submit',e=>{
   e.preventDefault();
@@ -962,6 +1150,7 @@ document.getElementById('lgForm').addEventListener('submit',e=>{
   document.getElementById('lg-pass').value='';save();render();window.scrollTo(0,0);
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.getElementById('drawer').classList.contains('open')){menu(false);return;}
   if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click();return;}if(e.key==='Escape'&&!document.getElementById('ov').hidden){document.getElementById('ov').dataset.detail='';closeModal();}});
 
 load();
