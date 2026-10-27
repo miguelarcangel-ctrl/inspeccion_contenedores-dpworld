@@ -826,3 +826,19 @@ main.lm-main{padding-block:18px 56px}
   .lm #vlogin .login-card{position:relative;right:auto;top:auto;transform:none;margin:-10px 16px 0;width:auto;max-width:none;max-height:none;overflow:visible}
   .lm .lg-scene{position:relative;flex:none;height:110px;margin-top:20px}
 }
+
+/* cinta superior: Instalar y tema claro/oscuro */
+.lm .hdr-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;min-width:28px;padding:0 9px;border-radius:6px;border:1px solid #ddd;background:#f4f4f7;color:#1A1060;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:background .2s}
+.lm .hdr-btn:hover{background:#e0e0ec}
+.lm .hdr-btn:focus-visible,.lm .lg-install:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.lm .hdr-btn svg,.lm .lg-install svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.lm .hdr-theme{padding:0;width:30px}
+.lm .hdr-install{background:#1A1060;border-color:#1A1060;color:#fff}
+.lm .hdr-install:hover{background:#2A1F8F}
+.lm .hdr-btn[hidden],.lm .lg-install[hidden]{display:none}
+.lm .lg-install{position:absolute;top:18px;right:20px;z-index:3;display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(4px)}
+.lm .lg-install:hover{background:rgba(255,255,255,.16)}
+.lm .ov{z-index:1000}
+.lm #toasts{z-index:1001}
+@media (max-width:480px){.lm .hdr-install span{display:none}.lm .hdr-install{padding:0;width:30px}.lm .hdr-user{gap:6px}}
+@media (max-width:820px){.lm .lg-install{top:14px;right:14px;padding:6px 11px}}
