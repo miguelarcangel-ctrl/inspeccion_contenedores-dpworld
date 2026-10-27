@@ -22,7 +22,7 @@
       <div class="hdr-sub" id="hdr-sub">Last Mile</div>
     </div>
   </div>
-  <div class="hdr-user"><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
+  <div class="hdr-user"><button type="button" class="hdr-btn hdr-install" data-act="install" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg><span>INSTALAR</span></button><button type="button" class="hdr-btn hdr-theme" data-act="themeToggle" id="themeBtn"></button><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
 </div>
 <div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Secciones" id="roles" hidden></nav></div></div>
 <div class="drawer-ov" id="drawerOv" data-act="menuClose" hidden></div>
@@ -39,6 +39,7 @@
 <div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="toasts" aria-live="polite"></div>
 <div id="vlogin" hidden>
+  <button type="button" class="lg-install hdr-install" data-act="install" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg><span>Instalar app</span></button>
   <div class="lg-map" aria-hidden="true"><svg id="lgMap"></svg></div>
   <div class="lg-hero"><div class="lg-kick">DP World · Last Mile</div><h1 class="lg-h1"><span>Conectamos</span> <span>cada entrega</span> <em>contigo.</em></h1><p class="lg-lead">Del patio a la rampa y al puerto: cada contenedor, en vivo.</p></div>
   <svg class="lg-scene" viewBox="0 0 1400 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -1060,7 +1061,9 @@ const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator
 const pushOK=()=>!!swReg&&'Notification' in window;
 const pushOn=()=>pushOK()&&Notification.permission==='granted'&&!!pushSubs()[ui.user];
 function pushInit(){
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;});
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEv=e;installBtns();});
+  window.addEventListener('appinstalled',()=>{installEv=null;installBtns();});
+  installBtns();
   if(!('serviceWorker' in navigator))return;
   navigator.serviceWorker.register('sw.js').then(r=>{swReg=r;if(ui.auth)renderRoles();}).catch(()=>{});
   navigator.serviceWorker.addEventListener('message',e=>abrirBk(e.data&&e.data.abrir));
@@ -1073,11 +1076,20 @@ function notify(to,titulo,texto,bk){
   const dest=[...new Set(to.flatMap(x=>USERS[x]?[x]:act.filter(u=>USERS[u].carrier===x||USERS[u].client===x||USERS[u].role===x)))].filter(u=>subs[u]&&u!==ui.user);
   dest.forEach(u=>swReg.showNotification(titulo,{body:texto+'\nPara: '+uName(u),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n'),data:{bk:bk||null}}).catch(()=>{}));
 }
+const iosSteps=fin=>'<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> <span class="ntf-ico" aria-hidden="true">⇪</span> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>Last Mile</b> desde el ícono nuevo'+(fin?' y '+fin:'')+'.</li></ol>';
+/* botón Instalar: usa el aviso nativo del navegador cuando existe; si no, muestra los pasos */
+function installApp(){
+  if(installEv){installEv.prompt();installEv.userChoice.then(c=>{installEv=null;if(c.outcome==='accepted')toast('Last Mile se está instalando.');installBtns();});return;}
+  const body=isIOS()?'<p style="margin:0">Así queda Last Mile en tu pantalla de inicio, a pantalla completa y con notificaciones:</p>'+iosSteps(''):
+    '<p style="margin:0">Este navegador no ofreció la instalación automática. Puedes hacerlo desde su menú:</p><ul class="ntf-steps"><li><b>Chrome o Edge en PC:</b> ícono de instalar <span class="ntf-ico" aria-hidden="true">⊕</span> en la barra de dirección, o menú ⋮ → <b>Instalar Last Mile</b>.</li><li><b>Android:</b> menú ⋮ → <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.</li><li><b>Safari en Mac:</b> Archivo → <b>Agregar al Dock</b>.</li></ul>';
+  openModal('<div class="sh-h"><div><span class="flbl">Este dispositivo</span><h3 class="mtitle">Instalar Last Mile</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div><div class="sh-b form">'+body+'</div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Entendido</button></div>',true);
+}
+// se oculta cuando ya se abre como app instalada
+const installBtns=()=>document.querySelectorAll('.hdr-install').forEach(b=>b.hidden=standalone());
 function notifSheet(){
   const ios=isIOS(),inst=standalone(),on=pushOn(),perm=pushOK()?Notification.permission:'',subs=pushSubs(),otros=Object.keys(subs).filter(u=>u!==ui.user&&USERS[u]);
   let body;
-  if(ios&&!inst)body='<div class="abox warn"><div>En iPhone los avisos solo funcionan con la app agregada a la pantalla de inicio.</div></div>'+
-    '<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> <span class="ntf-ico" aria-hidden="true">⇪</span> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>Last Mile</b> desde el ícono nuevo y vuelve a este menú para activar.</li></ol>'+
+  if(ios&&!inst)body='<div class="abox warn"><div>En iPhone los avisos solo funcionan con la app agregada a la pantalla de inicio.</div></div>'+iosSteps('vuelve a este menú para activar')+
     '<p class="muted" style="font-size:12px;margin:0">Requiere iOS 16.4 o más reciente.</p>';
   else if(!pushOK())body='<div class="abox warn"><div>Este navegador no permite notificaciones. Usa Chrome, Edge o Firefox, o Safari con la app agregada a la pantalla de inicio.</div></div>';
   else if(perm==='denied')body='<div class="abox warn"><div>Las notificaciones están <b>bloqueadas</b> para esta página. Para activarlas, entra a los ajustes del sitio (el candado junto a la dirección) o a los ajustes de notificaciones del teléfono, permítelas y vuelve aquí.</div></div>';
@@ -1246,6 +1258,9 @@ function render(){
   if(!ui.auth){lgPlay();document.getElementById('lg-demo').innerHTML=state.users.filter(x=>x.active!==false).map(x=>x.u).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
   if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
   applyTheme();
+  const tb=document.getElementById('themeBtn'),lt=theme()==='light';
+  tb.innerHTML=lt?'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1z"/></svg>':'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>';
+  tb.setAttribute('aria-label',lt?'Cambiar a tema oscuro':'Cambiar a tema claro');tb.title=tb.getAttribute('aria-label');
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
@@ -1284,7 +1299,8 @@ document.addEventListener('click',e=>{
    case 'pushOn':pushActivate();break;
    case 'pushOff':{const s=pushSubs();delete s[ui.user];pushSet(s);renderRoles();notifSheet();toast('Notificaciones desactivadas para '+uName(ui.user)+'.');break;}
    case 'pushTest':swReg.showNotification('Prueba de Last Mile',{body:'Así te llegarán los avisos.\nPara: '+uName(ui.user),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n')}).catch(()=>{});toast('Aviso de prueba enviado.');break;
-   case 'install':if(installEv){installEv.prompt();installEv.userChoice.then(()=>{installEv=null;notifSheet();});}break;
+   case 'install':installApp();break;
+   case 'themeToggle':ui.theme=theme()==='light'?'dark':'light';save();render();break;
    case 'sec':closeModal();if(document.getElementById('drawer').classList.contains('open'))menu(false);ui.sec=t.dataset.k;save();render();window.scrollTo(0,0);break;
    case 'demo':document.getElementById('lg-user').value=t.dataset.u;document.getElementById('lg-pass').value='demo';document.getElementById('lg-pass').focus();break;
    case 'logout':closeModal();document.getElementById('toasts').innerHTML='';ui.auth=false;ui.user='';save();render();break;
