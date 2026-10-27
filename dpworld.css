@@ -703,6 +703,17 @@ main.lm-main{padding-block:18px 56px}
 .lm .drawer-item:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
 .lm .drawer-f{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-top:1px solid var(--b1)}
 @media (prefers-reduced-motion:reduce){.lm .drawer{transition:none}}
+/* notificaciones */
+.lm .drawer-extra{border-top:1px solid var(--b1);padding-top:6px}
+.lm .ntf-tag{margin-left:auto;font-family:'Barlow',sans-serif;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;padding:2px 8px;border-radius:10px;background:var(--b0);color:var(--t3)}
+.lm .ntf-tag.on{background:rgba(0,195,137,.15);color:var(--green)}
+.lm .ntf-state{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--b1);border-radius:10px;background:var(--b0)}
+.lm .ntf-state div{display:grid;gap:2px}.lm .ntf-state span:not(.ntf-dot){font-size:12px;color:var(--t3)}
+.lm .ntf-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--t3)}
+.lm .ntf-state.on .ntf-dot{background:var(--green);box-shadow:0 0 0 4px rgba(0,195,137,.2)}
+.lm .ntf-list{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--t2)}
+.lm .ntf-steps{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;line-height:1.4}
+.lm .ntf-ico{display:inline-block;padding:0 5px;border:1px solid var(--b2);border-radius:4px;font-size:12px}
 /* aprobación por excepción */
 .lm .rg-box{border-radius:var(--r2);padding:10px 12px;border:1px solid}
 .lm .rg-box.ok{background:rgba(0,195,137,.07);border-color:rgba(0,195,137,.3)}

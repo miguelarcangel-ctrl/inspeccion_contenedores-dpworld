@@ -151,6 +151,21 @@ Semana por horas (05:00–22:00, hora de Panamá), con navegación anterior / Ho
 
 Datos: `contenedor.cita = {at, by}` y `contenedor.turno = {at, rampa, dur}`. En Supabase: columnas `cita_retiro`, `turno_rampa`, `turno_inicio`, `turno_duracion` en `operaciones` (o tabla `citas`), con una restricción que impida turnos solapados en la misma rampa.
 
+## Notificaciones push
+- **Instalable (PWA):** `manifest.json` + `sw.js` en `last-mile/prototype/`. En Android y PC el push funciona desde el navegador; en iPhone (iOS 16.4+) solo con la app agregada a la pantalla de inicio. La app muestra esos pasos cuando detecta un iPhone sin instalar.
+- **Activación:** menú ☰ → Notificaciones → *Activar*. El permiso se pide con un toque del usuario y queda por usuario y dispositivo.
+- **Qué se avisa:**
+  - Transportistas: booking nuevo, reabierto o republicado; aprobación o rechazo; aprobación revertida; turno de rampa; contenedor sellado; reasignación; cancelación del cliente.
+  - Admin: confirmación por revisar, aprobación automática, booking vencido sin confirmar, cancelación del cliente.
+  - Bodega: cita de retiro y vacío en cola de rampa.
+  - Cliente: transporte asignado, retiro, cargado y sellado, tránsito, entrega y devolución.
+- Quien hace la acción no recibe el aviso. Tocar el aviso abre el booking.
+- **Prototipo:** el aviso lo muestra el service worker del mismo dispositivo para los usuarios que activaron ahí sus avisos; el texto incluye "Para: …".
+- **Producción:**
+  1. Generar las llaves VAPID: la pública va en la app y la privada como secreto de Supabase.
+  2. Crear la tabla `push_subs` (usuario, rol, suscripción).
+  3. Un database webhook por evento llama a una Edge Function, que envía con `web-push` a las suscripciones de los destinatarios. `sw.js` ya atiende el evento `push`.
+
 ## Reportería (admin)
 Sección **Reportes** del admin, con filtro de período (30 días, 90 días, este mes, todo; se cuenta por el inicio de la ventana de retiro):
 - **Cumplimiento** contra meta, con semáforo (✓ Cumple / ▲ Bajo meta, hasta 5 puntos bajo la meta / ✕ Crítico): confirmados ≤ 1 h, retiro en ventana, entrega en ventana, pruebas completas (EIR retiro, foto del sello y EIR entrega).
