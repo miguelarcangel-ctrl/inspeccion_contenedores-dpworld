@@ -738,3 +738,64 @@ main.lm-main{padding-block:18px 56px}
 .lm .psblist .muted{font-family:'Barlow',sans-serif;font-size:12px;font-weight:500}
 .lm [role=button][data-act]:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 @media (max-width:560px){.lm .vhead .sc-title{font-size:22px}.lm .win{grid-template-columns:1fr}.lm .tab{flex:1 1 40%}.lm .sn{font-size:22px}.lm .hdr-role{display:none}}
+/* configuración */
+.lm .cfg-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.lm .cfg-head .htab .psect-cnt{margin-left:4px}
+.lm .cfg-acts{display:flex;gap:6px;justify-content:flex-end;flex-wrap:nowrap}
+.lm .cfg-acts .btn-p{padding:6px 10px;font-size:11px}
+.lm .cfg-t tr.off td:not(:last-child){opacity:.55}
+.lm .cfg-show{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer}
+.lm .cfg-show input{width:auto}
+
+/* tema claro (Configuración → Apariencia): misma línea gráfica, fondo claro estilo Cotizador 3PL.
+   El tablero de rampas se mantiene oscuro a propósito: es la vista de bodega y sus colores de estado brillan sobre negro. */
+.lm.theme-light{color-scheme:light;
+  --bg:#F2F3F8;--surf:#FFFFFF;--card:#FFFFFF;--raised:#FFFFFF;
+  --b0:rgba(26,16,96,.04);--b1:rgba(26,16,96,.12);--b2:rgba(26,16,96,.22);
+  --t:#1B1B2F;--t2:rgba(27,27,47,.72);--t3:rgba(27,27,47,.52);--t4:rgba(27,27,47,.14);
+  --green:#00996b;--amber:#b86e00;--blue:#0070b8;--red:#d10037;--primary:#1A1060}
+.lm.theme-light .stats{background:#fff;border-bottom:1px solid var(--b1)}
+.lm.theme-light .sbox{border-right-color:var(--b1)}
+.lm.theme-light .sn.sl{color:var(--t4)}
+.lm.theme-light .tab.active{background:rgba(26,16,96,.08);color:var(--primary);box-shadow:none}
+.lm.theme-light .btn-navy{background:#fff;color:var(--primary);border-color:var(--b2)}
+.lm.theme-light .btn-navy:active{background:var(--b0)}
+.lm.theme-light .cli-badge.off{color:var(--red)}
+.lm.theme-light .pip-d.cur{background:rgba(26,16,96,.08)}
+.lm.theme-light .fin,.lm.theme-light :where(select,input,textarea){background:#fff;color:var(--t)}
+.lm.theme-light .bk-foot,.lm.theme-light .bkr-b,.lm.theme-light .bk .tw,.lm.theme-light .sheet .tw,.lm.theme-light .panel .tw{background:#FAFAFD}
+.lm.theme-light .bar,.lm.theme-light .bprog{background:rgba(26,16,96,.08)}
+.lm.theme-light fieldset{background:#FAFAFD}
+.lm.theme-light .ov,.lm.theme-light .drawer-ov{background:rgba(26,16,96,.35)}
+.lm.theme-light .sheet{background:#fff;box-shadow:0 24px 64px rgba(26,16,96,.25)}
+.lm.theme-light .sh-h,.lm.theme-light .sh-f{background:#fff}
+.lm.theme-light .drawer{box-shadow:8px 0 32px rgba(26,16,96,.2)}
+.lm.theme-light .drawer-item.active{color:var(--primary);background:rgba(26,16,96,.07)}
+.lm.theme-light .rp-chart .hit:hover,.lm.theme-light .rp-chart .hit:focus{fill:rgba(26,16,96,.05)}
+.lm.theme-light .rp-tip{box-shadow:0 6px 20px rgba(26,16,96,.18)}
+.lm.theme-light .lg-ent,.lm.theme-light .cal-win.ent{background:rgba(26,16,96,.05)}
+.lm.theme-light .cal-now{background:var(--red)}
+.lm.theme-light .cal-now::before{background:var(--red)}
+.lm.theme-light .cd-day.on b,.lm.theme-light .cd-day.on span{color:#fff}
+.lm.theme-light .toast{box-shadow:0 8px 24px rgba(26,16,96,.18)}
+.lm.theme-light .dock-wrap{color-scheme:dark;--bg:#0d0b28;--surf:#16143d;--card:#1e1c50;--b0:rgba(255,255,255,.05);--b1:rgba(255,255,255,.1);--b2:rgba(255,255,255,.18);--t:#fff;--t2:rgba(255,255,255,.6);--t3:rgba(255,255,255,.3);--t4:rgba(255,255,255,.12);--green:#00C389;--amber:#f5a20b;--blue:#0099e6;--red:#E8003D;color:var(--t)}
+.lm.theme-light #toasts .toast{background:#fff}
+.lm.theme-light .cd-day.on{background:var(--primary)}
+.lm.theme-light .sec-acc[open]>summary{background:#fff;border-color:var(--b2);box-shadow:inset 3px 0 0 var(--primary)}
+.lm.theme-light .bkr[open]>.bkr-s{background:rgba(26,16,96,.05)}
+.lm.theme-light .flow li.on{background:rgba(26,16,96,.07)}
+.lm.theme-light .cal-head span.today{background:rgba(26,16,96,.1)}
+.lm.theme-light .cal-day.today{background-color:rgba(26,16,96,.04)}
+@media (max-width:640px){
+  .lm .cfg-t,.lm .cfg-t tbody{display:block;width:100%;min-width:0!important}
+  .lm .cfg-t thead{display:none}
+  .lm .cfg-t tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px;border-top:1px solid var(--b1)}
+  .lm .cfg-t tr:first-child{border-top:0}
+  .lm .cfg-t td{display:block;padding:0;border:0;min-width:0;overflow-wrap:anywhere}
+  .lm .cfg-t td::before{display:block;margin-bottom:1px;content:attr(data-l);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
+  .lm .cfg-t td:first-child{grid-column:1/-1}
+  .lm .cfg-t td:last-child{grid-column:1/-1}
+  .lm .cfg-t td:last-child::before{display:none}
+  .lm .cfg-acts{justify-content:flex-start;margin-top:4px}
+  .lm .cfg-t tbody tr:hover td{background:transparent}
+}
