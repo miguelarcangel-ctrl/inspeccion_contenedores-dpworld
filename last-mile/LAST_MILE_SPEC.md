@@ -7,7 +7,7 @@ Módulo de coordinación de transporte de contenedores (retiro de vacío → car
 | Rol | Ve | Hace |
 |---|---|---|
 | Cliente (CERNAC) | Sus bookings, estado por contenedor, chofer y placa **como DP World**, pruebas | Crear booking (incluye detalle de carga), observar |
-| Transportista subcontratado | Datos de transporte: número de booking, tamaño, cantidad, ventanas, patio y terminal, documentos operativos. **Nunca** el detalle de carga ni los datos comerciales del cliente | Confirmar disponibilidad (≤ 1 h), retiro de vacío, en tránsito, entregado lleno, devuelto, subir EIR |
+| Transportista subcontratado | Datos de transporte: número de booking, tamaño, cantidad, ventanas, patio y terminal, documentos operativos. **Nunca** el detalle de carga ni los datos comerciales del cliente | Confirmar disponibilidad (≤ 1 h), agendar hora de retiro, retiro de vacío, en tránsito, entregado lleno, devuelto, subir EIR. No cancela: avisa a coordinación |
 | Bodega | Detalle de carga: SKU, descripción, instrucciones especiales | Marcar **Cargado en bodega** (sello, cajas, foto) |
 | Admin DP World | Todo, incluida la identidad real del transportista | Aprobar o rechazar confirmaciones, asignar directo, reabrir, dividir por contenedor, corregir estados |
 
@@ -21,6 +21,19 @@ DP World es el transportista de cara al cliente: el cliente nunca ve el nombre d
 - Cantidad, naviera, documentos (booking, release)
 - Detalle de carga (solo bodega y admin): SKU, descripción, cajas por contenedor, instrucciones especiales
 
+## Navegación
+- **Menú ☰** en el encabezado: panel lateral de izquierda a derecha con las secciones del rol, sus contadores, la sesión, «Reiniciar demo» y «Salir». El encabezado muestra la sección actual («Last Mile · Calendario»).
+- **Secciones desplegables** en todas las vistas (bodega: en cola, en rampa, próximas cargas, cargados y sellados; transportista: disponibles, esperando aprobación, mis operaciones; admin; reportes). Se abre la primera con contenido y se recuerda lo que el usuario deja abierto.
+- El **cliente** ve sus bookings en tres secciones: programando transporte, en operación y completados.
+
+## Aprobación por excepción y cancelaciones
+- Al confirmar, el transportista ve las reglas antes de enviar. **Se aprueba sola** si cumple todas: documentos vigentes, capacidad (cabezales comprometidos en la ventana ≤ flota), desempeño de 90 días ≥ mínimo en retiro y entrega, equipo compatible (RF requiere genset), carga general y máx. 2 transportistas por booking. Si falla alguna, va a «Por aprobar» con los motivos.
+- El admin puede **revertir** una aprobación automática durante unos minutos; ve los **posibles no-show** (cita sin retiro pasadas N horas) y la configuración (encendido/apagado, umbrales y teléfono de coordinación).
+- **El transportista no cancela desde la app**: ve «¿Problema con este viaje?» con llamada y WhatsApp a coordinación. DP World cancela o reasigna desde el detalle del booking indicando el **origen** (el transportista avisó / detectado por DP World) y el motivo; se republica con reloj corto o se asigna directo a otro transportista, y queda como incidencia del transportista.
+- **El cliente** puede cancelar contenedores que aún no se retiraron; los retirados se gestionan como incidencia.
+- **Reportes**: incidencias por cada 100 contenedores, separadas por origen, y cancelaciones por transportista.
+- Valores de ejemplo: desempeño mínimo 95 %, revertir 15 min, no-show 3 h, republicar 30 min, teléfono `+507 6000-0000` (por definir).
+
 ## Flujo y estados (por contenedor)
 `publicado → confirmado (por aprobar) → asignado → retiro de vacío → cargado en bodega → en tránsito → entregado lleno → devuelto`
 
@@ -28,7 +41,7 @@ DP World es el transportista de cara al cliente: el cliente nunca ve el nombre d
 - El transportista tiene **1 hora** para confirmar. Al vencer el plazo se avisa al admin, que asigna directo o reabre otra hora.
 - Si el proveedor preferido rechaza, el booking pasa a modo abierto y el reloj se reinicia.
 - Confirmación parcial permitida: los contenedores sobrantes siguen publicados.
-- **Aprobación del admin obligatoria** antes de que el booking quede asignado en firme.
+- **Aprobación por excepción**: automática si cumple las reglas; el admin revisa solo lo que falla y puede revertir lo automático por unos minutos.
 - Asignación por booking completo por defecto, con opción de dividir por contenedor.
 
 | Estado | Lo marca | Datos o prueba |
@@ -125,6 +138,18 @@ Colores de estado: verde = completado/OK, ámbar = pendiente/espera, rojo = venc
 ## Documentos de apoyo
 - `docs/Descripcion_Funciones_Coordinador_Last_Mile.docx`: funciones del coordinador manual (20 pasos), perfil, comparativo con la app e indicadores.
 - Comparativo de acciones que requieren una persona: **17 tipos sin app frente a 4 con app** (aprobar, incidencias, conciliación, indicadores).
+
+## Calendario (cliente, transportista, bodega y admin)
+Semana por horas (05:00–22:00, hora de Panamá), con navegación anterior / Hoy / siguiente:
+- **Franja de ventanas**: retiro de vacío y entrega de lleno de cada booking sobre la línea de tiempo de la semana.
+- **Vistas**: en PC, semana por defecto con selector «Semana / Día»; en celular, siempre un día (tira de 7 días con puntos de actividad y ventanas del día con su barra horaria).
+- **Turnos agrupados**: los turnos de un booking que empiezan a la misma hora se muestran en un solo bloque («11:00 R1–R6 · 6 cont.»); al tocarlo se ve el detalle por contenedor.
+- **Cita de retiro** (transportista): hora exacta de retiro, obligatoriamente dentro de la ventana; se agenda para N contenedores y se puede reprogramar o quitar. Si cambia, los turnos de rampa de esos contenedores se liberan.
+- **Turno de rampa** (bodega): rampa, inicio y duración por contenedor con cita. Se rechaza si la rampa ya está ocupada en ese horario o si empieza antes del retiro agendado; avisa si termina cerca del cierre de la entrega.
+- **Cliente**: solo consulta, como «Retiro programado» y «Carga en bodega» (sin nombre del subcontratista). **Admin**: vista completa.
+- Pendientes con contador en la pestaña: retiros sin hora (transportista) y llegadas sin turno (bodega).
+
+Datos: `contenedor.cita = {at, by}` y `contenedor.turno = {at, rampa, dur}`. En Supabase: columnas `cita_retiro`, `turno_rampa`, `turno_inicio`, `turno_duracion` en `operaciones` (o tabla `citas`), con una restricción que impida turnos solapados en la misma rampa.
 
 ## Reportería (admin)
 Sección **Reportes** del admin, con filtro de período (30 días, 90 días, este mes, todo; se cuenta por el inicio de la ventana de retiro):
