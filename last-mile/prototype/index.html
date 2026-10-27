@@ -71,11 +71,15 @@ const ST=[
 const IDX=Object.fromEntries(ST.map((s,i)=>[s.k,i]));
 const LBL=Object.fromEntries(ST.map(s=>[s.k,s.l]));
 const OWNER={retiro:'transportista',bodega:'bodega',transito:'transportista',entregado:'transportista',devuelto:'transportista'};
-const CARRIERS=[
+const CARRIERS0=[
  {id:'c1',name:'Transportes Costa Atlántica',units:24,chassis:'20\' y 40\'',reefer:true,docVence:Date.now()+200*24*3600000},
  {id:'c2',name:'Logística Istmo Cargo',units:9,chassis:'40\' / 40\'HC',reefer:false,docVence:Date.now()+40*24*3600000},
  {id:'c3',name:'Rutas del Caribe S.A.',units:6,chassis:'20\' y 40\'',reefer:false,docVence:Date.now()-5*24*3600000,docNota:'Póliza de seguro de carga vencida'}];
-const CN=Object.fromEntries(CARRIERS.map(c=>[c.id,c.name]));
+/* clientes, transportistas y usuarios viven en state (Configuración los edita); estas son copias de lectura rápida */
+let CARRIERS=[],CN={},USERS={};
+const ACT=()=>CARRIERS.filter(c=>c.active!==false);
+const cli=b=>b.clientId||'k1';
+const CL=id=>state.clients.find(c=>c.id===id)||{name:'',short:''};
 const SIZES=['20\' DV','40\' DV','40\' HC','20\' RF','40\' RF'];
 const NAVIERAS=['Maersk','Hapag-Lloyd','CMA CGM','MSC','ONE','Evergreen','COSCO'];
 const PICK=['Patio Maersk · MIT','Patio Hapag · CCT','Depot CMA CGM · Coco Solo','Patio MSC · MIT','Depot ONE · CCT'];
@@ -97,8 +101,16 @@ const plate=()=>'AK'+(1000+rnd(8999));
 let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90',calW:0,secOpen:{}};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
-const USERS={cernac:{role:'cliente',n:'Cliente · CERNAC'},bodega:{role:'bodega',n:'Bodega CLP'},costa:{role:'transportista',carrier:'c1'},istmo:{role:'transportista',carrier:'c2'},caribe:{role:'transportista',carrier:'c3'},admin:{role:'admin',n:'DP World · Admin'}};
-const SECTIONS={cliente:[['main','Mis bookings'],['cal','Calendario']],transportista:[['main','Bookings'],['cal','Calendario']],bodega:[['main','Bookings'],['cal','Calendario'],['rampas','Rampas']],admin:[['main','Panel'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes']]};
+const USERS0=[{u:'cernac',role:'cliente',client:'k1',n:'Logística CERNAC'},{u:'bodega',role:'bodega',n:'Bodega CLP'},{u:'costa',role:'transportista',carrier:'c1',n:'Despacho Costa'},{u:'istmo',role:'transportista',carrier:'c2',n:'Despacho Istmo'},{u:'caribe',role:'transportista',carrier:'c3',n:'Despacho Caribe'},{u:'admin',role:'admin',n:'DP World · Admin'}];
+function migrate(){
+  state.carriers=state.carriers||CARRIERS0.map(c=>Object.assign({active:true},c));
+  state.clients=state.clients||[{id:'k1',name:'Cervecería Nacional',short:'CERNAC',contacto:'',active:true}];
+  state.users=state.users||USERS0.map(x=>Object.assign({pass:'demo',active:true},x));
+  syncRef();
+  if(ui.auth&&ui.role==='cliente'&&!ui.client)ui.client=(USERS[ui.user]||{}).client||'k1';
+}
+function syncRef(){CARRIERS=state.carriers;CN=Object.fromEntries(CARRIERS.map(c=>[c.id,c.name]));USERS=Object.fromEntries(state.users.map(x=>[x.u,x]));}
+const SECTIONS={cliente:[['main','Mis bookings'],['cal','Calendario'],['config','Configuración']],transportista:[['main','Bookings'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings'],['cal','Calendario'],['rampas','Rampas'],['config','Configuración']],admin:[['main','Panel'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['config','Configuración']]};
 
 /* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
 const RAMPS=6, BUFFER=16;
@@ -233,7 +245,7 @@ function seedHistory(now,cargos){
 }
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify({state:state,ui:ui}));}catch(e){}}
-function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;state.hist=state.hist||[];state.incid=state.incid||[];state.settings.auto=state.settings.auto||{on:true,perf:95,revert:15,noShowH:3,reopenMin:30,tel:'+507 6000-0000'};ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};ui.secOpen=ui.secOpen||{};return;}}catch(e){}state=seed();}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;state.hist=state.hist||[];state.incid=state.incid||[];state.settings.auto=state.settings.auto||{on:true,perf:95,revert:15,noShowH:3,reopenMin:30,tel:'+507 6000-0000'};ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};ui.secOpen=ui.secOpen||{};}}catch(e){state=null;}if(!state||!state.bookings)state=seed();migrate();}
 function log(t){state.log.unshift({at:Date.now(),t:t});state.log=state.log.slice(0,60);}
 
 /* derived */
@@ -338,14 +350,14 @@ function renderRoles(){
   const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
   const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin}}[ui.role]||{};
   nav.hidden=true;
-  const ico={main:'<path d="M3 4h10M3 8h10M3 12h7"/>',cal:'<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',rampas:'<path d="M2 13V5l6-3 6 3v8"/><path d="M5 13V8h6v5"/>',reportes:'<path d="M3 13V8M8 13V3M13 13V6"/>'};
+  const ico={main:'<path d="M3 4h10M3 8h10M3 12h7"/>',cal:'<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',rampas:'<path d="M2 13V5l6-3 6 3v8"/><path d="M5 13V8h6v5"/>',reportes:'<path d="M3 13V8M8 13V3M13 13V6"/>',config:'<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/>'};
   document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><svg viewBox="0 0 16 16" aria-hidden="true">'+ico[x[0]]+'</svg><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   const cur=(secs.find(x=>x[0]===ui.sec)||secs[0]||[])[1];
   document.getElementById('hdr-sub').textContent='Last Mile'+(cur?' · '+cur:'');
   const tot=Object.keys(badge).reduce((n,k)=>n+(badge[k]||0),0),bg=document.querySelector('.hdr-burger');
   bg.classList.toggle('has-badge',tot>0);bg.dataset.n=tot||'';
   nav.innerHTML=secs.length<2?'':secs.map(x=>'<button class="tab'+(ui.sec===x[0]?' active':'')+'" role="tab" aria-selected="'+(ui.sec===x[0])+'" data-act="sec" data-k="'+x[0]+'">'+x[1]+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
-  document.getElementById('hdr-role').textContent=ui.role==='transportista'?CN[ui.carrier]:(USERS[ui.user]||{}).n||ui.role;
+  document.getElementById('hdr-role').textContent=ui.role==='transportista'?CN[ui.carrier]:ui.role==='cliente'?'Cliente · '+CL(ui.client).short:(USERS[ui.user]||{}).n||ui.role;
   document.getElementById('drawerNotif').innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1 1.5H3z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg><span>Notificaciones</span><span class="ntf-tag'+(pushOn()?' on':'')+'">'+(pushOn()?'Activas':'Activar')+'</span>';
   document.getElementById('drawerWho').innerHTML='<span class="flbl">Sesión</span><b>'+esc(document.getElementById('hdr-role').textContent)+'</b>';
   const steps=[['cliente','Cliente crea booking'],['transportista','Transportista confirma ≤ 1 h'],['admin','DP World aprueba'],['transportista','Retiro de vacío → cola de rampa'],['bodega','Rampa: inspección, carga y sello'],['transportista','Entrega lleno y devuelve'],['cliente','Cliente ve todo bajo DP World']];
@@ -355,14 +367,14 @@ function renderRoles(){
 function cliSecs(body){
   // bookings del cliente separados por avance, cada grupo ordenado por prioridad
   const prog=[],op=[],done=[];
-  state.bookings.forEach(b=>{const c=counts(b);if(c.entregado+c.devuelto===b.containers.length)done.push(b);else if(c.publicado+c.confirmado>0)prog.push(b);else op.push(b);});
+  misBk().forEach(b=>{const c=counts(b);if(c.entregado+c.devuelto===b.containers.length)done.push(b);else if(c.publicado+c.confirmado>0)prog.push(b);else op.push(b);});
   const sec=(t,k,l,e)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+t+'</h2><span class="psect-cnt">'+l.length+'</span></div>'+(l.length?bkRows(k,l,body,b=>stagePill(b,'cliente')):'<div class="empty">'+e+'</div>')+'</div>';
   return sec('Programando transporte','clip',prog,'Nada por programar.')+sec('En operación','clio',op,'Sin bookings en operación.')+sec('Completados','clid',done,'Aún no hay bookings completados.');
 }
 function vCliente(){
   let pr=0,asg=0,ruta=0,ent=0;
-  state.bookings.forEach(b=>b.containers.forEach(c=>{const i=IDX[c.status];if(i<=1)pr++;else if(i===2)asg++;else if(i<=5)ruta++;else ent++;}));
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Mis bookings</h1><p class="sc-sub">Cervecería Nacional · Transporte de contenedores operado por DP World. Crea el booking y sigue cada contenedor en vivo.</p></div><button class="btn-p btn-green inl" data-act="new">+ Nuevo booking</button></div>'+
+  misBk().forEach(b=>b.containers.forEach(c=>{const i=IDX[c.status];if(i<=1)pr++;else if(i===2)asg++;else if(i<=5)ruta++;else ent++;}));
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Mis bookings</h1><p class="sc-sub">'+esc(CL(ui.client).name)+' · Transporte de contenedores operado por DP World. Crea el booking y sigue cada contenedor en vivo.</p></div><button class="btn-p btn-green inl" data-act="new">+ Nuevo booking</button></div>'+
   '<div class="stats"><div class="sbox"><div class="sn sa">'+pr+'</div><div class="sl2">Programando</div></div><div class="sbox"><div class="sn en">'+asg+'</div><div class="sl2">Transporte asignado</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
   cliSecs(b=>
    '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Transportista <strong>DP World</strong></span></div>'+bar(b)+'</div>'+
@@ -404,7 +416,7 @@ function cbox(x,isBuf){
   return '<div class="'+cls+'" style="height:'+(isBuf?90:148)+'px" role="button" tabindex="0" aria-label="'+esc(c.number+' · '+st.l)+'" data-act="rtap" data-b="'+x.b.id+'" data-c="'+c.id+'">'+
     '<div class="cfill" style="height:'+fillH+'%;background:'+((k==='P100'||post)?'rgba(0,195,137,0.2)':'rgba(245,162,11,0.2)')+'"></div><div class="ccont">'+
     '<div class="ctag" style="background:'+(post?'rgba(0,195,137,.15)':'rgba(245,162,11,.15)')+';color:'+(post?'#00C389':'#f5a20b')+'">'+st.s+'</div>'+
-    '<div class="cvert" style="flex-direction:column-reverse;gap:2px"><div class="ctext-v" style="color:'+st.c+';text-shadow:0 0 6px '+st.g+';flex:1;overflow:hidden">'+esc(c.number.replace(/\s/g,''))+'</div><div class="ctext-v" style="font-size:6.5px;color:var(--t3);letter-spacing:.3px;font-weight:600;flex:none">CERNAC</div></div></div></div>';
+    '<div class="cvert" style="flex-direction:column-reverse;gap:2px"><div class="ctext-v" style="color:'+st.c+';text-shadow:0 0 6px '+st.g+';flex:1;overflow:hidden">'+esc(c.number.replace(/\s/g,''))+'</div><div class="ctext-v" style="font-size:6.5px;color:var(--t3);letter-spacing:.3px;font-weight:600;flex:none">'+esc(CL(cli(x.b)).short)+'</div></div></div></div>';
 }
 function vRampas(){
   const all=allC(),q=cola(),post=all.filter(x=>x.c.status==='bodega'),inR=all.filter(x=>x.c.status==='retiro'&&x.c.rampa);
@@ -502,9 +514,9 @@ function vAdmin(){
    '<label class="f"><span class="flbl">Teléfono / WhatsApp de coordinación</span><input class="fin" type="tel" data-act="telSet" value="'+esc(A.tel)+'"></label></div>'+
    '<p class="muted" style="margin:0;font-size:13px">Se aprueba sola si: documentos vigentes · capacidad disponible en la ventana · desempeño de 90 días sobre el mínimo · equipo compatible · carga general · máx. 2 transportistas por booking. Si falla alguna, pasa a «Por aprobar» con el motivo.</p></div>'+
   '<div class="grid2"><div class="panel"><h2 class="psect-title">Publicación de nuevos bookings</h2><div class="row"><div class="htabs" role="group" aria-label="Modo"><button class="htab'+(s.mode==='directo'?' active':'')+'" data-act="mode" data-v="directo" aria-pressed="'+(s.mode==='directo')+'">Directo a preferido</button><button class="htab'+(s.mode==='abierto'?' active':'')+'" data-act="mode" data-v="abierto" aria-pressed="'+(s.mode==='abierto')+'">Abierto · primero que confirma</button></div></div>'+
-   '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
+   '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+ACT().map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
    '<p class="muted" style="margin:0;font-size:13.5px">Si el preferido rechaza, el booking pasa solo a modo abierto y el reloj de 1 h reinicia.</p></div>'+
-   '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Activos</th><th>Documentos</th></tr></thead><tbody>'+CARRIERS.map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td class="num">'+active(c.id)+'</td><td>'+(c.docVence>Date.now()?'<span class="cli-badge on">Hasta '+fmtDia(c.docVence)+'</span>':'<span class="cli-badge off">Vencidos</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
+   '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Activos</th><th>Documentos</th></tr></thead><tbody>'+ACT().map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td class="num">'+active(c.id)+'</td><td>'+(c.docVence>Date.now()?'<span class="cli-badge on">Hasta '+fmtDia(c.docVence)+'</span>':'<span class="cli-badge off">Vencidos</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]||''):'Abierto')+'</strong></span></div>'+
      '<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div>'+
@@ -523,9 +535,10 @@ const calWeek=()=>weekStart(Date.now())+(ui.calW||0)*7*DAY;
 const shortCN=id=>CN[id]?CN[id].split(' ').slice(-2).join(' '):'';
 function sinCita(){const me=ui.carrier,o=[];state.bookings.forEach(b=>b.containers.forEach(c=>{if(c.carrierId===me&&c.status==='asignado'&&!c.cita)o.push({b:b,c:c});}));return o;}
 function sinTurno(){const o=[];state.bookings.forEach(b=>b.containers.forEach(c=>{if(c.cita&&!c.turno&&(c.status==='asignado'||c.status==='retiro'))o.push({b:b,c:c});}));return o;}
+const misBk=()=>state.bookings.filter(b=>cli(b)===ui.client);
 function calScope(){
   const me=ui.carrier,r=ui.role;
-  return state.bookings.map(b=>({b:b,cs:r==='transportista'?b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado):b.containers,
+  return (r==='cliente'?misBk():state.bookings).map(b=>({b:b,cs:r==='transportista'?b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado):b.containers,
     avail:r==='transportista'&&openCount(b)>0&&(b.mode==='abierto'||b.directTo===me)&&b.hidden.indexOf(me)<0})).filter(x=>r!=='transportista'||x.cs.length||x.avail);
 }
 function calEvents(scope){
@@ -812,7 +825,7 @@ function detail(id){
   '<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Estado</th><th>Chofer</th><th>Placa</th>'+(isAdmin?'<th>Transportista real</th>':'')+'<th>Sello</th><th>Pruebas</th></tr></thead><tbody>'+
   b.containers.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por asignar</span>')+'</td><td>'+(isAdmin?'<select data-act="fix" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Corregir estado">'+ST.map(s=>'<option value="'+s.k+'"'+(s.k===c.status?' selected':'')+'>'+esc(s.l)+'</option>').join('')+'</select>':(r==='cliente'&&IDX[c.status]<=1?'<span class="cli-badge wait">Programando</span>':statusPill(c.status,c)))+'</td>'+
     '<td>'+(c.driver?esc(c.driver)+(r==='cliente'?' <span class="muted" style="font-size:12px">· DP World</span>':''):'<span class="muted">—</span>')+'</td><td>'+(c.plate?esc(c.plate):'<span class="muted">—</span>')+'</td>'+
-    (isAdmin?'<td>'+(IDX[c.status]<=2?'<select data-act="reassign" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Transportista"><option value="">— Sin asignar —</option>'+CARRIERS.map(k=>'<option value="'+k.id+'"'+(k.id===c.carrierId?' selected':'')+'>'+esc(k.name)+'</option>').join('')+'</select>':esc(CN[c.carrierId]||'—'))+'</td>':'')+
+    (isAdmin?'<td>'+(IDX[c.status]<=2?'<select data-act="reassign" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Transportista"><option value="">— Sin asignar —</option>'+CARRIERS.filter(k=>k.active!==false||k.id===c.carrierId).map(k=>'<option value="'+k.id+'"'+(k.id===c.carrierId?' selected':'')+'>'+esc(k.name)+'</option>').join('')+'</select>':esc(CN[c.carrierId]||'—'))+'</td>':'')+
     '<td class="mono">'+(esc(c.seal)||'<span class="muted">—</span>')+'</td><td style="font-size:12.5px">'+(c.proofs.length?'<div class="docs">'+c.proofs.map(p=>docBtn(b.id+'/'+c.id+'/'+p.name,p.name,b.ref,p.type)).join('')+'</div>':'<span class="muted">—</span>')+'</td></tr>').join('')+
   '</tbody></table></div>'+(isAdmin?(()=>{const by={};b.containers.forEach(c=>{if(c.carrierId&&(c.status==='asignado'||c.status==='confirmado'))by[c.carrierId]=(by[c.carrierId]||0)+1;});const k=Object.keys(by);
      return k.length?'<div class="row"><span class="flbl">Transportistas con contenedores sin retirar</span>'+k.map(id=>'<button class="btn-p btn-red inl" data-act="reasign" data-b="'+b.id+'" data-c="'+id+'">Cancelar / reasignar · '+esc(CN[id])+' ('+by[id]+')</button>').join('')+'</div>':'';})()+'<p class="muted" style="margin:0;font-size:13px">Como admin puedes dividir el booking por contenedor (columna Transportista real) y corregir cualquier estado.</p>':'')+'</div>';
@@ -823,7 +836,7 @@ function detail(id){
 function toLocalInput(t){const d=new Date(t-new Date(t).getTimezoneOffset()*MIN);return d.toISOString().slice(0,16);}
 function newBooking(){
   const base=D('2026-10-16T07:00:00-05:00')+SHIFT;
-  openModal('<div class="sh-h"><div><span class="flbl">Cervecería Nacional</span><h3 class="mtitle">Nuevo booking</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(CL(ui.client).name)+'</span><h3 class="mtitle">Nuevo booking</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
   '<form class="sh-b form" id="nbForm" novalidate>'+
   '<fieldset><legend>Ventanas</legend><div class="fgrid">'+
    '<label class="f"><span class="flbl">Retiro vacío desde</span><input class="fin" type="datetime-local" id="pf" required value="'+toLocalInput(base)+'"></label>'+
@@ -865,13 +878,13 @@ async function submitNew(){
   if(big){err.textContent=big.name+' pesa más de '+MAX_MB+' MB.';return;}
   const skus=Array.from(document.querySelectorAll('#skus .skurow')).map(r=>{const i=r.querySelectorAll('input');return {sku:i[0].value.trim(),d:i[1].value.trim(),q:parseInt(i[2].value,10)||0};}).filter(x=>x.sku||x.d);
   const s=state.settings, nav=v('nv');
-  const b={id:uid('b'),ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],declines:[],containers:mkContainers(qty,'publicado',null,nav)};
+  const b={id:uid('b'),clientId:ui.client||'k1',ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],declines:[],containers:mkContainers(qty,'publicado',null,nav)};
   b.containers.forEach(c=>stamp(c,'publicado',b.publishedAt));
   let saved=true;
   try{await Promise.all(files.map(f=>FILES.put(b.id+'/'+f.name,f)));}catch(e){saved=false;}
   state.bookings.push(b);
-  log('CERNAC creó '+ref+' · '+qty+' × '+b.size+' · '+(b.mode==='directo'?'directo a '+CN[b.directTo]:'publicado abierto'));
-  notify((b.mode==='directo'?[b.directTo]:CARRIERS.map(c=>c.id)).concat('admin'),'Nuevo booking '+ref,qty+' × '+b.size+' · retiro desde '+fmt(pf),b.id);
+  log(CL(b.clientId).short+' creó '+ref+' · '+qty+' × '+b.size+' · '+(b.mode==='directo'?'directo a '+CN[b.directTo]:'publicado abierto'));
+  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),'Nuevo booking '+ref,qty+' × '+b.size+' · retiro desde '+fmt(pf),b.id);
   closeModal();commit();toast('Booking '+ref+' recibido. DP World está programando el transporte.');
   if(!saved)toast('Este navegador no permitió guardar los adjuntos.',true);
 }
@@ -895,7 +908,7 @@ function reasignForm(bid,cid,motivo,at){
    '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">Contenedores</span><input class="fin" type="number" id="rx-n" min="1" max="'+cs.length+'" value="'+(nCita||cs.length)+'"></label>'+(nCita?'<p class="muted" style="grid-column:1/-1;margin:0;font-size:12px">'+nCita+' con cita '+fmt(+at)+' sin retiro (se reasignan primero) de '+cs.length+' sin retirar.</p>':'')+
    '<label class="f"><span class="flbl">Origen</span><select class="fin" id="rx-o" data-act="rxOrigen"><option value="t"'+(motivo?'':' selected')+'>El transportista avisó (llamada / WhatsApp)</option><option value="dp"'+(motivo?' selected':'')+'>Detectado por DP World</option></select></label>'+
    '<label class="f"><span class="flbl">Motivo</span><select class="fin" id="rx-m">'+MOTIVOS[motivo?'dp':'t'].map(x=>'<option'+(x===motivo?' selected':'')+'>'+x+'</option>').join('')+'</select></label>'+
-   '<label class="f"><span class="flbl">Qué hacer</span><select class="fin" id="rx-a"><option value="pub">Republicar a todos ('+state.settings.auto.reopenMin+' min)</option>'+CARRIERS.filter(c=>c.id!==cid).map(c=>'<option value="'+c.id+'">Asignar directo a '+esc(c.name)+'</option>').join('')+'</select></label></div>'+
+   '<label class="f"><span class="flbl">Qué hacer</span><select class="fin" id="rx-a"><option value="pub">Republicar a todos ('+state.settings.auto.reopenMin+' min)</option>'+ACT().filter(c=>c.id!==cid).map(c=>'<option value="'+c.id+'">Asignar directo a '+esc(c.name)+'</option>').join('')+'</select></label></div>'+
    '<div class="abox warn">Queda registrado como incidencia de '+esc(CN[cid])+' y cuenta en su desempeño. Se liberan las citas y turnos de esos contenedores y se le notifica.</div><div class="err" id="rx-err"></div></div>'+
    '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Volver</button><button class="btn-p btn-red inl" data-act="reasignDo" data-b="'+b.id+'" data-c="'+cid+'" data-at="'+(at||'')+'">Confirmar</button></div>',true);
 }
@@ -909,7 +922,7 @@ function reasignDo(bid,cid,at){
   state.incid.push({type:'dp',origen:o,carrierId:cid,bookingId:b.id,ref:b.ref,n:n,motivo:m,at:Date.now(),destino:a});
   log('DP World '+(a==='pub'?'republicó':'reasignó a '+CN[a])+' '+n+' cont. de '+b.ref+' quitados a '+CN[cid]+' ('+m+')');
   notify([cid],'Contenedores reasignados',n+' cont. de '+b.ref+' ya no están a tu cargo ('+m+').',b.id);
-  if(a==='pub')notify(CARRIERS.map(c=>c.id).filter(x=>x!==cid),'Booking republicado',b.ref+' · '+n+' cont. disponibles · retiro hasta '+fmt(b.pickTo),b.id);else notify([a],'Contenedores asignados',n+' cont. de '+b.ref+' · retiro hasta '+fmt(b.pickTo),b.id);
+  if(a==='pub')notify(ACT().map(c=>c.id).filter(x=>x!==cid),'Booking republicado',b.ref+' · '+n+' cont. disponibles · retiro hasta '+fmt(b.pickTo),b.id);else notify([a],'Contenedores asignados',n+' cont. de '+b.ref+' · retiro hasta '+fmt(b.pickTo),b.id);
   closeModal();commit();toast(a==='pub'?'Republicado a todos los transportistas.':'Reasignado a '+CN[a]+'.');
 }
 function cliCancelForm(bid){
@@ -928,8 +941,8 @@ function cliCancelDo(bid){
   b.containers=b.containers.filter(c=>quitar.indexOf(c)<0);b.qty-=n;
   state.incid.push({type:'c',carrierId:null,bookingId:b.id,ref:b.ref,n:n,motivo:m,at:Date.now()});
   if(!b.containers.length){state.bookings=state.bookings.filter(x=>x!==b);b.cancelado=true;state.hist.push(b);}
-  log('CERNAC canceló '+n+' cont. de '+b.ref+' ('+m+')'+(avisar.length?' · aviso a '+avisar.map(x=>CN[x]).join(', '):''));
-  notify(avisar.concat('admin'),'Cancelación del cliente','CERNAC canceló '+n+' cont. de '+b.ref+' ('+m+').',b.id);
+  log(CL(cli(b)).short+' canceló '+n+' cont. de '+b.ref+' ('+m+')'+(avisar.length?' · aviso a '+avisar.map(x=>CN[x]).join(', '):''));
+  notify(avisar.concat('admin'),'Cancelación del cliente',CL(cli(b)).short+' canceló '+n+' cont. de '+b.ref+' ('+m+').',b.id);
   closeModal();commit();toast(n+' contenedores cancelados.'+(avisar.length?' Se avisó al transportista.':''));
 }
 
@@ -969,7 +982,7 @@ function sendConfirm(id){
   const f={id:uid('f'),bookingId:id,carrierId:ui.carrier,qty:q,units:parseInt(document.getElementById('cu').value,10)||null,note:document.getElementById('cnote').value.trim(),at:Date.now(),status:rg.auto?'auto':'pendiente',motivos:rg.R.filter(r=>!r.pass).map(r=>r.txt)};
   b.containers.filter(c=>c.status==='publicado').slice(0,q).forEach(c=>{c.status='confirmado';c.carrierId=ui.carrier;c.confId=f.id;stamp(c,'confirmado');if(rg.auto){c.status='asignado';stamp(c,'asignado');}});
   state.confs.push(f);log(CN[ui.carrier]+' confirmó '+q+' contenedores de '+b.ref+(rg.auto?' · aprobado automáticamente':' · a revisión: '+f.motivos.join('; ')));
-  if(rg.auto){notify(['cliente'],'Transporte asignado',q+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);notify(['admin'],'Aprobación automática',CN[ui.carrier]+' cubre '+q+' cont. de '+b.ref+'. Puedes revertir en '+state.settings.auto.revert+' min.',b.id);}
+  if(rg.auto){notify([cli(b)],'Transporte asignado',q+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);notify(['admin'],'Aprobación automática',CN[ui.carrier]+' cubre '+q+' cont. de '+b.ref+'. Puedes revertir en '+state.settings.auto.revert+' min.',b.id);}
   else notify(['admin'],'Confirmación por revisar',CN[ui.carrier]+' · '+q+' cont. de '+b.ref+': '+(f.motivos[0]||'aprobación automática apagada'),b.id);
   closeModal();commit();
   toast(rg.auto?'Aprobado automáticamente. Ya puedes agendar la hora de retiro.':'Enviado a revisión de DP World: '+(f.motivos[0]||'aprobación automática apagada')+'.',!rg.auto);
@@ -994,11 +1007,11 @@ function advForm(bid,cid,to){
 }
 function notifyAdv(b,to,n,cid,num){
   const q=(n===1&&num?num:n+' cont.')+' · '+b.ref;
-  if(to==='retiro'){notify(['cliente'],'Vacío retirado',q+' en camino a bodega',b.id);notify(['bodega'],'Contenedor en cola de rampa',q+' · '+CN[cid],b.id);}
-  else if(to==='bodega')notify([cid,'cliente'],'Cargado y sellado',q+(cid?' · listo para retirar lleno':''),b.id);
-  else if(to==='transito')notify(['cliente'],'En tránsito al puerto',q,b.id);
-  else if(to==='entregado')notify(['cliente'],'Entregado en puerto',q+' · EIR de entrega disponible',b.id);
-  else if(to==='devuelto')notify(['cliente'],'Contenedor devuelto',q,b.id);
+  if(to==='retiro'){notify([cli(b)],'Vacío retirado',q+' en camino a bodega',b.id);notify(['bodega'],'Contenedor en cola de rampa',q+' · '+CN[cid],b.id);}
+  else if(to==='bodega')notify([cid,cli(b)],'Cargado y sellado',q+(cid?' · listo para retirar lleno':''),b.id);
+  else if(to==='transito')notify([cli(b)],'En tránsito al puerto',q,b.id);
+  else if(to==='entregado')notify([cli(b)],'Entregado en puerto',q+' · EIR de entrega disponible',b.id);
+  else if(to==='devuelto')notify([cli(b)],'Contenedor devuelto',q,b.id);
 }
 function doAdv(bid,cid,to){
   const b=B(bid),c=b.containers.find(x=>x.id===cid),st=STEP[to];
@@ -1019,8 +1032,7 @@ function doAdv(bid,cid,to){
    el aviso lo muestra el service worker de este mismo dispositivo. En producción el evento se guarda en
    Supabase y una Edge Function lo envía con web-push a cada dispositivo suscrito (ver sw.js). */
 const PUSH_KEY='dpw-lastmile-push';
-const CAR_USER=Object.fromEntries(Object.keys(USERS).filter(u=>USERS[u].carrier).map(u=>[USERS[u].carrier,u]));
-const uName=u=>USERS[u].carrier?CN[USERS[u].carrier]:USERS[u].n;
+const uName=u=>{const x=USERS[u];return !x?u:x.role==='transportista'?CN[x.carrier]:x.role==='cliente'?CL(x.client).name:x.n;};
 const AVISOS={cliente:['Transporte asignado a tu booking','Vacío retirado y en camino a bodega','Contenedor cargado y sellado','Entregado en puerto y devuelto'],
   transportista:['Booking nuevo para ti','Aprobación o rechazo de DP World','Turno de rampa asignado','Contenedor sellado, listo para retirar','Reasignación o cancelación'],
   bodega:['Cita de retiro agendada','Vacío retirado: entra a la cola de rampa'],
@@ -1042,7 +1054,8 @@ function abrirBk(id){if(!id||!ui.auth||!B(id))return;menu(false);document.getEle
 /* to: ids de usuario, de transportista (c1…) o de rol; no se avisa a quien hizo la acción */
 function notify(to,titulo,texto,bk){
   if(!pushOK()||Notification.permission!=='granted')return;
-  const subs=pushSubs(),dest=[...new Set(to.map(x=>USERS[x]?x:CAR_USER[x]||Object.keys(USERS).find(u=>USERS[u].role===x)).filter(Boolean))].filter(u=>subs[u]&&u!==ui.user);
+  const subs=pushSubs(),act=Object.keys(USERS).filter(u=>USERS[u].active!==false);
+  const dest=[...new Set(to.flatMap(x=>USERS[x]?[x]:act.filter(u=>USERS[u].carrier===x||USERS[u].client===x||USERS[u].role===x)))].filter(u=>subs[u]&&u!==ui.user);
   dest.forEach(u=>swReg.showNotification(titulo,{body:texto+'\nPara: '+uName(u),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n'),data:{bk:bk||null}}).catch(()=>{}));
 }
 function notifSheet(){
@@ -1069,6 +1082,119 @@ function pushActivate(){
       toast('Notificaciones activadas en este dispositivo.');}
     else toast('No se dio permiso para notificaciones.',true);
     renderRoles();notifSheet();});
+}
+
+/* ===== configuración: tema y administración de clientes, transportistas y usuarios ===== */
+const ROLES={cliente:'Cliente',transportista:'Transportista',bodega:'Bodega',admin:'Admin DP World'};
+const KINDS={clientes:{t:'Clientes',one:'cliente'},transportistas:{t:'Transportistas',one:'transportista'},usuarios:{t:'Usuarios',one:'usuario'}};
+const theme=()=>ui.theme==='light'?'light':'dark';
+function applyTheme(){document.body.classList.toggle('theme-light',theme()==='light');}
+const allBk=()=>state.bookings.concat(state.hist||[]);
+function cfgUso(kind,id){
+  // qué historia tiene cada registro: si tiene, solo se puede dar de baja
+  if(kind==='clientes')return {bk:allBk().filter(b=>cli(b)===id).length,us:state.users.filter(x=>x.client===id).length};
+  if(kind==='transportistas')return {bk:allBk().filter(b=>b.containers.some(c=>c.carrierId===id)||b.directTo===id).length+state.confs.filter(f=>f.carrierId===id).length+state.incid.filter(f=>f.carrierId===id).length,us:state.users.filter(x=>x.carrier===id).length};
+  return {bk:0,us:0};
+}
+const cfgList=kind=>kind==='clientes'?state.clients:kind==='transportistas'?state.carriers:state.users;
+const cfgFind=(kind,id)=>cfgList(kind).find(x=>(kind==='usuarios'?x.u:x.id)===id);
+const estado=x=>x.active===false?'<span class="cli-badge mute">De baja</span>':'<span class="cli-badge on">Activo</span>';
+function cfgActs(kind,id,x){
+  return '<div class="cfg-acts"><button class="btn-p btn-navy inl" data-act="cfgEdit" data-k="'+kind+'" data-id="'+esc(id)+'">Editar</button>'+
+    '<button class="btn-p btn-navy inl" data-act="cfgToggle" data-k="'+kind+'" data-id="'+esc(id)+'">'+(x.active===false?'Reactivar':'Dar de baja')+'</button>'+
+    '<button class="btn-p btn-red inl" data-act="cfgDel" data-k="'+kind+'" data-id="'+esc(id)+'">Eliminar</button></div>';
+}
+function cfgTable(kind){
+  const L=cfgList(kind);let head,rows;
+  if(kind==='clientes'){head=['Cliente','Siglas','Contacto','Usuarios','Bookings','Estado',''];
+    rows=L.map(c=>{const u=cfgUso(kind,c.id);return '<tr'+(c.active===false?' class="off"':'')+'><td><b>'+esc(c.name)+'</b></td><td class="mono">'+esc(c.short)+'</td><td>'+(esc(c.contacto)||'<span class="muted">—</span>')+'</td><td class="num">'+u.us+'</td><td class="num">'+u.bk+'</td><td>'+estado(c)+'</td><td>'+cfgActs(kind,c.id,c)+'</td></tr>';});}
+  else if(kind==='transportistas'){head=['Empresa','Flota','Chasis','Reefer','Documentos','Usuarios','Estado',''];
+    rows=L.map(c=>{const u=cfgUso(kind,c.id),ok=c.docVence>Date.now();return '<tr'+(c.active===false?' class="off"':'')+'><td><b>'+esc(c.name)+'</b>'+(c.id===state.settings.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td>'+esc(c.chassis||'—')+'</td><td>'+(c.reefer?'Sí':'No')+'</td><td><span class="cli-badge '+(ok?'on':'off')+'">'+(ok?'Vigentes · ':'Vencidos · ')+fmtDia(c.docVence)+'</span></td><td class="num">'+u.us+'</td><td>'+estado(c)+'</td><td>'+cfgActs(kind,c.id,c)+'</td></tr>';});}
+  else{head=['Usuario','Nombre','Rol','Empresa','Estado',''];
+    rows=L.map(x=>'<tr'+(x.active===false?' class="off"':'')+'><td class="mono"><b>'+esc(x.u)+'</b>'+(x.u===ui.user?' <span class="tag">Tú</span>':'')+'</td><td>'+esc(x.n||'—')+'</td><td>'+ROLES[x.role]+'</td><td>'+esc(empresa(x))+'</td><td>'+estado(x)+'</td><td>'+cfgActs(kind,x.u,x)+'</td></tr>');}
+  rows=rows.map(r=>{let i=0;return r.replace(/<td/g,()=>'<td data-l="'+head[i++]+'"');});  // etiqueta de cada dato en celular
+  return '<div class="tw"><table class="t cfg-t"><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+(rows.join('')||'<tr><td colspan="'+head.length+'" class="muted">Sin registros.</td></tr>')+'</tbody></table></div>';
+}
+function empresa(x){return x.role==='cliente'?(CL(x.client).name||'—'):x.role==='transportista'?(CN[x.carrier]||'—'):'DP World';}
+function vConfig(){
+  const adm=ui.role==='admin',tab=KINDS[ui.cfgTab]?ui.cfgTab:'clientes';
+  let h='<section class="view"><div class="vhead"><div><h1 class="sc-title">Configuración</h1><p class="sc-sub">'+(adm?'Apariencia de la app y administración de clientes, transportistas y usuarios.':'Apariencia de la app.')+'</p></div></div>'+
+   '<div class="panel"><h2 class="psect-title">Apariencia</h2><div class="htabs" role="group" aria-label="Tema">'+[['dark','Oscuro'],['light','Claro']].map(x=>'<button class="htab'+(theme()===x[0]?' active':'')+'" data-act="theme" data-v="'+x[0]+'" aria-pressed="'+(theme()===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
+   '<p class="muted" style="margin:0;font-size:13px">Se guarda en este dispositivo y aplica a todas las pantallas.</p></div>';
+  if(adm)h+='<div class="panel"><div class="cfg-head"><div class="htabs" role="tablist" aria-label="Administración">'+Object.keys(KINDS).map(k=>'<button class="htab'+(tab===k?' active':'')+'" role="tab" aria-selected="'+(tab===k)+'" data-act="cfgTab" data-v="'+k+'">'+KINDS[k].t+' <span class="psect-cnt">'+cfgList(k).length+'</span></button>').join('')+'</div>'+
+   '<button class="btn-p btn-green inl" data-act="cfgEdit" data-k="'+tab+'">+ Nuevo '+KINDS[tab].one+'</button></div>'+cfgTable(tab)+
+   '<div class="abox inf"><div><b>Dar de baja</b> bloquea el acceso y lo saca de las asignaciones nuevas, pero conserva su historial y sus reportes. <b>Eliminar</b> solo se permite si no tiene historial. En la versión definitiva las contraseñas se guardan cifradas y cada usuario puede cambiar la suya; aquí el admin las edita para la demo.</div></div></div>';
+  return h+'</section>';
+}
+function cfgForm(kind,id){
+  const x=id?cfgFind(kind,id):null,f=(k,l,v,t,a)=>'<label class="f"><span class="flbl">'+l+'</span><input class="fin" id="cf-'+k+'" type="'+(t||'text')+'" value="'+esc(v==null?'':v)+'"'+(a||'')+'></label>';
+  let body;
+  if(kind==='clientes')body=f('name','Nombre del cliente',x&&x.name)+f('short','Siglas',x&&x.short,'text',' maxlength="12"')+f('contacto','Contacto (correo o teléfono)',x&&x.contacto);
+  else if(kind==='transportistas')body=f('name','Empresa',x&&x.name)+f('units','Flota (cabezales)',x?x.units:'','number',' min="1"')+f('chassis','Chasis',x?x.chassis:'20\' y 40\'')+
+    '<label class="f"><span class="flbl">Reefer</span><select class="fin" id="cf-reefer"><option value="0">No</option><option value="1"'+(x&&x.reefer?' selected':'')+'>Sí</option></select></label>'+
+    f('docVence','Documentos vigentes hasta',toPa(x?x.docVence:Date.now()+180*DAY).slice(0,10),'date')+f('docNota','Nota de documentos',x&&x.docNota);
+  else body=f('u','Usuario',x&&x.u,'text',' autocomplete="off" autocapitalize="none"')+f('n','Nombre',x&&x.n)+
+    '<label class="f"><span class="flbl">Rol</span><select class="fin" id="cf-role">'+Object.keys(ROLES).map(r=>'<option value="'+r+'"'+((x?x.role:'cliente')===r?' selected':'')+'>'+ROLES[r]+'</option>').join('')+'</select></label>'+
+    '<label class="f" id="cf-emp-w"><span class="flbl">Empresa</span><select class="fin" id="cf-emp">'+empOpts(x?x.role:'cliente',x&&(x.client||x.carrier))+'</select></label>'+
+    '<label class="f"><span class="flbl">'+(x?'Nueva contraseña':'Contraseña')+'</span><input class="fin" id="cf-pass" type="password" autocomplete="new-password" placeholder="'+(x?'Déjala vacía para no cambiarla':'Mínimo 4 caracteres')+'"></label>'+
+    '<label class="cfg-show"><input type="checkbox" data-act="cfgShow"> Mostrar contraseña</label>';
+  openModal('<div class="sh-h"><div><span class="flbl">'+KINDS[kind].t+'</span><h3 class="mtitle">'+(x?'Editar '+KINDS[kind].one:'Nuevo '+KINDS[kind].one)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="fgrid">'+body+'</div><div class="err" id="cf-err"></div></div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="cfgSave" data-k="'+kind+'" data-id="'+esc(id||'')+'">Guardar</button></div>',true);
+  if(kind==='usuarios')document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(x?x.role:'cliente');
+}
+function empOpts(role,sel){
+  const L=role==='cliente'?state.clients:role==='transportista'?state.carriers:[];
+  return L.filter(c=>c.active!==false||c.id===sel).map(c=>'<option value="'+c.id+'"'+(c.id===sel?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+}
+function cfgSave(kind,id){
+  const g=k=>{const el=document.getElementById('cf-'+k);return el?el.value.trim():'';},err=t=>{document.getElementById('cf-err').textContent=t;};
+  const x=id?cfgFind(kind,id):null;let nombre;
+  if(kind==='clientes'){
+    if(!g('name')||!g('short'))return err('Completa el nombre y las siglas.');
+    if(state.clients.some(c=>c!==x&&c.short.toUpperCase()===g('short').toUpperCase()))return err('Ya hay un cliente con esas siglas.');
+    const o=x||{id:uid('k'),active:true};Object.assign(o,{name:g('name'),short:g('short').toUpperCase(),contacto:g('contacto')});if(!x)state.clients.push(o);nombre=o.name;}
+  else if(kind==='transportistas'){
+    const units=parseInt(g('units'),10),dv=fromPa(g('docVence')+'T23:59');
+    if(!g('name'))return err('Completa el nombre de la empresa.');if(!(units>=1))return err('Indica cuántos cabezales tiene.');if(!(dv>0))return err('Indica hasta cuándo están vigentes los documentos.');
+    if(state.carriers.some(c=>c!==x&&c.name.toLowerCase()===g('name').toLowerCase()))return err('Ya hay un transportista con ese nombre.');
+    const o=x||{id:uid('c'),active:true};Object.assign(o,{name:g('name'),units:units,chassis:g('chassis'),reefer:g('reefer')==='1',docVence:dv,docNota:g('docNota')});if(!x)state.carriers.push(o);nombre=o.name;}
+  else{
+    const u=g('u').toLowerCase(),role=g('role'),emp=g('emp'),pw=document.getElementById('cf-pass').value;
+    if(!/^[a-z0-9._-]{3,20}$/.test(u))return err('El usuario debe tener de 3 a 20 letras, números, punto, guion o guion bajo, sin espacios.');
+    if(state.users.some(o=>o!==x&&o.u===u))return err('Ese usuario ya existe.');
+    if(/cliente|transportista/.test(role)&&!emp)return err('Elige la empresa.');
+    if((!x||pw)&&pw.length<4)return err('La contraseña debe tener al menos 4 caracteres.');
+    if(x&&x.role==='admin'&&role!=='admin'&&admins(x)===0)return err('Debe quedar al menos un admin activo.');
+    if(x&&x.u===ui.user&&role!==x.role)return err('No puedes cambiar tu propio rol.');
+    const o=x||{active:true},old=o.u;Object.assign(o,{u:u,n:g('n'),role:role,client:role==='cliente'?emp:undefined,carrier:role==='transportista'?emp:undefined});if(pw)o.pass=pw;
+    if(!x)state.users.push(o);if(x&&old===ui.user)ui.user=u;nombre=u;}
+  log('DP World '+(x?'editó':'creó')+' '+KINDS[kind].one+' '+nombre);syncRef();closeModal();commit();toast((x?'Cambios guardados':'Creado')+': '+nombre+'.');
+}
+const admins=ex=>state.users.filter(o=>o!==ex&&o.role==='admin'&&o.active!==false).length;
+function cfgToggle(kind,id){
+  const x=cfgFind(kind,id),baja=x.active!==false,nm=x.name||x.u;
+  if(baja&&kind==='usuarios'&&x.u===ui.user)return toast('No puedes darte de baja a ti mismo.',true);
+  if(baja&&kind==='usuarios'&&x.role==='admin'&&admins(x)===0)return toast('Debe quedar al menos un admin activo.',true);
+  if(baja&&kind==='transportistas'&&!state.carriers.some(c=>c!==x&&c.active!==false))return toast('Debe quedar al menos un transportista activo.',true);
+  x.active=!baja;let extra='';
+  if(baja&&kind==='transportistas'&&state.settings.preferred===x.id){const o=state.carriers.find(c=>c.active!==false);state.settings.preferred=o.id;extra=' El preferido ahora es '+o.name+'.';}
+  log('DP World '+(baja?'dio de baja':'reactivó')+' '+KINDS[kind].one+' '+nm);syncRef();commit();toast(nm+(baja?' dado de baja. Ya no puede entrar ni recibir asignaciones nuevas.':' reactivado.')+extra,baja);
+}
+function cfgDelForm(kind,id){
+  const x=cfgFind(kind,id),u=cfgUso(kind,id),nm=x.name||x.u;let bloq='';
+  if(kind==='usuarios'&&x.u===ui.user)bloq='No puedes eliminar tu propio usuario.';
+  else if(kind==='usuarios'&&x.role==='admin'&&admins(x)===0)bloq='Debe quedar al menos un admin activo.';
+  else if(u.bk)bloq=nm+' tiene historial ('+u.bk+' registros de bookings). Para conservar los reportes, dalo de baja en vez de eliminarlo.';
+  else if(u.us)bloq=nm+' tiene '+u.us+' usuario(s). Elimínalos o muévelos a otra empresa primero.';
+  openModal('<div class="sh-h"><div><span class="flbl">'+KINDS[kind].t+'</span><h3 class="mtitle">Eliminar '+esc(nm)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form">'+(bloq?'<div class="abox warn"><div>'+esc(bloq)+'</div></div>':'<div class="abox warn"><div>Se elimina de forma permanente. No se puede deshacer.</div></div>')+'</div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">'+(bloq?'Entendido':'Cancelar')+'</button>'+(bloq?(x.active!==false&&!/propio|admin/.test(bloq)?'<button class="btn-p btn-navy inl" data-act="cfgToggle" data-k="'+kind+'" data-id="'+esc(id)+'">Dar de baja</button>':''):'<button class="btn-p btn-red inl" data-act="cfgDelDo" data-k="'+kind+'" data-id="'+esc(id)+'">Eliminar</button>')+'</div>',true);
+}
+function cfgDelDo(kind,id){
+  const x=cfgFind(kind,id),nm=x.name||x.u,L=cfgList(kind);L.splice(L.indexOf(x),1);
+  if(kind==='transportistas'&&state.settings.preferred===id)state.settings.preferred=state.carriers.find(c=>c.active!==false).id;
+  log('DP World eliminó '+KINDS[kind].one+' '+nm);syncRef();closeModal();commit();toast(nm+' eliminado.');
 }
 
 /* ===== modal / toast ===== */
@@ -1100,12 +1226,13 @@ function accordion(root){
 function render(){
   const lg=document.getElementById('vlogin');
   lg.hidden=!!ui.auth;
-  if(!ui.auth){document.getElementById('lg-demo').innerHTML=Object.keys(USERS).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
+  if(!ui.auth){document.getElementById('lg-demo').innerHTML=state.users.filter(x=>x.active!==false).map(x=>x.u).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
   if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
+  applyTheme();
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
-  v.innerHTML=ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  v.innerHTML=ui.sec==='config'?vConfig():ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
   accordion(v);
   window.scrollTo(0,sy);
   tickClocks();
@@ -1128,6 +1255,14 @@ document.addEventListener('click',e=>{
   switch(a){
    case 'menu':menu(!document.getElementById('drawer').classList.contains('open'));break;
    case 'menuClose':menu(false);break;
+   case 'theme':ui.theme=t.dataset.v;save();render();break;
+   case 'cfgTab':ui.cfgTab=t.dataset.v;save();render();break;
+   case 'cfgEdit':cfgForm(t.dataset.k,t.dataset.id||null);break;
+   case 'cfgSave':cfgSave(t.dataset.k,t.dataset.id||null);break;
+   case 'cfgToggle':closeModal();cfgToggle(t.dataset.k,t.dataset.id);break;
+   case 'cfgDel':cfgDelForm(t.dataset.k,t.dataset.id);break;
+   case 'cfgDelDo':cfgDelDo(t.dataset.k,t.dataset.id);break;
+   case 'cfgShow':return;
    case 'notif':menu(false);ov.dataset.detail='';notifSheet();break;
    case 'pushOn':pushActivate();break;
    case 'pushOff':{const s=pushSubs();delete s[ui.user];pushSet(s);renderRoles();notifSheet();toast('Notificaciones desactivadas para '+uName(ui.user)+'.');break;}
@@ -1189,12 +1324,12 @@ document.addEventListener('click',e=>{
      b.containers.filter(c=>c.confId===f.id&&c.status==='confirmado').forEach(c=>{if(a==='approve'){c.status='asignado';stamp(c,'asignado');}else{c.status='publicado';c.carrierId=null;c.confId=null;if(c.t)delete c.t.confirmado;}});
      f.status=a==='approve'?'aprobada':'rechazada';
      log('DP World '+(a==='approve'?'aprobó':'rechazó')+' '+f.qty+' cont. de '+b.ref+' para '+CN[f.carrierId]);
-     notify([f.carrierId],a==='approve'?'Confirmación aprobada':'Confirmación rechazada',f.qty+' cont. de '+b.ref+(a==='approve'?' · ya puedes agendar el retiro.':' · vuelven a publicarse.'),b.id);if(a==='approve')notify(['cliente'],'Transporte asignado',f.qty+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);
+     notify([f.carrierId],a==='approve'?'Confirmación aprobada':'Confirmación rechazada',f.qty+' cont. de '+b.ref+(a==='approve'?' · ya puedes agendar el retiro.':' · vuelven a publicarse.'),b.id);if(a==='approve')notify([cli(b)],'Transporte asignado',f.qty+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);
      commit();toast(a==='approve'?'Aprobado. '+CN[f.carrierId]+' ya puede operar.':'Rechazado. Los contenedores vuelven a publicarse.',a!=='approve');break;}
    case 'force':{const b=B(t.dataset.id),cid=document.getElementById('asg-'+b.id).value,n=openCount(b);
      b.containers.filter(c=>c.status==='publicado').forEach(c=>{c.status='asignado';c.carrierId=cid;stamp(c,'asignado');});
-     log('DP World asignó directo '+n+' cont. de '+b.ref+' a '+CN[cid]);notify([cid],'Contenedores asignados',n+' cont. de '+b.ref+' · retiro hasta '+fmt(b.pickTo),b.id);notify(['cliente'],'Transporte asignado',n+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);commit();toast(n+' contenedores asignados a '+CN[cid]+'.');break;}
-   case 'reopen':{const b=B(t.dataset.id);b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.containers.filter(c=>c.status==='publicado').forEach(c=>stamp(c,'publicado',b.publishedAt));b.hidden=[];b.expLogged=false;log('DP World reabrió '+b.ref+' a todos · nuevo plazo de 1 h');notify(CARRIERS.map(c=>c.id),'Booking reabierto',b.ref+' · '+openCount(b)+' cont. · tienes 1 h para confirmar',b.id);commit();toast('Reabierto a todos los transportistas por 1 h.');break;}
+     log('DP World asignó directo '+n+' cont. de '+b.ref+' a '+CN[cid]);notify([cid],'Contenedores asignados',n+' cont. de '+b.ref+' · retiro hasta '+fmt(b.pickTo),b.id);notify([cli(b)],'Transporte asignado',n+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);commit();toast(n+' contenedores asignados a '+CN[cid]+'.');break;}
+   case 'reopen':{const b=B(t.dataset.id);b.mode='abierto';b.directTo=null;b.publishedAt=Date.now();b.containers.filter(c=>c.status==='publicado').forEach(c=>stamp(c,'publicado',b.publishedAt));b.hidden=[];b.expLogged=false;log('DP World reabrió '+b.ref+' a todos · nuevo plazo de 1 h');notify(ACT().map(c=>c.id),'Booking reabierto',b.ref+' · '+openCount(b)+' cont. · tienes 1 h para confirmar',b.id);commit();toast('Reabierto a todos los transportistas por 1 h.');break;}
    case 'mode':state.settings.mode=t.dataset.v;log('Modo de publicación: '+(t.dataset.v==='directo'?'directo a preferido':'abierto'));commit();break;
    case 'adv':ov.dataset.detail='';advForm(t.dataset.b,t.dataset.c,t.dataset.to);break;
    case 'load':ov.dataset.detail='';advForm(t.dataset.b,t.dataset.c,'bodega');break;
@@ -1202,10 +1337,10 @@ document.addEventListener('click',e=>{
    case 'bulk':{const b=B(t.dataset.b),to=t.dataset.to;const cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status===t.dataset.from);
      cs.forEach(c=>{c.status=to;stamp(c,to);if(STEP[to].proof)c.proofs.push({type:STEP[to].proof,name:STEP[to].proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
      log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+LBL[to].toLowerCase());notifyAdv(b,to,cs.length,ui.carrier,cs.length===1?cs[0].number:'');commit();toast(cs.length+' contenedores actualizados a «'+LBL[to]+'».');break;}
-   case 'reset':state=seed();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
+   case 'reset':state=seed();migrate();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });
-document.addEventListener('change',e=>{const t=e.target;if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='telSet'){state.settings.auto.tel=t.value.trim()||state.settings.auto.tel;log('Teléfono de coordinación: '+state.settings.auto.tel);commit();}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='telSet'){state.settings.auto.tel=t.value.trim()||state.settings.auto.tel;log('Teléfono de coordinación: '+state.settings.auto.tel);commit();}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='cq'){const box=document.getElementById('rgBox');if(box){const q=parseInt(t.value,10)||0;box.innerHTML=reglasHtml(reglas(B(box.dataset.b),ui.carrier,q));}}});
 document.addEventListener('change',e=>{
   const t=e.target, a=t.dataset&&t.dataset.act;
@@ -1232,9 +1367,11 @@ document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches(
 document.getElementById('lgForm').addEventListener('submit',e=>{
   e.preventDefault();
   const u=document.getElementById('lg-user').value.trim().toLowerCase(),pw=document.getElementById('lg-pass').value,err=document.getElementById('lg-err'),usr=USERS[u];
-  if(!usr||pw!=='demo'){err.classList.add('show');return;}
+  const emp=usr&&(usr.role==='cliente'?CL(usr.client):usr.role==='transportista'?state.carriers.find(c=>c.id===usr.carrier):{});
+  const msg=!usr||usr.pass!==pw?'Usuario o contraseña incorrectos':usr.active===false?'Este usuario está dado de baja. Contacta a DP World.':!emp||emp.active===false?'Tu empresa está dada de baja. Contacta a DP World.':'';
+  if(msg){err.textContent=msg;err.classList.add('show');return;}
   err.classList.remove('show');
-  Object.assign(ui,{auth:true,user:u,role:usr.role,carrier:usr.carrier||ui.carrier,sec:'main'});
+  Object.assign(ui,{auth:true,user:u,role:usr.role,carrier:usr.carrier||ui.carrier,client:usr.client||null,sec:'main'});
   document.getElementById('lg-pass').value='';save();render();window.scrollTo(0,0);
 });
 document.addEventListener('keydown',e=>{

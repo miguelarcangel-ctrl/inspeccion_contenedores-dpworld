@@ -151,6 +151,17 @@ Semana por horas (05:00–22:00, hora de Panamá), con navegación anterior / Ho
 
 Datos: `contenedor.cita = {at, by}` y `contenedor.turno = {at, rampa, dur}`. En Supabase: columnas `cita_retiro`, `turno_rampa`, `turno_inicio`, `turno_duracion` en `operaciones` (o tabla `citas`), con una restricción que impida turnos solapados en la misma rampa.
 
+## Configuración
+- **Ubicación:** menú ☰ → Configuración, para todos los roles.
+- **Apariencia:** tema oscuro o claro. Se guarda por dispositivo. El tablero de rampas sigue oscuro en los dos temas.
+- **Administración (solo admin):** clientes, transportistas y usuarios.
+  - **Crear y editar.** Clientes: nombre, siglas, contacto. Transportistas: flota, chasis, reefer, vigencia y nota de documentos. Usuarios: usuario, nombre, rol, empresa y contraseña.
+  - **Dar de baja.** Bloquea el acceso y saca al transportista de preferido, asignaciones y avisos nuevos. Conserva su historial para los reportes. Si se da de baja la empresa, sus usuarios tampoco pueden entrar.
+  - **Eliminar.** Solo se permite si no tiene historial ni usuarios.
+  - **Reglas.** Nadie se elimina ni se da de baja a sí mismo. Siempre queda al menos un admin y un transportista activos.
+- **Bookings por cliente.** Cada cliente ve solo sus bookings (`clientId`). Los avisos llegan a todos los usuarios activos de esa empresa.
+- **Definitiva.** Las contraseñas pasan a Supabase Auth, cifradas. El usuario crea la suya desde un enlace y el admin solo puede restablecerla.
+
 ## Notificaciones push
 - **Instalable (PWA):** `manifest.json` + `sw.js` en `last-mile/prototype/`. En Android y PC el push funciona desde el navegador; en iPhone (iOS 16.4+) solo con la app agregada a la pantalla de inicio. La app muestra esos pasos cuando detecta un iPhone sin instalar.
 - **Activación:** menú ☰ → Notificaciones → *Activar*. El permiso se pide con un toque del usuario y queda por usuario y dispositivo.
