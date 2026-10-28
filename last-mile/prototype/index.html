@@ -22,7 +22,7 @@
       <div class="hdr-sub" id="hdr-sub">Last Mile</div>
     </div>
   </div>
-  <div class="hdr-user"><button type="button" class="hdr-btn hdr-install" data-act="install" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg><span>INSTALAR</span></button><button type="button" class="hdr-btn hdr-theme" data-act="themeToggle" id="themeBtn"></button><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
+  <div class="hdr-user"><button type="button" class="hdr-btn hdr-install" data-act="install" hidden><span>INSTALAR</span></button><button type="button" class="hdr-btn hdr-theme" data-act="themeToggle" id="themeBtn"></button><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
 </div>
 <div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Secciones" id="roles" hidden></nav></div></div>
 <div class="drawer-ov" id="drawerOv" data-act="menuClose" hidden></div>
@@ -39,7 +39,7 @@
 <div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="toasts" aria-live="polite"></div>
 <div id="vlogin" hidden>
-  <button type="button" class="lg-install hdr-install" data-act="install" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.8 8 10.3l3.5-3.5M3 13.5h10"/></svg><span>Instalar app</span></button>
+  <button type="button" class="lg-install hdr-install" data-act="install" hidden><span>Instalar app</span></button>
   <div class="lg-map" aria-hidden="true"><svg id="lgMap"></svg></div>
   <div class="lg-hero"><div class="lg-kick">DP World · Last Mile</div><h1 class="lg-h1"><span>Conectamos</span> <span>cada entrega</span> <em>contigo.</em></h1><p class="lg-lead">Del patio a la rampa y al puerto: cada contenedor, en vivo.</p></div>
   <svg class="lg-scene" viewBox="0 0 1400 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
@@ -67,7 +67,7 @@
       <button class="lg-btn" type="submit">INGRESAR</button>
     </form>
     <div class="lg-demo"><span class="lg-lbl">Usuarios de prueba · contraseña «demo»</span><div id="lg-demo"></div></div>
-    <div class="login-footer">🔒 USO INTERNO EXCLUSIVO · DP WORLD PANAMÁ</div>
+    <div class="login-footer">USO INTERNO EXCLUSIVO · DP WORLD PANAMÁ</div>
   </div>
 </div>
 <script src="login-map.js"></script>
@@ -287,8 +287,7 @@ function bar(b){
   return '<div class="bar" role="img" aria-label="Avance por estado">'+ST.map((s,i)=>ct[s.k]?'<span style="width:'+(ct[s.k]/n*100)+'%;background:var(--seg-'+i+')" title="'+esc(s.l)+': '+ct[s.k]+'"></span>':'').join('')+'</div>'+
    '<div class="legend">'+ST.map((s,i)=>ct[s.k]?'<span><i style="background:var(--seg-'+i+')"></i>'+esc(s.l)+' <b class="num">'+ct[s.k]+'</b></span>':'').join('')+'</div>';
 }
-const clockSvg='<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 4.5V8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
-function clock(b){if(!openCount(b))return'';return '<span class="clock" data-dl="'+deadline(b)+'">'+clockSvg+'<span></span></span>';}
+function clock(b){if(!openCount(b))return'';return '<span class="clock" data-dl="'+deadline(b)+'"><span></span></span>';}
 function tickClocks(){
   document.querySelectorAll('[data-dl]').forEach(el=>{
     const left=+el.dataset.dl-Date.now(), s=el.querySelector('span');
@@ -302,8 +301,7 @@ function windows(b){
     '<div><span class="flbl">Entrega lleno</span><span class="t">'+fmt(b.delFrom)+' → '+fmt(b.delTo)+'</span><span class="loc">'+esc(b.delLoc)+'</span></div></div>';
 }
 function idRow(b,extra){return '<div class="bk-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span>'+(extra||'')+'</div>';}
-const dlIcon='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.8 6.8M8 10l3.2-3.2M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function docBtn(key,name,ref,label){return '<button type="button" class="doc" data-act="doc" data-k="'+esc(key)+'" data-n="'+esc(name)+'" data-r="'+esc(ref)+'" title="Descargar '+esc(name)+'">'+dlIcon+esc(label||name)+'</button>';}
+function docBtn(key,name,ref,label){return '<button type="button" class="doc" data-act="doc" data-k="'+esc(key)+'" data-n="'+esc(name)+'" data-r="'+esc(ref)+'" title="Descargar '+esc(name)+'">'+esc(label||name)+'</button>';}
 function docsHtml(b){const list=b.docs||[];if(!list.length)return'<span class="muted">Sin documentos</span>';return '<div class="docs">'+list.map(n=>docBtn(b.id+'/'+n,n,b.ref)).join('')+'</div>';}
 function cargoHtml(b,full){
   const c=b.cargo||{};
@@ -336,11 +334,11 @@ function trk(b){
   const ct=counts(b),n=b.containers.length,mx=Math.max.apply(null,b.containers.map(c=>IDX[c.status]));
   return '<div class="trk" role="img" aria-label="'+esc(ST.filter(x=>ct[x.k]).map(x=>x.l+': '+ct[x.k]).join(' · '))+'">'+ST.map((x,i)=>{
     const done=b.containers.every(c=>IDX[c.status]>i)&&!ct[x.k], cur=ct[x.k]>0;
-    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(x.l)+': '+ct[x.k]+'">'+(done?'✓':cur?ct[x.k]:'')+'</span><small class="trk-l'+(cur?' cur':'')+'">'+SHORT[x.k]+'</small></span>';}).join('')+'</div>';
+    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(x.l)+': '+ct[x.k]+'">'+(cur?ct[x.k]:'')+'</span><small class="trk-l'+(cur?' cur':'')+'">'+SHORT[x.k]+'</small></span>';}).join('')+'</div>';
 }
 function bkRows(sec,list,body,right,alert){
   if(!list.length)return '';
-  return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Prioridad · desde / hasta</span><span>Booking</span><span class="trk-key">Avance · <b>✓</b> todos pasaron la etapa · <b>número</b> contenedores en esa etapa ahora</span><span>Estado</span></div>'+
+  return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Prioridad · desde / hasta</span><span>Booking</span><span class="trk-key">Avance · <b>verde</b> todos pasaron la etapa · <b>número</b> contenedores en esa etapa ahora</span><span>Estado</span></div>'+
    byPrio(list).map(b=>{const k=sec+':'+b.id,p=prio(b),now=Date.now(),open=now>=p.t,closed=now>p.end;
     const tone=p.done?'done':closed?'over':(open||p.t-now<24*HOUR)?'soon':'';
     const st=closed?'cerrada '+rel(p.end):open?'abierta · cierra '+rel(p.end):'empieza '+rel(p.t);
@@ -366,15 +364,14 @@ function renderRoles(){
   const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
   const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin}}[ui.role]||{};
   nav.hidden=true;
-  const ico={main:'<path d="M3 4h10M3 8h10M3 12h7"/>',cal:'<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',rampas:'<path d="M2 13V5l6-3 6 3v8"/><path d="M5 13V8h6v5"/>',reportes:'<path d="M3 13V8M8 13V3M13 13V6"/>',config:'<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/>'};
-  document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><svg viewBox="0 0 16 16" aria-hidden="true">'+ico[x[0]]+'</svg><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
+  document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   const cur=(secs.find(x=>x[0]===ui.sec)||secs[0]||[])[1];
   document.getElementById('hdr-sub').textContent='Last Mile'+(cur?' · '+cur:'');
   const tot=Object.keys(badge).reduce((n,k)=>n+(badge[k]||0),0),bg=document.querySelector('.hdr-burger');
   bg.classList.toggle('has-badge',tot>0);bg.dataset.n=tot||'';
   nav.innerHTML=secs.length<2?'':secs.map(x=>'<button class="tab'+(ui.sec===x[0]?' active':'')+'" role="tab" aria-selected="'+(ui.sec===x[0])+'" data-act="sec" data-k="'+x[0]+'">'+x[1]+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   document.getElementById('hdr-role').textContent=ui.role==='transportista'?CN[ui.carrier]:ui.role==='cliente'?'Cliente · '+CL(ui.client).short:(USERS[ui.user]||{}).n||ui.role;
-  document.getElementById('drawerNotif').innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1 1.5H3z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg><span>Notificaciones</span><span class="ntf-tag'+(pushOn()?' on':'')+'">'+(pushOn()?'Activas':'Activar')+'</span>';
+  document.getElementById('drawerNotif').innerHTML='<span>Notificaciones</span><span class="ntf-tag'+(pushOn()?' on':'')+'">'+(pushOn()?'Activas':'Activar')+'</span>';
   document.getElementById('drawerWho').innerHTML='<span class="flbl">Sesión</span><b>'+esc(document.getElementById('hdr-role').textContent)+'</b>';
   const steps=[['cliente','Cliente crea booking'],['transportista','Transportista confirma ≤ 1 h'],['admin','DP World aprueba'],['transportista','Retiro de vacío → cola de rampa'],['bodega','Rampa: inspección, carga y sello'],['transportista','Entrega lleno y devuelve'],['cliente','Cliente ve todo bajo DP World']];
   document.getElementById('flow').innerHTML=steps.map((s,i)=>'<li class="'+(s[0]===ui.role?'on':'')+'"><b>'+(i+1)+'</b>'+s[1]+'</li>').join('');
@@ -440,7 +437,7 @@ function vRampas(){
   let doors='<div class="wh-bl">CLP</div>',slots='';
   for(let i=1;i<=RAMPS;i++){const r='R'+i,x=rampOcc(r);
     doors+='<div class="rdoor"><div class="dframe"><div class="dseal"></div><div class="dnum">'+r+'</div></div></div>';
-    slots+='<div class="rslot"><div class="rpipe"></div>'+(x?cbox(x,false):'<div class="cbox libre" role="button" tabindex="0" aria-label="Rampa '+r+' libre" data-act="rfree" data-r="'+r+'"><div class="ccont"><div class="libre-plus"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div class="libre-lbl">Libre</div></div></div>')+'<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>';}
+    slots+='<div class="rslot"><div class="rpipe"></div>'+(x?cbox(x,false):'<div class="cbox libre" role="button" tabindex="0" aria-label="Rampa '+r+' libre" data-act="rfree" data-r="'+r+'"><div class="ccont"><div class="libre-plus">+</div><div class="libre-lbl">Libre</div></div></div>')+'<div class="chassis"><div class="wheel"></div><div class="wheel"></div></div></div>';}
   const buf=q.concat(post);let bs='';
   for(let i=1;i<=BUFFER;i++){const x=buf[i-1];bs+='<div class="bslot"><div class="bpipe"></div>'+(x?cbox(x,true):'<div class="bbox libre-b"></div>')+'<div class="bnum">B'+i+'</div></div>';}
   const sb=(n,cls,l)=>'<div class="sbox"><div class="sn '+cls+'">'+n+'</div><div class="sl2">'+l+'</div></div>';
@@ -486,7 +483,7 @@ function vTrans(){
     return '<article class="bk'+(ex?' alert':'')+'">'+windows(b)+'<div class="bk-main">'+idRow(b,b.mode==='directo'?'<span class="cli-badge tr">Directo para ti</span>':'<span class="cli-badge mute">Abierto</span>')+
      '<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Cliente <strong>Cuenta DP World</strong></span></div>'+
      '<div><span class="flbl">Documentos operativos</span>'+docsHtml(b)+'</div>'+
-     '<div class="lock">🔒 Detalle de mercancía reservado a bodega.</div></div>'+
+     '<div class="lock">Detalle de mercancía reservado a bodega.</div></div>'+
      '<div class="bk-foot">'+clock(b)+'<div class="acts">'+(ex?'<span class="muted">Plazo vencido · DP World decide</span>':'<button class="btn-p btn-red inl" data-act="decline" data-id="'+b.id+'">No puedo</button><button class="btn-p btn-green inl" data-act="confirm" data-id="'+b.id+'">Confirmar disponibilidad</button>')+'</div></div></article>';};
   const mineCard=b=>{
     const cs=b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado);
@@ -523,7 +520,7 @@ function vAdmin(){
   '<div class="stats"><div class="sbox"><div class="sn '+(pend.length?'sa':'sl')+'">'+pend.length+'</div><div class="sl2">Por aprobar</div></div><div class="sbox"><div class="sn '+(exp.length?'er':'sl')+'">'+exp.length+'</div><div class="sl2">Vencidos sin cubrir</div></div><div class="sbox"><div class="sn sa">'+open+'</div><div class="sl2">Cont. publicados</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Aprobadas automáticamente · se pueden revertir</h2><span class="psect-cnt">'+autos.length+'</span></div>'+(autos.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Aprobada</th><th>Revertir hasta</th><th></th></tr></thead><tbody>'+autos.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td class="mono">'+esc(b.ref)+'</td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td>'+ago(f.at)+'</td><td><span class="clock warn"><span>'+Math.max(0,Math.ceil((f.at+A.revert*MIN-Date.now())/MIN))+' min</span></span></td><td class="r"><button class="btn-p btn-red inl" data-act="revert" data-id="'+f.id+'">Revertir</button></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada aprobado automáticamente en los últimos '+A.revert+' min.</div>')+'</div>'+
   (ns.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Posibles no-show · cita sin retiro hace más de '+A.noShowH+' h</h2><span class="psect-cnt">'+ns.length+'</span></div><div class="tw"><table class="t" style="min-width:0"><thead><tr><th>Transportista</th><th>Booking</th><th>Cita</th><th>Cont.</th><th></th></tr></thead><tbody>'+ns.map(x=>'<tr><td><b>'+esc(CN[x.cid])+'</b></td><td class="mono">'+esc(x.b.ref)+'</td><td><span class="cli-badge off">'+fmt(x.at)+' · '+ago(x.at)+'</span></td><td class="num">'+x.n+'</td><td class="r"><button class="btn-p btn-red inl" data-act="reasign" data-b="'+x.b.id+'" data-c="'+x.cid+'" data-at="'+x.at+'" data-m="No se presentó a la cita">Reasignar</button></td></tr>').join('')+'</tbody></table></div></div>':'')+
-  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Por aprobar · requieren revisión</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Unidades</th><th>Enviado</th><th>Motivo de revisión</th><th></th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td><span class="mono">'+esc(b.ref)+'</span><br><span class="muted" style="font-size:12.5px">retiro desde '+fmt(b.pickFrom)+'</span></td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td class="num">'+(f.units||'—')+'</td><td>'+ago(f.at)+'</td><td style="max-width:300px"><div class="rg-mot">'+((f.motivos&&f.motivos.length?f.motivos:reglas(b,f.carrierId,0).R.filter(r=>!r.pass).map(r=>r.txt)).map(m=>'<span>✕ '+esc(m)+'</span>').join('')||'<span>Aprobación automática apagada</span>')+'</div>'+(f.note?'<div class="muted" style="font-size:12px;margin-top:4px">Nota: '+esc(f.note)+'</div>':'')+'</td><td class="r"><div class="acts" style="justify-content:flex-end"><button class="btn-p btn-red inl" data-act="reject" data-id="'+f.id+'">Rechazar</button><button class="btn-p btn-green inl" data-act="approve" data-id="'+f.id+'">Aprobar</button></div></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Sin confirmaciones por aprobar.</div>')+'</div>'+
+  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Por aprobar · requieren revisión</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Transportista</th><th>Booking</th><th>Cubre</th><th>Unidades</th><th>Enviado</th><th>Motivo de revisión</th><th></th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td><b>'+esc(CN[f.carrierId])+'</b></td><td><span class="mono">'+esc(b.ref)+'</span><br><span class="muted" style="font-size:12.5px">retiro desde '+fmt(b.pickFrom)+'</span></td><td class="num">'+f.qty+' de '+b.qty+' × '+esc(b.size)+'</td><td class="num">'+(f.units||'—')+'</td><td>'+ago(f.at)+'</td><td style="max-width:300px"><div class="rg-mot">'+((f.motivos&&f.motivos.length?f.motivos:reglas(b,f.carrierId,0).R.filter(r=>!r.pass).map(r=>r.txt)).map(m=>'<span>'+esc(m)+'</span>').join('')||'<span>Aprobación automática apagada</span>')+'</div>'+(f.note?'<div class="muted" style="font-size:12px;margin-top:4px">Nota: '+esc(f.note)+'</div>':'')+'</td><td class="r"><div class="acts" style="justify-content:flex-end"><button class="btn-p btn-red inl" data-act="reject" data-id="'+f.id+'">Rechazar</button><button class="btn-p btn-green inl" data-act="approve" data-id="'+f.id+'">Aprobar</button></div></td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Sin confirmaciones por aprobar.</div>')+'</div>'+
   (exp.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Alertas · vencieron sin cubrir</h2><span class="psect-cnt">'+exp.length+'</span></div>'+bkRows('aex',exp,b=>'<article class="bk alert">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]):'Abierto')+'</strong></span></div></div><div class="bk-foot">'+clock(b)+'<div class="acts"><select id="asg-'+b.id+'" aria-label="Transportista">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select><button class="btn-p btn-green inl" data-act="force" data-id="'+b.id+'">Asignar directo</button><button class="btn-p btn-navy inl" data-act="reopen" data-id="'+b.id+'">Reabrir 1 h a todos</button></div></div></article>',b=>'<span class="cli-badge off">Vencido</span>',()=>true)+'</div>':'')+
   '<div class="panel"><h2 class="psect-title">Aprobación automática</h2><div class="row"><div class="htabs" role="group" aria-label="Aprobación automática"><button class="htab'+(A.on?' active':'')+'" data-act="autoOn" data-v="1" aria-pressed="'+A.on+'">Encendida · por excepción</button><button class="htab'+(A.on?'':' active')+'" data-act="autoOn" data-v="0" aria-pressed="'+!A.on+'">Apagada · todo manual</button></div></div>'+
    '<div class="fgrid">'+[['perf','Desempeño mínimo (%)',50,100],['revert','Minutos para revertir',0,120],['noShowH','No-show: horas después de la cita',1,24],['reopenMin','Minutos para confirmar al republicar',10,60]].map(x=>'<label class="f"><span class="flbl">'+x[1]+'</span><input class="fin" type="number" data-act="autoSet" data-k="'+x[0]+'" min="'+x[2]+'" max="'+x[3]+'" value="'+A[x[0]]+'"></label>').join('')+
@@ -532,7 +529,7 @@ function vAdmin(){
   '<div class="grid2"><div class="panel"><h2 class="psect-title">Publicación de nuevos bookings</h2><div class="row"><div class="htabs" role="group" aria-label="Modo"><button class="htab'+(s.mode==='directo'?' active':'')+'" data-act="mode" data-v="directo" aria-pressed="'+(s.mode==='directo')+'">Directo a preferido</button><button class="htab'+(s.mode==='abierto'?' active':'')+'" data-act="mode" data-v="abierto" aria-pressed="'+(s.mode==='abierto')+'">Abierto · primero que confirma</button></div></div>'+
    '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+ACT().map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
    '<p class="muted" style="margin:0;font-size:13.5px">Si el preferido rechaza, el booking pasa solo a modo abierto y el reloj de 1 h reinicia.</p></div>'+
-   '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Activos</th><th>Documentos</th></tr></thead><tbody>'+ACT().map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td class="num">'+active(c.id)+'</td><td>'+(c.docVence>Date.now()?'<span class="cli-badge on">Hasta '+fmtDia(c.docVence)+'</span>':'<span class="cli-badge off">Vencidos</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">🔒 El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
+   '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Activos</th><th>Documentos</th></tr></thead><tbody>'+ACT().map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td class="num">'+active(c.id)+'</td><td>'+(c.docVence>Date.now()?'<span class="cli-badge on">Hasta '+fmtDia(c.docVence)+'</span>':'<span class="cli-badge off">Vencidos</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]||''):'Abierto')+'</strong></span></div>'+
      '<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div>'+
@@ -614,12 +611,12 @@ function vCal(){
       const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':(e.rampas.length>1?'Rampas ':'Turno ')+e.rampa);
       const t2=e.b.ref+' · '+n+' cont.'+who;
       return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'" data-r="'+(e.rampa||'')+'" title="'+esc(t1+' · '+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+t2)+'">'+
-        '<b>'+(e.done?'✓ ':'')+hm(e.at)+' '+esc(e.type==='cita'?'Retiro':r==='cliente'?'Carga':e.rampa)+'</b><span>'+esc(t2)+'</span></button>';}).join('');
+        '<b>'+(e.done?'Hecho · ':'')+hm(e.at)+' '+esc(e.type==='cita'?'Retiro':r==='cliente'?'Carga':e.rampa)+'</b><span>'+esc(t2)+'</span></button>';}).join('');
     const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
     return '<div class="cal-day'+(d===today?' today':'')+'">'+blocks+nowLine+'</div>';}).join('');
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+calHint()+'</p></div>'+calToggle()+'</div>'+calPend()+
    '<div class="cal-bar"><div class="htabs"><button class="htab" data-act="calw" data-v="-1" aria-label="Semana anterior">‹ Anterior</button><button class="htab'+(ui.calW?'':' active')+'" data-act="calw" data-v="0">Hoy</button><button class="htab" data-act="calw" data-v="1" aria-label="Semana siguiente">Siguiente ›</button></div>'+
-   '<span class="cal-range">'+range+'</span><span class="cal-legend"><span><i class="lg-ret"></i>Ventana de retiro</span><span><i class="lg-ent"></i>Ventana de entrega</span><span><i class="lg-cita"></i>'+(r==='cliente'?'Retiro programado':'Cita de retiro')+'</span><span><i class="lg-turno"></i>'+(r==='cliente'?'Carga en bodega':'Turno de rampa')+'</span><span>✓ hecho</span></span></div>'+
+   '<span class="cal-range">'+range+'</span><span class="cal-legend"><span><i class="lg-ret"></i>Ventana de retiro</span><span><i class="lg-ent"></i>Ventana de entrega</span><span><i class="lg-cita"></i>'+(r==='cliente'?'Retiro programado':'Cita de retiro')+'</span><span><i class="lg-turno"></i>'+(r==='cliente'?'Carga en bodega':'Turno de rampa')+'</span><span>Hecho</span></span></div>'+
    '<div class="cal-scroll"><div class="cal" style="--cal-h:'+((CAL_H1-CAL_H0)*CAL_PX)+'px;--cal-px:'+CAL_PX+'px">'+
     '<div class="cal-head"><span></span>'+days.map(d=>'<span class="'+(d===today?'today':'')+'">'+dl(d)+'</span>').join('')+'</div>'+
     '<div class="cal-lane"><div class="cal-lane-lbl">Ventanas</div><div class="cal-lane-body">'+lane+'</div></div>'+
@@ -632,7 +629,7 @@ function vCalDia(){
   const d=ws+ui.calD*DAY,de=d+DAY,ev=calEvents(scope);
   const evDay=x=>ev.filter(e=>e.at<x+DAY&&e.at+e.dur>x);
   const strip=Array.from({length:7},(_,i)=>{const x=ws+i*DAY,n=evDay(x).length,lb=new Date(x).toLocaleDateString('es-PA',{timeZone:'America/Panama',weekday:'short'}).replace('.','').slice(0,3);
-    return '<button class="cd-day'+(i===ui.calD?' on':'')+(x===today?' hoy':'')+'" data-act="cald" data-v="'+i+'"><span>'+lb+'</span><b>'+new Date(x-5*HOUR).getUTCDate()+'</b><i>'+(n?'●'.repeat(Math.min(3,n)):'')+'</i></button>';}).join('');
+    return '<button class="cd-day'+(i===ui.calD?' on':'')+(x===today?' hoy':'')+'" data-act="cald" data-v="'+i+'"><span>'+lb+'</span><b>'+new Date(x-5*HOUR).getUTCDate()+'</b><i>'+(n?n:'')+'</i></button>';}).join('');
   const px=t=>Math.max(0,Math.min(100,(t-d)/DAY*100));
   const wins=[];scope.forEach(x=>{[[x.b.pickFrom,x.b.pickTo,'ret','Retiro'],[x.b.delFrom,x.b.delTo,'ent','Entrega']].forEach(w=>{if(w[1]>d&&w[0]<de)wins.push({b:x.b,a:w[0],z:w[1],cls:w[2],l:w[3]});});});
   const lane=wins.length?wins.map(w=>'<button class="cd-win" data-act="calbk" data-id="'+w.b.id+'"><span class="cd-wl"><b>'+w.l+'</b> '+esc(w.b.ref)+'</span><span class="cd-wt">'+(w.a<d?'desde ayer':hm(w.a))+' → '+(w.z>de?fmt(w.z):hm(w.z))+'</span><span class="cd-track"><span class="cal-win '+w.cls+'" style="left:'+px(w.a)+'%;width:'+Math.max(2,px(w.z)-px(w.a))+'%"></span></span></button>').join(''):'<div class="cal-none">Sin ventanas este día</div>';
@@ -640,7 +637,7 @@ function vCalDia(){
   const blocks=items.map(it=>{const e=it.e,hs=Math.min(CAL_H1-.5,Math.max(CAL_H0,(it.s-d)/HOUR)),hz=Math.max(hs+.75,Math.min(CAL_H1,(it.z-d)/HOUR)),n=e.cs.length;
     const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':(e.rampas.length>1?'Rampas ':'Rampa ')+e.rampa);
     const who=(r==='bodega'||r==='admin')&&e.cs[0].carrierId?' · '+shortCN(e.cs[0].carrierId):'';
-    return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'"><b>'+(e.done?'✓ ':'')+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+esc(t1)+'</b><span>'+esc(e.b.ref+' · '+n+' cont.'+who)+'</span></button>';}).join('');
+    return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'"><b>'+(e.done?'Hecho · ':'')+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+esc(t1)+'</b><span>'+esc(e.b.ref+' · '+n+' cont.'+who)+'</span></button>';}).join('');
   const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
   const titulo=new Date(d).toLocaleDateString('es-PA',{timeZone:'America/Panama',weekday:'long',day:'numeric',month:'long'});
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+calHint()+'</p></div>'+calToggle()+'</div>'+calPend()+
@@ -740,7 +737,7 @@ function rpRows(fromOverride){
 }
 function kpi(rows,k){const ev=rows.filter(x=>x[k].ev);return {n:ev.filter(x=>x[k].ok).length,d:ev.length,v:pct(ev.filter(x=>x[k].ok).length,ev.length)};}
 function nivel(v,meta){return v===null?'na':v>=meta?'ok':v>=meta-5?'warn':'crit';}
-const NIVEL={ok:['on','✓','Cumple'],warn:['wait','▲','Bajo meta'],crit:['off','✕','Crítico'],na:['mute','–','Sin datos']};
+const NIVEL={ok:['on','','Cumple'],warn:['wait','','Bajo meta'],crit:['off','','Crítico'],na:['mute','','Sin datos']};
 const fmtPct=v=>v===null?'—':(Math.round(v*10)/10).toLocaleString('es-PA')+' %';
 function celda(v,meta,n){const lv=NIVEL[nivel(v,meta)];return '<span class="rk '+lv[0]+'" title="'+lv[2]+'"><i aria-hidden="true">'+lv[1]+'</i>'+fmtPct(v)+(n!==undefined?'<small>'+n+'</small>':'')+'</span>';}
 function barsSvg(data){
@@ -868,7 +865,7 @@ function newBooking(){
    '<label class="f"><span class="flbl">Naviera</span><select class="fin" id="nv">'+NAVIERAS.map(n=>'<option>'+esc(n)+'</option>').join('')+'</select></label></div>'+
    '<label class="f"><span class="flbl">Booking (PDF)</span><input class="fin" type="file" id="dcb" accept=".pdf,application/pdf"></label>'+
    '<label class="f"><span class="flbl">Otros documentos · release, instrucciones (PDF o foto)</span><input class="fin" type="file" id="dc" multiple accept=".pdf,application/pdf,image/*"></label></fieldset>'+
-  '<fieldset class="wh"><legend>Detalle de carga · solo para bodega</legend><p class="lock" style="margin:0">🔒 El transportista no ve esta sección.</p>'+
+  '<fieldset class="wh"><legend>Detalle de carga · solo para bodega</legend><p class="lock" style="margin:0">El transportista no ve esta sección.</p>'+
    '<label class="f"><span class="flbl">Descripción de la mercancía</span><input class="fin" id="cd" value="Cerveza Atlas lata 355 ml"></label>'+
    '<div class="f"><span class="flbl">SKU por contenedor</span><div id="skus" style="display:grid;gap:6px"></div><button type="button" class="link" data-act="addsku" style="justify-self:start">+ Agregar SKU</button></div>'+
    '<label class="f"><span class="flbl">Instrucciones especiales de carga</span><textarea class="fin" id="cn">Carga a piso. No mezclar lotes. Foto al 50 % y con puertas cerradas.</textarea></label></fieldset>'+
@@ -979,8 +976,8 @@ function reglas(b,cid,q){
   return {R:R,auto:A.on&&R.every(r=>r.pass),off:!A.on};
 }
 function reglasHtml(rg){
-  return '<div class="rg-box '+(rg.auto?'ok':'rev')+'"><div class="rg-head">'+(rg.auto?'✓ Se aprueba automáticamente':rg.off?'Aprobación automática apagada: la revisa DP World':'▲ Requiere revisión de DP World')+'</div>'+
-    '<ul class="rg-list">'+rg.R.map(r=>'<li class="'+(r.pass?'ok':'no')+'"><i aria-hidden="true">'+(r.pass?'✓':'✕')+'</i>'+esc(r.txt)+'</li>').join('')+'</ul></div>';
+  return '<div class="rg-box '+(rg.auto?'ok':'rev')+'"><div class="rg-head">'+(rg.auto?'Se aprueba automáticamente':rg.off?'Aprobación automática apagada: la revisa DP World':'Requiere revisión de DP World')+'</div>'+
+    '<ul class="rg-list">'+rg.R.map(r=>'<li class="'+(r.pass?'ok':'no')+'"><i aria-hidden="true">'+(r.pass?'Sí':'No')+'</i>'+esc(r.txt)+'</li>').join('')+'</ul></div>';
 }
 function confirmForm(id){
   const b=B(id),n=openCount(b),me=CARRIERS.find(c=>c.id===ui.carrier);
@@ -1259,7 +1256,7 @@ function render(){
   if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
   applyTheme();
   const tb=document.getElementById('themeBtn'),lt=theme()==='light';
-  tb.innerHTML=lt?'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1z"/></svg>':'<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>';
+  tb.textContent=lt?'Oscuro':'Claro';
   tb.setAttribute('aria-label',lt?'Cambiar a tema oscuro':'Cambiar a tema claro');tb.title=tb.getAttribute('aria-label');
   renderRoles();
   const v=document.getElementById('view');

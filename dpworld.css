@@ -695,10 +695,8 @@ main.lm-main{padding-block:18px 56px}
 .lm .drawer-who b{font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:.3px}
 .lm .drawer-items{display:grid;padding:8px 0;overflow-y:auto}
 .lm .drawer-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;border:0;border-left:3px solid transparent;background:transparent;color:var(--t2);font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;text-align:left;cursor:pointer}
-.lm .drawer-item svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .lm .drawer-item:hover{background:var(--b0);color:var(--t)}
 .lm .drawer-item.active{color:#fff;background:rgba(62,60,144,.3);border-left-color:var(--green)}
-.lm .drawer-item.active svg{color:var(--green)}
 .lm .drawer-item .badge{margin-left:auto}
 .lm .drawer-item:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
 .lm .drawer-f{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-top:1px solid var(--b1)}
@@ -722,7 +720,7 @@ main.lm-main{padding-block:18px 56px}
 .lm .rg-box.ok .rg-head{color:var(--green)}.lm .rg-box.rev .rg-head{color:var(--amber)}
 .lm .rg-list{list-style:none;display:grid;gap:4px;font-size:13px;color:var(--t2)}
 .lm .rg-list li{display:flex;gap:8px;align-items:baseline}
-.lm .rg-list i{font-style:normal;font-weight:700;width:12px;flex:none}
+.lm .rg-list i{font-style:normal;font-weight:700;width:22px;flex:none}
 .lm .rg-list li.ok i{color:var(--green)}.lm .rg-list li.no{color:var(--t)}.lm .rg-list li.no i{color:#ff6680}
 .lm .rg-mot{display:grid;gap:2px;font-size:12px;color:#ff9db0}
 .lm .contact{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;padding:10px 12px;border-radius:var(--r2);background:var(--b0);border:1px solid var(--b1);font-size:13px;color:var(--t2)}
@@ -832,7 +830,7 @@ main.lm-main{padding-block:18px 56px}
 .lm .hdr-btn:hover{background:#e0e0ec}
 .lm .hdr-btn:focus-visible,.lm .lg-install:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .lm .hdr-btn svg,.lm .lg-install svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.lm .hdr-theme{padding:0;width:30px}
+.lm .hdr-theme{text-transform:uppercase}
 .lm .hdr-install{background:#1A1060;border-color:#1A1060;color:#fff}
 .lm .hdr-install:hover{background:#2A1F8F}
 .lm .hdr-btn[hidden],.lm .lg-install[hidden]{display:none}
@@ -840,5 +838,5 @@ main.lm-main{padding-block:18px 56px}
 .lm .lg-install:hover{background:rgba(255,255,255,.16)}
 .lm .ov{z-index:1000}
 .lm #toasts{z-index:1001}
-@media (max-width:480px){.lm .hdr-install span{display:none}.lm .hdr-install{padding:0;width:30px}.lm .hdr-user{gap:6px}}
+@media (max-width:480px){.lm .hdr-btn{padding:0 7px}.lm .hdr-user{gap:6px}.lm .hdr-role{display:none}}
 @media (max-width:820px){.lm .lg-install{top:14px;right:14px;padding:6px 11px}}
