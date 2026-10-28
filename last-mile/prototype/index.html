@@ -87,6 +87,15 @@ const ST=[
  {k:'devuelto',l:'Devuelto'}];
 const IDX=Object.fromEntries(ST.map((s,i)=>[s.k,i]));
 const LBL=Object.fromEntries(ST.map(s=>[s.k,s.l]));
+/* importación: lleno del puerto → descarga en CLP → devolución del vacío (sin etapa «entregado») */
+const isImpo=b=>!!b&&b.tipo==='impo';
+const LBL_I={retiro:'Retiro lleno',bodega:'Descargado',transito:'Vacío en camino',devuelto:'Vacío devuelto'};
+const SHORT_I={retiro:'Ret. lleno',bodega:'Descarg.',transito:'Vacío',devuelto:'Devuelto'};
+const lbl=(b,k)=>(isImpo(b)&&LBL_I[k])||LBL[k];
+const stagesOf=b=>isImpo(b)?ST.filter(x=>x.k!=='entregado'):ST;
+const ADU=[['bl','Liberación de la naviera (BL)'],['lev','Levante de aduana / DMC']];
+const liberado=b=>!isImpo(b)||!!(b.aduana&&b.aduana.bl&&b.aduana.lev);
+const tipoTag=b=>isImpo(b)?'<span class="tag tipo impo">Impo</span>':'<span class="tag tipo expo">Expo</span>';
 const OWNER={retiro:'transportista',bodega:'bodega',transito:'transportista',entregado:'transportista',devuelto:'transportista'};
 const CARRIERS0=[
  {id:'c1',name:'Transportes Costa Atlántica',units:24,chassis:'20\' y 40\'',reefer:true,docVence:Date.now()+200*24*3600000},
@@ -126,6 +135,8 @@ const waFmt=d=>/^507\d{8}$/.test(d)?'+507 '+d.slice(3,7)+'-'+d.slice(7):'+'+d;
 const waGrupo=v=>/^https:\/\/chat\.whatsapp\.com\/\w+/.test(v||'');  // enlace de invitación a un grupo
 const waNum=k=>k==='coord'?state.settings.auto.tel:(state.settings.wa||{})[k]||'';
 function migrate(){
+  // demos guardadas antes del módulo de importación reciben los ejemplos sin perder lo demás
+  if(!state.impoSeeded){if(!state.bookings.some(isImpo))state.bookings.push(...seedImpo(Date.now()));state.impoSeeded=true;}
   state.settings.wa=state.settings.wa||{ger:'+507 6000-0001',ventas:'+507 6000-0002'};
   state.carriers=state.carriers||CARRIERS0.map(c=>Object.assign({active:true},c));
   state.clients=state.clients||[{id:'k1',name:'Cervecería Nacional',short:'CERNAC',contacto:'',active:true}];
@@ -163,6 +174,28 @@ function mkContainers(n,status,carrierId,nav,opts){
     if(IDX[status]>=IDX.entregado){c.proofs.push({type:'EIR entrega lleno',name:'EIR_full_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});}
     return c;});
 }
+function seedImpo(now){
+  // importaciones vivas: una en operación, una esperando el levante y una recién publicada
+  const H=h=>Math.floor((now+h*HOUR)/HOUR)*HOUR,mk=(n,st,cid,nav)=>mkContainers(n,st,cid,nav).map(c=>{c.number=c.number||cnum(nav);
+    c.proofs=[];if(IDX[st]>=IDX.retiro){c.seal=c.seal||String(5500000+rnd(99999));c.proofs.push({type:'EIR retiro lleno',name:'EIR_lleno_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});}
+    if(IDX[st]>=IDX.bodega){c.loaded=22;c.recv={wms:'REC-'+(10400+rnd(500)),nov:'Sin novedad',nota:''};c.proofs.push({type:'Foto descarga / novedades',name:'descarga_'+c.number.replace(/\W/g,'')+'.jpg',by:'bodega'});}
+    return c;});
+  const latas={desc:'Latas de aluminio vacías 355 ml (insumo)',bultos:22,notes:'Descargar con montacargas. Pallets de 2,1 m: no apilar. Revisar film y esquineros.',skus:[]};
+  const malta={desc:'Malta de cebada en sacos de 50 kg',bultos:440,notes:'Sacos a piso sobre pallet. Revisar humedad; separar sacos rotos y fotografiar.',skus:[]};
+  const I1={id:'i1',tipo:'impo',ref:'MEDU 7781204',naviera:'MSC',size:'40\' HC',qty:6,clientId:'k1',pickFrom:H(-30),pickTo:H(42),pickLoc:DELIV[0],delFrom:H(-6),delTo:H(140),delLoc:PICK[3],
+    docs:['BL_MEDU7781204.pdf','Packing_list_MEDU7781204.pdf'],cargo:latas,createdAt:now-40*HOUR,publishedAt:now-40*HOUR,mode:'abierto',hidden:[],declines:[],aduana:{resp:'dp',bl:{at:now-38*HOUR,by:'admin'},lev:{at:now-34*HOUR,by:'admin'}}};
+  I1.containers=[].concat(mk(2,'bodega','c2','MSC'),mk(2,'retiro','c2','MSC'),mk(2,'asignado','c2','MSC'));
+  I1.containers.forEach((c,i)=>c.seq=i+1);Object.assign(I1.containers[2],{ramp:'P50',rampa:'R5'});Object.assign(I1.containers[3],{ramp:'ESPERA_RAMPA',rampa:null});
+  I1.containers.slice(4).forEach(c=>c.cita={at:H(3),by:'c2'});
+  const I2={id:'i2',tipo:'impo',ref:'HLCU PAN5520931',naviera:'Hapag-Lloyd',size:'20\' DV',qty:4,clientId:'k1',pickFrom:H(2),pickTo:H(70),pickLoc:DELIV[1],delFrom:H(20),delTo:H(190),delLoc:PICK[1],
+    docs:['BL_HLCUPAN5520931.pdf'],cargo:malta,createdAt:now-20*HOUR,publishedAt:now-20*HOUR,mode:'abierto',hidden:[],declines:[],aduana:{resp:'cliente',bl:{at:now-10*HOUR,by:'cliente'},lev:null}};
+  I2.containers=mk(4,'asignado','c2','Hapag-Lloyd');I2.containers.forEach((c,i)=>c.seq=i+1);
+  const I3={id:'i3',tipo:'impo',ref:'MAEU 9032217',naviera:'Maersk',size:'40\' HC',qty:3,clientId:'k1',pickFrom:H(20),pickTo:H(80),pickLoc:DELIV[0],delFrom:H(40),delTo:H(200),delLoc:PICK[0],
+    docs:['BL_MAEU9032217.pdf'],cargo:latas,createdAt:now-20*MIN,publishedAt:now-20*MIN,mode:'abierto',hidden:[],declines:[],aduana:{resp:'dp',bl:null,lev:null}};
+  I3.containers=mk(3,'publicado',null,'Maersk');I3.containers.forEach((c,i)=>c.seq=i+1);
+  [I1,I2,I3].forEach(b=>{backfill(b);b.containers.forEach(c=>{if(c.t)delete c.t.entregado;});});
+  return [I1,I2,I3];
+}
 function seed(){
   const now=Date.now();
   const D=x=>Date_(x)+SHIFT;
@@ -194,6 +227,7 @@ function seed(){
   B6.pickFrom=Math.floor((now-6*HOUR)/HOUR)*HOUR;B6.containers.slice(4).forEach(c=>c.cita={at:B6.pickFrom+HOUR,by:'c1'});
   b.push(B5,B1,B2,B3,B4,B6);
   b.forEach(backfill);
+  b.push(...seedImpo(now));
   const hist=seedHistory(now,{atlas:atlas,mixto:mixto,vigor:vigor});
   const MOT={t:['Avisó: falla mecánica del cabezal','Avisó: sin chofer disponible','Avisó: sin chasis del tamaño'],dp:['No se presentó a la cita','Chofer o unidad no cumple'],c:['Naviera canceló el booking','Cambio de buque']};
   const incid=hist.filter((x,i)=>i%5===2).map((x,i)=>{const ty=['t','dp','c','t'][i%4],cid=ty==='c'?null:(i%3===0?'c3':i%3===1?'c2':'c3');return {type:ty==='c'?'c':'dp',origen:ty==='t'?'t':ty==='dp'?'dp':'c',carrierId:cid,bookingId:x.id,ref:x.ref,n:1+(i%3),motivo:MOT[ty][i%MOT[ty].length],at:x.pickFrom-(ty==='c'?20:4)*HOUR};});
@@ -284,16 +318,18 @@ function stagePill(b,role){
   if(ct.devuelto===b.containers.length) return '<span class="cli-badge on">Completado</span>';
   if(role==='cliente'){
     if(ct.publicado+ct.confirmado>0) return '<span class="cli-badge wait">Programando transporte</span>';
-    const k=ST[minIdx(b)].k; return '<span class="cli-badge '+(IDX[k]>=IDX.entregado?'on':'tr')+'">'+(k==='asignado'?'Transporte asignado':LBL[k])+'</span>';}
+    if(!liberado(b)&&minIdx(b)<=IDX.asignado) return '<span class="cli-badge wait">Pendiente de liberación</span>';
+    const k=ST[minIdx(b)].k; return '<span class="cli-badge '+(IDX[k]>=IDX.entregado?'on':'tr')+'">'+(k==='asignado'?'Transporte asignado':lbl(b,k))+'</span>';}
   if(expired(b)) return '<span class="cli-badge off">Vencido sin cubrir</span>';
   if(ct.publicado>0) return '<span class="cli-badge wait">Publicado · '+ct.publicado+' sin cubrir</span>';
   if(ct.confirmado>0) return '<span class="cli-badge wait">Por aprobar</span>';
-  const k=ST[minIdx(b)].k; return '<span class="cli-badge '+(IDX[k]>=IDX.entregado?'on':'tr')+'">'+LBL[k]+'</span>';
+  if(!liberado(b)&&minIdx(b)<=IDX.asignado) return '<span class="cli-badge wait">Pendiente de liberación</span>';
+  const k=ST[minIdx(b)].k; return '<span class="cli-badge '+(IDX[k]>=IDX.entregado?'on':'tr')+'">'+lbl(b,k)+'</span>';
 }
 function bar(b){
   const ct=counts(b),n=b.containers.length;
-  return '<div class="bar" role="img" aria-label="Avance por estado">'+ST.map((s,i)=>ct[s.k]?'<span style="width:'+(ct[s.k]/n*100)+'%;background:var(--seg-'+i+')" title="'+esc(s.l)+': '+ct[s.k]+'"></span>':'').join('')+'</div>'+
-   '<div class="legend">'+ST.map((s,i)=>ct[s.k]?'<span><i style="background:var(--seg-'+i+')"></i>'+esc(s.l)+' <b class="num">'+ct[s.k]+'</b></span>':'').join('')+'</div>';
+  return '<div class="bar" role="img" aria-label="Avance por estado">'+ST.map((s,i)=>ct[s.k]?'<span style="width:'+(ct[s.k]/n*100)+'%;background:var(--seg-'+i+')" title="'+esc(lbl(b,s.k))+': '+ct[s.k]+'"></span>':'').join('')+'</div>'+
+   '<div class="legend">'+ST.map((s,i)=>ct[s.k]?'<span><i style="background:var(--seg-'+i+')"></i>'+esc(lbl(b,s.k))+' <b class="num">'+ct[s.k]+'</b></span>':'').join('')+'</div>';
 }
 function clock(b){if(!openCount(b))return'';return '<span class="clock" data-dl="'+deadline(b)+'"><span></span></span>';}
 function tickClocks(){
@@ -304,15 +340,27 @@ function tickClocks(){
     else s.textContent='Plazo de 1 h vencido · '+ago(+el.dataset.dl).replace('hace ','hace ');
   });
 }
+function aduanaHtml(b){
+  // checklist de liberación: lo marca DP World o el cliente según quién hace el trámite
+  if(!isImpo(b))return '';const a=b.aduana||{},quien=a.resp==='cliente'?'el cliente':'DP World',puede=ui.role==='admin'||(ui.role==='cliente'&&a.resp==='cliente');
+  return '<div class="adu'+(liberado(b)?' ok':'')+'"><div class="adu-h"><span class="flbl">Liberación para retirar del puerto</span><span class="muted">Trámite: '+quien+'</span></div>'+
+    ADU.map(x=>{const v=a[x[0]];return '<div class="adu-i'+(v?' ok':'')+'"><span class="adu-ck" aria-hidden="true"></span><span>'+x[1]+(v?' <span class="muted">· '+fmt(v.at)+'</span>':'')+'</span>'+(!v&&puede?'<button class="btn-p btn-green inl" data-act="adu" data-id="'+b.id+'" data-k="'+x[0]+'">Marcar listo</button>':!v?'<span class="cli-badge wait">Pendiente</span>':'')+'</div>';}).join('')+
+    (liberado(b)?'':'<p class="muted" style="margin:0;font-size:12px">El transportista puede confirmar y agendar, pero no marcar el retiro hasta que ambos estén listos.</p>')+'</div>';
+}
 function windows(b){
+  if(isImpo(b))return '<div class="win"><div><span class="flbl">Retiro lleno · puerto</span><span class="t">'+fmt(b.pickFrom)+' → '+fmt(b.pickTo)+'</span><span class="loc">'+esc(b.pickLoc)+' · último día libre '+fmt(b.pickTo)+'</span></div>'+
+    '<div><span class="flbl">Devolución de vacío</span><span class="t">'+fmt(b.delFrom)+' → '+fmt(b.delTo)+'</span><span class="loc">'+esc(b.delLoc)+' · sin demora hasta '+fmt(b.delTo)+'</span></div></div>'+aduanaHtml(b);
   return '<div class="win"><div><span class="flbl">Retiro de vacío</span><span class="t">'+fmt(b.pickFrom)+' → '+fmt(b.pickTo)+'</span><span class="loc">'+esc(b.pickLoc)+'</span></div>'+
     '<div><span class="flbl">Entrega lleno</span><span class="t">'+fmt(b.delFrom)+' → '+fmt(b.delTo)+'</span><span class="loc">'+esc(b.delLoc)+'</span></div></div>';
 }
-function idRow(b,extra){return '<div class="bk-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span>'+(extra||'')+'</div>';}
+function idRow(b,extra){return '<div class="bk-id"><span class="bk-ref">'+esc(b.ref)+'</span>'+tipoTag(b)+'<span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span>'+(extra||'')+'</div>';}
 function docBtn(key,name,ref,label){return '<button type="button" class="doc" data-act="doc" data-k="'+esc(key)+'" data-n="'+esc(name)+'" data-r="'+esc(ref)+'" title="Descargar '+esc(name)+'">'+esc(label||name)+'</button>';}
 function docsHtml(b){const list=b.docs||[];if(!list.length)return'<span class="muted">Sin documentos</span>';return '<div class="docs">'+list.map(n=>docBtn(b.id+'/'+n,n,b.ref)).join('')+'</div>';}
 function cargoHtml(b,full){
   const c=b.cargo||{};
+  if(isImpo(b))return '<div class="cargo"><div class="row" style="justify-content:space-between"><span class="flbl">Mercancía · solo bodega y DP World</span></div><strong>'+esc(c.desc||'—')+'</strong>'+
+    (c.bultos?'<div class="muted">'+c.bultos.toLocaleString('es-PA')+' bultos esperados por contenedor (packing list en documentos)</div>':'')+
+    (c.notes?'<div class="note"><b>Instrucciones de descarga:</b> '+esc(c.notes)+'</div>':'')+'<div class="lock">La recepción detallada por SKU se registra en el WMS; aquí solo coordinación y visibilidad.</div></div>';
   return '<div class="cargo"><div class="row" style="justify-content:space-between"><span class="flbl">Detalle de carga · solo bodega y DP World</span></div>'+
     '<strong>'+esc(c.desc||'—')+'</strong>'+
     '<ul>'+(c.skus||[]).map(s=>'<li><span class="sku">'+esc(s.sku)+'</span><span>'+esc(s.d)+'</span><span class="muted num">'+(s.q?s.q.toLocaleString('es-PA')+' cajas / cont.':'')+'</span></li>').join('')+'</ul>'+
@@ -325,13 +373,17 @@ function allC(){const o=[];state.bookings.forEach(b=>b.containers.forEach(c=>o.p
 const rampOcc=r=>allC().find(x=>x.c.status==='retiro'&&x.c.rampa===r);
 const freeRamps=()=>Array.from({length:RAMPS},(_,i)=>'R'+(i+1)).filter(r=>!rampOcc(r));
 const cola=()=>allC().filter(x=>rs(x.c)==='ESPERA_RAMPA');
-function rampBadge(c){const k=rs(c);return '<span class="cli-badge '+RST[k].p+'">'+(c.rampa?c.rampa+' · ':'')+RST[k].l+'</span>';}
+const RST_I={PEND_INSP:'Revisar sello',INSPECCIONADO:'Sello OK',P20:'20 % descargado',P50:'50 % descargado',P100:'100 % descargado',BUFFER_POST:'Vacío listo'};
+const rampLbl=(c,b)=>{const k=rs(c);return (isImpo(b)&&RST_I[k])||RST[k].l;};
+function rampBadge(c,b){const k=rs(c);return '<span class="cli-badge '+RST[k].p+'">'+(c.rampa?c.rampa+' · ':'')+rampLbl(c,b)+'</span>';}
 
 /* filas de booking: prioridad + tracking */
 const SHORT={publicado:'Publ.',confirmado:'Conf.',asignado:'Asig.',retiro:'Retiro',bodega:'Bodega',transito:'Tráns.',entregado:'Entreg.',devuelto:'Dev.'};
 const TONE=k=>IDX[k]<=1?'wait':IDX[k]>=6?'on':'tr';
 function prio(b){
   const ct=counts(b),n=b.containers.length;
+  if(isImpo(b)){if(ct.publicado+ct.confirmado+ct.asignado>0)return {t:b.pickFrom,end:b.pickTo,l:'Retiro lleno'};
+    if(ct.devuelto<n)return {t:b.delFrom,end:b.delTo,l:'Devolución vacío'};return {t:b.delTo,end:b.delTo,l:'Devuelto',done:true};}
   if(ct.publicado+ct.confirmado+ct.asignado>0)return {t:b.pickFrom,end:b.pickTo,l:'Retiro vacío'};
   if(ct.entregado+ct.devuelto<n)return {t:b.delFrom,end:b.delTo,l:'Entrega lleno'};
   return {t:b.delTo,end:b.delTo,l:'Entregado',done:true};
@@ -340,9 +392,10 @@ function byPrio(list){return list.slice().sort((a,b)=>{const x=prio(a),y=prio(b)
 function rel(t){const m=Math.round((t-Date.now())/MIN),a=Math.abs(m),h=Math.floor(a/60),d=Math.floor(h/24);const v=a<60?a+' min':h<48?h+' h':d+' d';return m<0?'hace '+v:'en '+v;}
 function trk(b){
   const ct=counts(b),n=b.containers.length,mx=Math.max.apply(null,b.containers.map(c=>IDX[c.status]));
-  return '<div class="trk" role="img" aria-label="'+esc(ST.filter(x=>ct[x.k]).map(x=>x.l+': '+ct[x.k]).join(' · '))+'">'+ST.map((x,i)=>{
+  const imp=isImpo(b);
+  return '<div class="trk" role="img" aria-label="'+esc(stagesOf(b).filter(x=>ct[x.k]).map(x=>lbl(b,x.k)+': '+ct[x.k]).join(' · '))+'">'+stagesOf(b).map(x=>{const i=IDX[x.k];
     const done=b.containers.every(c=>IDX[c.status]>i)&&!ct[x.k], cur=ct[x.k]>0;
-    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(x.l)+': '+ct[x.k]+'">'+(cur?ct[x.k]:'')+'</span><small class="trk-l'+(cur?' cur':'')+'">'+SHORT[x.k]+'</small></span>';}).join('')+'</div>';
+    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(lbl(b,x.k))+': '+ct[x.k]+'">'+(cur?ct[x.k]:'')+'</span><small class="trk-l'+(cur?' cur':'')+'">'+((imp&&SHORT_I[x.k])||SHORT[x.k])+'</small></span>';}).join('')+'</div>';
 }
 function bkRows(sec,list,body,right,alert){
   if(!list.length)return '';
@@ -352,9 +405,9 @@ function bkRows(sec,list,body,right,alert){
     const st=closed?'cerrada '+rel(p.end):open?'abierta · cierra '+rel(p.end):'empieza '+rel(p.t);
     return '<details class="bkr'+((alert&&alert(b))?' alert':'')+'" data-key="'+k+'"'+(ui.open[k]?' open':'')+'><summary class="bkr-s">'+
      '<span class="bkr-chev" aria-hidden="true">›</span>'+
-     (p.done?'<span class="bkr-p done"><b>Completado</b><span>Entrega lleno · '+fmt(p.end)+'</span></span>':
+     (p.done?'<span class="bkr-p done"><b>Completado</b><span>'+(isImpo(b)?'Vacío devuelto':'Entrega lleno')+' · '+fmt(p.end)+'</span></span>':
       '<span class="bkr-p '+tone+'"><span class="bkr-pl">'+p.l+'</span><b>'+fmt(p.t)+'</b><span>hasta '+fmt(p.end)+'</span><span class="bkr-st">'+st+'</span></span>')+
-     '<span class="bkr-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="bkr-tags"><span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span></span></span>'+
+     '<span class="bkr-id"><span class="bk-ref">'+esc(b.ref)+'</span><span class="bkr-tags">'+tipoTag(b)+'<span class="tag size">'+b.qty+' × '+esc(b.size)+'</span><span class="tag">'+esc(b.naviera)+'</span></span></span>'+
      trk(b)+'<span class="bkr-r">'+right(b)+'</span></summary><div class="bkr-b">'+body(b)+'</div></details>';}).join('')+'</div>';
 }
 
@@ -411,33 +464,32 @@ function vBodega(){
     if(ct.publicado+ct.confirmado+ct.asignado>0)coming.push(b);
     if(ct.bodega)done.push(b);});
   const rows=(b,f,lbl)=>'<div class="tw"><table class="t" style="min-width:0"><thead><tr><th>#</th><th>Contenedor</th><th class="hide-sm">Unidad</th><th>Estado</th><th></th></tr></thead><tbody>'+
-    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td class="hide-sm">'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c)+(c.turno?' <span class="muted">· turno '+c.turno.rampa+' '+fmt(c.turno.at)+'</span>':'')+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
+    b.containers.filter(f).map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+esc(c.number)+'</td><td class="hide-sm">'+esc(c.plate)+' · '+esc(c.driver)+'</td><td>'+rampBadge(c,b)+(c.turno?' <span class="muted">· turno '+c.turno.rampa+' '+fmt(c.turno.at)+'</span>':'')+(c.seal?' <span class="muted">· sello '+esc(c.seal)+'</span>':'')+'</td><td class="r"><button class="btn-p '+(lbl==='Asignar rampa'?'btn-green':'btn-navy')+' inl" data-act="rtap" data-b="'+b.id+'" data-c="'+c.id+'">'+lbl+'</button></td></tr>').join('')+'</tbody></table></div>';
   const card=(b,mode)=>{
     const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');
-    const head=mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola de rampa</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' aún sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' cargados y sellados</span>';
     const t=mode==='cola'?rows(b,c=>c.status==='retiro'&&!c.rampa,'Asignar rampa'):mode==='rampa'?rows(b,c=>c.status==='retiro'&&c.rampa,'Abrir rampa'):mode==='done'?rows(b,c=>c.status==='bodega','Ver'):'';
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+cargoHtml(b)+t+'</div></article>';
   };
   const n=(arr,f)=>arr.reduce((s,b)=>s+b.containers.filter(f).length,0);
-  const head=(b,mode)=>{const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');return mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+' sellados</span>';};
+  const head=(b,mode)=>{const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');return mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+(isImpo(b)?' vacíos listos':' sellados')+'</span>';};
   const sec=(title,cnt,arr,mode,empty)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+title+'</h2><span class="psect-cnt">'+cnt+'</span></div>'+(arr.length?bkRows('bo'+mode,arr,b=>card(b,mode),b=>head(b,mode)):'<div class="empty">'+empty+'</div>')+'</div>';
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bookings de bodega</h1><p class="sc-sub">Lo que viene a la bodega y qué cargar en cada contenedor. Los vacíos que retira el transportista entran solos a la cola de rampas; «Cargado en bodega» se marca al sellar en Rampas.</p></div><button class="btn-p btn-green inl" data-act="sec" data-k="rampas">Ir a rampas</button></div>'+
-   sec('En cola de rampa · vacíos retirados',n(q,c=>c.status==='retiro'&&!c.rampa),q,'cola','No hay vacíos esperando rampa.')+
-   sec('En rampa · inspección y carga',n(inR,c=>c.status==='retiro'&&c.rampa),inR,'rampa','No hay contenedores en rampa.')+
-   sec('Próximas cargas',coming.length,coming,'coming','Sin bookings por llegar.')+
-   sec('Cargados y sellados · esperando salida',n(done,c=>c.status==='bodega'),done,'done','Nada cargado pendiente de salir.')+'</section>';
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bookings de bodega</h1><p class="sc-sub">Lo que viene a la bodega: vacíos de exportación para cargar y llenos de importación para descargar. Entran solos a la cola de rampas al marcar el retiro; se cierran al sellar o al terminar la descarga en Rampas.</p></div><button class="btn-p btn-green inl" data-act="sec" data-k="rampas">Ir a rampas</button></div>'+
+   sec('En cola de rampa · llegadas',n(q,c=>c.status==='retiro'&&!c.rampa),q,'cola','No hay vacíos esperando rampa.')+
+   sec('En rampa · inspección, carga y descarga',n(inR,c=>c.status==='retiro'&&c.rampa),inR,'rampa','No hay contenedores en rampa.')+
+   sec('Próximas llegadas',coming.length,coming,'coming','Sin bookings por llegar.')+
+   sec('Listos en buffer · sellados o vacíos por devolver',n(done,c=>c.status==='bodega'),done,'done','Nada pendiente de salir.')+'</section>';
 }
 
 /* ===== RAMPAS (mismo muelle que Control de Rampas) ===== */
 function cbox(x,isBuf){
-  const c=x.c,k=rs(c),st=RST[k],post=k==='BUFFER_POST';
+  const c=x.c,k=rs(c),st=RST[k],post=k==='BUFFER_POST',imp=isImpo(x.b),col=post?'#00C389':imp?'#0099e6':'#f5a20b',bg=post?'rgba(0,195,137,.15)':imp?'rgba(0,153,230,.18)':'rgba(245,162,11,.15)';
   const fillH=k==='P20'?25:k==='P50'?55:(k==='P100'||post)?100:5;
   const sc={PEND_INSP:'pend-insp',INSPECCIONADO:'inspeccionado',P20:'p20',P50:'p50',P100:'p100',BUFFER_POST:'buffer-post'}[k]||'salida';
-  const cls=isBuf?'bbox '+(post?'buffer-post':'salida'):'cbox '+sc;
+  const cls=(isBuf?'bbox '+(post?'buffer-post':'salida'):'cbox '+sc)+(imp?' impo':'');
   return '<div class="'+cls+'" style="height:'+(isBuf?90:148)+'px" role="button" tabindex="0" aria-label="'+esc(c.number+' · '+st.l)+'" data-act="rtap" data-b="'+x.b.id+'" data-c="'+c.id+'">'+
-    '<div class="cfill" style="height:'+fillH+'%;background:'+((k==='P100'||post)?'rgba(0,195,137,0.2)':'rgba(245,162,11,0.2)')+'"></div><div class="ccont">'+
-    '<div class="ctag" style="background:'+(post?'rgba(0,195,137,.15)':'rgba(245,162,11,.15)')+';color:'+(post?'#00C389':'#f5a20b')+'">'+st.s+'</div>'+
-    '<div class="cvert" style="flex-direction:column-reverse;gap:2px"><div class="ctext-v" style="color:'+st.c+';text-shadow:0 0 6px '+st.g+';flex:1;overflow:hidden">'+esc(c.number.replace(/\s/g,''))+'</div><div class="ctext-v" style="font-size:6.5px;color:var(--t3);letter-spacing:.3px;font-weight:600;flex:none">'+esc(CL(cli(x.b)).short)+'</div></div></div></div>';
+    '<div class="cfill" style="height:'+(imp&&!post?100-fillH+(k==='P100'?5:0):fillH)+'%;background:'+((k==='P100'||post)?'rgba(0,195,137,0.2)':imp?'rgba(0,153,230,0.22)':'rgba(245,162,11,0.2)')+'"></div><div class="ccont">'+
+    '<div class="ctag" style="background:'+bg+';color:'+col+'">'+(imp&&!post&&k==='ESPERA_RAMPA'?'ENT':st.s)+'</div>'+
+    '<div class="cvert" style="flex-direction:column-reverse;gap:2px"><div class="ctext-v" style="color:'+(imp&&k!=='PEND_INSP'&&!post?'#0099e6':st.c)+';text-shadow:0 0 6px '+(imp&&k!=='PEND_INSP'&&!post?'rgba(0,153,230,.5)':st.g)+';flex:1;overflow:hidden">'+esc(c.number.replace(/\s/g,''))+'</div><div class="ctext-v" style="font-size:6.5px;color:var(--t3);letter-spacing:.3px;font-weight:600;flex:none">'+esc(CL(cli(x.b)).short)+'</div></div></div></div>';
 }
 function vRampas(){
   const all=allC(),q=cola(),post=all.filter(x=>x.c.status==='bodega'),inR=all.filter(x=>x.c.status==='retiro'&&x.c.rampa);
@@ -449,11 +501,11 @@ function vRampas(){
   const buf=q.concat(post);let bs='';
   for(let i=1;i<=BUFFER;i++){const x=buf[i-1];bs+='<div class="bslot"><div class="bpipe"></div>'+(x?cbox(x,true):'<div class="bbox libre-b"></div>')+'<div class="bnum">B'+i+'</div></div>';}
   const sb=(n,cls,l)=>'<div class="sbox"><div class="sn '+cls+'">'+n+'</div><div class="sl2">'+l+'</div></div>';
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Control de Rampas · CLP</h1><p class="sc-sub">Los vacíos que retira el transportista llegan solos a la cola. Toca uno en cola para asignarle rampa; toca la rampa para inspeccionar, cargar y sellar.</p></div>'+(ui.role==='bodega'?'<button class="btn-p btn-navy inl" data-act="sec" data-k="main">Ver bookings</button>':'')+'</div>'+
-   '<div class="stats">'+sb(RAMPS-inR.length,'sl','Rampas libres')+sb(q.length,q.length?'sa':'sl','En cola')+sb(pend,pend?'er':'sl','Pend. inspección')+sb(inR.length-pend,'en','En carga')+sb(post.length,'ok','Sellados en buffer')+'</div>'+
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Control de Rampas · CLP</h1><p class="sc-sub">Llegan solos a la cola los vacíos de exportación (SALIDA, ámbar) y los llenos de importación (ENTRADA, azul). Toca uno en cola para asignarle rampa; toca la rampa para inspeccionar, cargar o descargar.</p></div>'+(ui.role==='bodega'?'<button class="btn-p btn-navy inl" data-act="sec" data-k="main">Ver bookings</button>':'')+'</div>'+
+   '<div class="stats">'+sb(RAMPS-inR.length,'sl','Rampas libres')+sb(q.length,q.length?'sa':'sl','En cola')+sb(pend,pend?'er':'sl','Pend. inspección')+sb(inR.length-pend,'en','En carga / descarga')+sb(post.length,'ok','Listos en buffer')+'</div>'+
    '<div class="dock-wrap"><div class="wh-wall"><div class="wh-inner">'+doors+'</div></div><div class="rscroll"><div class="rinner">'+slots+'</div></div><div class="dlane"><div class="dlane-lbl">ZONA DE MANIOBRA</div></div>'+
    '<div class="bzone"><div class="bzone-hdr"><div class="bzone-lbl">Buffer de espera</div>'+(q.length?'<div class="bzone-pill">'+q.length+' en cola</div>':'')+'</div><div class="bscroll"><div class="binner">'+bs+'</div></div></div></div>'+
-   '<p class="muted" style="font-size:12px">Solo se muestran las operaciones de SALIDA que vienen de bookings. En la app integrada conviven con las ENTRADAS que hoy se registran a mano.</p></section>';
+   '<p class="muted" style="font-size:12px">Se muestran las operaciones que vienen de bookings: SALIDA (exportación) y ENTRADA (importación). En la app integrada conviven con las que hoy se registran a mano.</p></section>';
 }
 function rampModal(bid,cid){
   const b=B(bid),c=b.containers.find(x=>x.id===cid),k=rs(c);
@@ -461,18 +513,26 @@ function rampModal(bid,cid){
   let body='',foot='<button class="btn-p btn-navy inl" data-act="close">Cerrar</button>';
   if(k==='ESPERA_RAMPA'){const fr=freeRamps();
     body=fr.length?'<div class="f"><span class="flbl">Asignar a rampa libre</span><div class="htabs">'+fr.map(r=>'<button class="htab" data-act="toRamp" '+d+' data-r="'+r+'">'+r+'</button>').join('')+'</div></div>':'<div class="abox warn">No hay rampas libres. El contenedor sigue en cola.</div>';}
+  else if(isImpo(b)&&k==='PEND_INSP'){
+    body='<div class="abox err"><div>Contenedor de entrada: revisa que el sello coincida ('+esc(c.seal||'—')+') y el estado del contenedor antes de abrir.</div></div><div class="abox inf"><div>Si el sello no coincide o hay daño, anótalo como novedad al cerrar la descarga.</div></div>';
+    foot+='<button class="btn-p btn-navy inl" data-act="rstep" '+d+' data-to="ESPERA_RAMPA">Devolver a cola</button><button class="btn-p btn-green inl" data-act="rstep" '+d+' data-to="INSPECCIONADO">Sello OK · abrir</button>';}
   else if(k==='PEND_INSP'){
     body='<div class="abox err">Contenedor de salida: requiere inspección antes de cargar.</div><div class="abox inf">En Control de Rampas aquí se llena el checklist de 20 puntos con fotos y se genera el PDF. En el prototipo se simula con un botón.</div>';
     foot+='<button class="btn-p btn-navy inl" data-act="rstep" '+d+' data-to="ESPERA_RAMPA">Devolver a cola</button><button class="btn-p btn-green inl" data-act="rstep" '+d+' data-to="INSPECCIONADO">Inspección OK</button>';}
   else if(k==='INSPECCIONADO'||k==='P20'||k==='P50'){
-    body='<div class="f"><span class="flbl">Avance de carga</span><div class="prog-row">'+['P20','P50','P100'].map(x=>'<div class="pbtn '+x.toLowerCase()+'" role="button" tabindex="0" data-act="rstep" '+d+' data-to="'+x+'"><div class="pn">'+x.slice(1)+'%</div><div class="pl">'+(x==='P100'?'Completo':'En proceso')+'</div></div>').join('')+'</div></div>';}
+    body='<div class="f"><span class="flbl">Avance de '+(isImpo(b)?'descarga':'carga')+'</span><div class="prog-row">'+['P20','P50','P100'].map(x=>'<div class="pbtn '+x.toLowerCase()+'" role="button" tabindex="0" data-act="rstep" '+d+' data-to="'+x+'"><div class="pn">'+x.slice(1)+'%</div><div class="pl">'+(x==='P100'?'Completo':'En proceso')+'</div></div>').join('')+'</div></div>';}
+  else if(isImpo(b)&&k==='P100'){
+    body='<div class="abox suc"><div>Descarga completa. Registra los bultos recibidos y las novedades: el contenedor vacío pasa al buffer y el transportista lo retira para devolverlo.</div></div>';
+    foot+='<button class="btn-p btn-green inl" data-act="seal" '+d+'>Cerrar descarga</button>';}
+  else if(isImpo(b)&&k==='BUFFER_POST'){const v=c.recv||{};
+    body='<div class="abox suc"><div>Descargado · '+(c.loaded?c.loaded.toLocaleString('es-PA')+' bultos':'')+(v.wms?' · recepción WMS '+esc(v.wms):'')+(v.nov&&v.nov!=='Sin novedad'?' · <b>'+esc(v.nov)+'</b>':'')+'. Vacío listo para que el transportista lo devuelva.</div></div>';}
   else if(k==='P100'){
     body='<div class="abox suc">Carga completa. Cierra puertas, coloca el sello y toma la foto: el contenedor pasa al buffer y el cliente lo ve como «Cargado en bodega».</div>';
     foot+='<button class="btn-p btn-green inl" data-act="seal" '+d+'>Cerrar y sellar</button>';}
   else if(k==='BUFFER_POST'){
     body='<div class="abox suc">Cargado y sellado · sello '+esc(c.seal)+(c.loaded?' · '+c.loaded.toLocaleString('es-PA')+' cajas':'')+'. Espera a que el transportista lo marque en tránsito.</div>';}
   openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · contenedor '+c.seq+(c.rampa?' · '+c.rampa:'')+'</span><h3 class="mtitle">'+esc(c.number)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
-   '<div class="sh-b form"><div class="row">'+rampBadge(c)+'</div><div class="bk-meta"><span>Unidad <strong>'+esc(c.plate)+' · '+esc(c.driver)+'</strong></span><span>Transportista <strong>'+esc(CN[c.carrierId]||'—')+'</strong></span></div>'+body+cargoHtml(b)+'</div><div class="sh-f">'+foot+'</div>',true);
+   '<div class="sh-b form"><div class="row">'+tipoTag(b)+rampBadge(c,b)+'</div><div class="bk-meta"><span>Unidad <strong>'+esc(c.plate)+' · '+esc(c.driver)+'</strong></span><span>Transportista <strong>'+esc(CN[c.carrierId]||'—')+'</strong></span></div>'+body+cargoHtml(b)+'</div><div class="sh-f">'+foot+'</div>',true);
 }
 function freeModal(r){
   const q=cola();
@@ -496,25 +556,31 @@ function vTrans(){
   const mineCard=b=>{
     const cs=b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado);
     const by={};cs.forEach(c=>{by[c.status]=(by[c.status]||0)+1;});
-    const bulk=[['bodega','transito','Salió de bodega → En tránsito'],['transito','entregado','Entregado lleno'],['entregado','devuelto','Devuelto']].filter(x=>by[x[0]]).map(x=>'<button class="btn-p btn-navy inl" data-act="bulk" data-b="'+b.id+'" data-from="'+x[0]+'" data-to="'+x[1]+'">'+by[x[0]]+' × '+x[2]+'</button>').join('');
+    const bulk=(isImpo(b)?[['bodega','transito','Retiré vacíos de bodega'],['transito','devuelto','Vacíos devueltos']]:[['bodega','transito','Salió de bodega → En tránsito'],['transito','entregado','Entregado lleno'],['entregado','devuelto','Devuelto']]).filter(x=>by[x[0]]).map(x=>'<button class="btn-p btn-navy inl" data-act="bulk" data-b="'+b.id+'" data-from="'+x[0]+'" data-to="'+x[1]+'">'+by[x[0]]+' × '+x[2]+'</button>').join('');
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b,'<span class="cli-badge mute">'+cs.length+' tuyos</span>')+
      '<div><span class="flbl">Documentos operativos</span>'+docsHtml(b)+'</div>'+
      '<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Chofer · placa</th><th>Estado</th><th>Pruebas</th><th></th></tr></thead><tbody>'+cs.map(c=>{
        let act='';
-       if(c.status==='asignado')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="retiro">Retiro de vacío</button>';
+       if(isImpo(b)){
+         if(c.status==='asignado')act=liberado(b)?'<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="retiro">Retiro lleno</button>':'<span class="cli-badge wait">Esperando liberación</span>';
+         else if(c.status==='retiro')act='<span class="muted" style="font-size:13px">En bodega · descargando</span>';
+         else if(c.status==='bodega')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="transito">Retirar vacío</button>';
+         else if(c.status==='transito')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="devuelto">Vacío devuelto</button>';
+         else act='<span class="cli-badge on">Cerrado</span>';}
+       else if(c.status==='asignado')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="retiro">Retiro de vacío</button>';
        else if(c.status==='retiro')act='<span class="muted" style="font-size:13px">Esperando carga en bodega</span>';
        else if(c.status==='bodega')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="transito">En tránsito</button>';
        else if(c.status==='transito')act='<button class="btn-p btn-green inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="entregado">Entregado lleno</button>';
        else if(c.status==='entregado')act='<button class="btn-p btn-navy inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="devuelto">Devuelto</button>';
        else act='<span class="cli-badge on">Cerrado</span>';
-       return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status,c)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
+       return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status,c,b)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
      (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+(cs.some(c=>c.status==='asignado')?(()=>{const tel=state.settings.auto.tel,num=waIntl(tel),grp=waGrupo(tel);return '<div class="contact"><span><b>¿Problema con este viaje?</b> Comunícate con coordinación de DP World y lo resolvemos.</span><span class="acts">'+(grp?'':'<a class="btn-p btn-navy inl" href="tel:'+esc(tel.replace(/[^+\d]/g,''))+'">Llamar '+esc(tel)+'</a>')+'<a class="btn-p btn-green inl" href="'+(grp?esc(tel):'https://wa.me/'+num+'?text='+encodeURIComponent('Hola DP World, sobre el booking '+b.ref+': '))+'" target="_blank" rel="noopener">'+(grp?'Grupo de WhatsApp':'WhatsApp')+'</a></span></div>';})():'')+'</div></article>';};
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">'+esc(CN[me])+'</h1><p class="sc-sub">Bookings para transporte bajo bandera DP World. Confirma disponibilidad de equipo dentro de 1 hora; DP World aprueba antes de quedar en firme.</p></div></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Disponibles para confirmar</h2><span class="psect-cnt">'+avail.length+'</span></div>'+(avail.length?bkRows('tav',avail,availCard,b=>clock(b)||'<span class="cli-badge mute">Sin cubrir '+openCount(b)+'</span>',expired):'<div class="empty">No hay bookings publicados para ti en este momento.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Esperando aprobación de DP World</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Booking</th><th>Tamaño</th><th>Contenedores</th><th>Enviado</th><th>Nota</th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td class="mono">'+esc(b.ref)+'</td><td>'+esc(b.size)+'</td><td class="num">'+f.qty+'</td><td>'+ago(f.at)+'</td><td>'+esc(f.note||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada pendiente de aprobación.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Mis operaciones</h2><span class="psect-cnt">'+mine.length+'</span></div>'+(mine.length?bkRows('tmi',mine,mineCard,b=>'<span class="cli-badge mute">'+b.containers.filter(c=>c.carrierId===me&&IDX[c.status]>=IDX.asignado).length+' tuyos</span>'):'<div class="empty">Sin contenedores asignados todavía.</div>')+'</div></section>';
 }
-function statusPill(k,c){if(k==='retiro'&&c&&c.rampa)return '<span class="cli-badge tr">En bodega · '+RST[c.ramp].l+'</span>';const i=IDX[k];const cls=i===0?'wait':i===1?'wait':i>=6?'on':'tr';return '<span class="cli-badge '+cls+'">'+esc(LBL[k])+'</span>';}
+function statusPill(k,c,b){if(k==='retiro'&&c&&c.rampa)return '<span class="cli-badge tr">En bodega · '+rampLbl(c,b)+'</span>';const i=IDX[k];const cls=i===0?'wait':i===1?'wait':(i>=6||(isImpo(b)&&i>=IDX.transito))?'on':'tr';return '<span class="cli-badge '+cls+'">'+esc(lbl(b,k))+'</span>';}
 
 /* ===== ADMIN ===== */
 function vAdmin(){
@@ -611,15 +677,15 @@ function vCal(){
   const range=new Date(ws).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'numeric',month:'short'})+' – '+new Date(we-DAY).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'numeric',month:'short',year:'numeric'});
   const win=(a,z,cls,lbl)=>inWk(a,z)?'<span class="cal-win '+cls+'" style="left:'+px(a)+'%;width:'+Math.max(1,px(z)-px(a))+'%"><span>'+esc(lbl)+'</span></span>':'';
   const lane=rows.length?rows.map(x=>'<button type="button" class="cal-row" data-act="calbk" data-id="'+x.b.id+'" title="'+esc(x.b.ref+' · retiro '+fmt(x.b.pickFrom)+' → '+fmt(x.b.pickTo)+' · entrega '+fmt(x.b.delFrom)+' → '+fmt(x.b.delTo))+'">'+
-    win(x.b.pickFrom,x.b.pickTo,'ret','Retiro · '+x.b.ref+' · '+x.b.qty+' × '+x.b.size)+win(x.b.delFrom,x.b.delTo,'ent','Entrega · '+x.b.ref)+'</button>').join(''):'<div class="cal-none">Sin ventanas esta semana</div>';
+    win(x.b.pickFrom,x.b.pickTo,'ret',(isImpo(x.b)?'Retiro lleno · ':'Retiro · ')+x.b.ref+' · '+x.b.qty+' × '+x.b.size)+win(x.b.delFrom,x.b.delTo,'ent',(isImpo(x.b)?'Devolución · ':'Entrega · ')+x.b.ref)+'</button>').join(''):'<div class="cal-none">Sin ventanas esta semana</div>';
   const cols=days.map(d=>{
     const items=calLayout(ev.filter(e=>e.at<d+DAY&&e.at+e.dur>d).map(e=>({e:e,s:Math.max(e.at,d),z:Math.min(e.at+e.dur,d+DAY)})));
     const blocks=items.map(it=>{const e=it.e,hs=Math.min(CAL_H1-.5,Math.max(CAL_H0,(it.s-d)/HOUR)),hz=Math.max(hs+.5,Math.min(CAL_H1,(it.z-d)/HOUR));
       const n=e.cs.length,who=(r==='bodega'||r==='admin')&&e.cs[0].carrierId?' · '+shortCN(e.cs[0].carrierId):'';
-      const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':(e.rampas.length>1?'Rampas ':'Turno ')+e.rampa);
+      const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':isImpo(e.b)?'Retiro lleno':'Retiro de vacío'):(r==='cliente'?(isImpo(e.b)?'Descarga en bodega':'Carga en bodega'):(e.rampas.length>1?'Rampas ':'Turno ')+e.rampa);
       const t2=e.b.ref+' · '+n+' cont.'+who;
       return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'" data-r="'+(e.rampa||'')+'" title="'+esc(t1+' · '+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+t2)+'">'+
-        '<b>'+(e.done?'Hecho · ':'')+hm(e.at)+' '+esc(e.type==='cita'?'Retiro':r==='cliente'?'Carga':e.rampa)+'</b><span>'+esc(t2)+'</span></button>';}).join('');
+        '<b>'+(e.done?'Hecho · ':'')+hm(e.at)+' '+esc(e.type==='cita'?'Retiro':r==='cliente'?(isImpo(e.b)?'Descarga':'Carga'):e.rampa)+'</b><span>'+esc(t2)+'</span></button>';}).join('');
     const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
     return '<div class="cal-day'+(d===today?' today':'')+'">'+blocks+nowLine+'</div>';}).join('');
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Calendario</h1><p class="sc-sub">'+calHint()+'</p></div>'+calToggle()+'</div>'+calPend()+
@@ -639,11 +705,11 @@ function vCalDia(){
   const strip=Array.from({length:7},(_,i)=>{const x=ws+i*DAY,n=evDay(x).length,lb=new Date(x).toLocaleDateString('es-PA',{timeZone:'America/Panama',weekday:'short'}).replace('.','').slice(0,3);
     return '<button class="cd-day'+(i===ui.calD?' on':'')+(x===today?' hoy':'')+'" data-act="cald" data-v="'+i+'"><span>'+lb+'</span><b>'+new Date(x-5*HOUR).getUTCDate()+'</b><i>'+(n?n:'')+'</i></button>';}).join('');
   const px=t=>Math.max(0,Math.min(100,(t-d)/DAY*100));
-  const wins=[];scope.forEach(x=>{[[x.b.pickFrom,x.b.pickTo,'ret','Retiro'],[x.b.delFrom,x.b.delTo,'ent','Entrega']].forEach(w=>{if(w[1]>d&&w[0]<de)wins.push({b:x.b,a:w[0],z:w[1],cls:w[2],l:w[3]});});});
+  const wins=[];scope.forEach(x=>{[[x.b.pickFrom,x.b.pickTo,'ret',isImpo(x.b)?'Retiro lleno':'Retiro'],[x.b.delFrom,x.b.delTo,'ent',isImpo(x.b)?'Devolución':'Entrega']].forEach(w=>{if(w[1]>d&&w[0]<de)wins.push({b:x.b,a:w[0],z:w[1],cls:w[2],l:w[3]});});});
   const lane=wins.length?wins.map(w=>'<button class="cd-win" data-act="calbk" data-id="'+w.b.id+'"><span class="cd-wl"><b>'+w.l+'</b> '+esc(w.b.ref)+'</span><span class="cd-wt">'+(w.a<d?'desde ayer':hm(w.a))+' → '+(w.z>de?fmt(w.z):hm(w.z))+'</span><span class="cd-track"><span class="cal-win '+w.cls+'" style="left:'+px(w.a)+'%;width:'+Math.max(2,px(w.z)-px(w.a))+'%"></span></span></button>').join(''):'<div class="cal-none">Sin ventanas este día</div>';
   const items=calLayout(evDay(d).map(e=>({e:e,s:Math.max(e.at,d),z:Math.min(e.at+e.dur,de)})));
   const blocks=items.map(it=>{const e=it.e,hs=Math.min(CAL_H1-.5,Math.max(CAL_H0,(it.s-d)/HOUR)),hz=Math.max(hs+.75,Math.min(CAL_H1,(it.z-d)/HOUR)),n=e.cs.length;
-    const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':'Retiro de vacío'):(r==='cliente'?'Carga en bodega':(e.rampas.length>1?'Rampas ':'Rampa ')+e.rampa);
+    const t1=e.type==='cita'?(r==='cliente'?'Retiro programado':isImpo(e.b)?'Retiro lleno':'Retiro de vacío'):(r==='cliente'?(isImpo(e.b)?'Descarga en bodega':'Carga en bodega'):(e.rampas.length>1?'Rampas ':'Rampa ')+e.rampa);
     const who=(r==='bodega'||r==='admin')&&e.cs[0].carrierId?' · '+shortCN(e.cs[0].carrierId):'';
     return '<button type="button" class="cal-ev '+e.type+(e.done?' done':'')+'" style="top:'+((hs-CAL_H0)*CAL_PX)+'px;height:'+((hz-hs)*CAL_PX-2)+'px;left:calc('+(it.col/it.n*100)+'% + 2px);width:calc('+(100/it.n)+'% - 4px)" data-act="calev" data-type="'+e.type+'" data-b="'+e.b.id+'" data-at="'+e.at+'"><b>'+(e.done?'Hecho · ':'')+hm(e.at)+'–'+hm(e.at+e.dur)+' · '+esc(t1)+'</b><span>'+esc(e.b.ref+' · '+n+' cont.'+who)+'</span></button>';}).join('');
   const nowLine=d===today?'<div class="cal-now" style="top:'+Math.max(0,Math.min(CAL_H1-CAL_H0,(now-d)/HOUR-CAL_H0))*CAL_PX+'px"></div>':'';
@@ -721,6 +787,7 @@ function turnoSave(bid,cid){
 const METAS={conf:95,ret:98,ent:100,prf:100};
 const PERIODOS=[['30','30 días'],['90','90 días'],['mes','Este mes'],['todo','Todo']];
 const PROOFS_REQ=['EIR retiro','Foto puerta + sello','EIR entrega lleno'];
+const PROOFS_REQ_I=['EIR retiro lleno','Foto descarga / novedades','EIR devolución vacío'];
 const pct=(n,d)=>d?Math.round(n/d*1000)/10:null;
 const teu=b=>b.size.indexOf('20')===0?1:2;
 function periodo(){
@@ -733,13 +800,13 @@ function rpRows(fromOverride){
   // una fila por contenedor del período (por inicio de la ventana de retiro), con sus mediciones
   const from=fromOverride!==undefined?fromOverride:periodo(),now=Date.now(),out=[];
   state.bookings.concat(state.hist||[]).forEach(b=>{if(b.pickFrom<from)return;b.containers.forEach(c=>{
-    const t=c.t||{},types=c.proofs.map(p=>p.type),i=IDX[c.status];
+    const t=c.t||{},types=c.proofs.map(p=>p.type),i=IDX[c.status],imp=isImpo(b),fin=imp?t.devuelto:t.entregado,req=imp?PROOFS_REQ_I:PROOFS_REQ;
     const confMin=t.confirmado&&t.publicado?(t.confirmado-t.publicado)/MIN:null;
     out.push({b:b,c:c,t:t,
       conf:{ev:!!(t.confirmado||t.asignado||(t.publicado&&now-t.publicado>HOUR)),ok:confMin!==null&&confMin<=60,min:confMin},
       ret:{ev:!!(t.retiro||now>b.pickTo),ok:!!(t.retiro&&t.retiro<=b.pickTo)},
-      ent:{ev:!!(t.entregado||now>b.delTo),ok:!!(t.entregado&&t.entregado<=b.delTo)},
-      prf:{ev:i>=IDX.entregado,ok:PROOFS_REQ.every(x=>types.indexOf(x)>=0),n:PROOFS_REQ.filter(x=>types.indexOf(x)>=0).length}});
+      ent:{ev:!!(fin||now>b.delTo),ok:!!(fin&&fin<=b.delTo)},
+      prf:{ev:imp?c.status==='devuelto':i>=IDX.entregado,ok:req.every(x=>types.indexOf(x)>=0),n:req.filter(x=>types.indexOf(x)>=0).length}});
   });});
   return out;
 }
@@ -792,7 +859,7 @@ function vReportes(){
    '<div class="htabs rp-per" role="group" aria-label="Período">'+PERIODOS.map(p=>'<button class="htab'+(ui.rp===p[0]?' active':'')+'" data-act="rp" data-v="'+p[0]+'" aria-pressed="'+(ui.rp===p[0])+'">'+p[1]+'</button>').join('')+
    '<span class="muted rp-cnt">'+bks.length+' bookings · '+tot+' contenedores · '+teus+' TEU</span></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Cumplimiento</h2></div><div class="rp-kpis">'+
-    tile('conf','Confirmados ≤ 1 h','confirmados a tiempo')+tile('ret','Retiro en ventana','retirados a tiempo')+tile('ent','Entrega en ventana','entregados a tiempo')+tile('prf','Pruebas completas','con EIR retiro, sello y EIR entrega')+
+    tile('conf','Confirmados ≤ 1 h','confirmados a tiempo')+tile('ret','Retiro en ventana','retirados a tiempo')+tile('ent','Entrega o devolución en ventana','entregados o devueltos a tiempo')+tile('prf','Pruebas completas','con EIR retiro, sello y EIR entrega')+
     (()=>{const from=periodo(),inc=(state.incid||[]).filter(x=>x.at>=from),n=inc.reduce((s,x)=>s+x.n,0),v=tot?Math.round(n/tot*1000)/10:null,by=o=>inc.filter(x=>(x.origen||x.type)===o).reduce((s,x)=>s+x.n,0);
       return '<div class="rpt-card rp-kpi"><div class="rpt-l">Incidencias por cada 100 contenedores</div><div class="rpt-n">'+(v===null?'—':v.toLocaleString('es-PA'))+'</div><div class="rp-sub">'+n+' contenedores afectados: '+by('t')+' avisados por el transportista · '+by('dp')+' detectados por DP World · '+by('c')+' cancelados por el cliente</div></div>';})()+
     '<div class="rpt-card rp-kpi rp-na"><div class="rpt-l">No disponible aún</div><div class="rp-sub"><b>Conciliación semanal</b>: el prototipo todavía no registra el cierre de conciliación.</div></div></div></div>'+
@@ -817,7 +884,7 @@ function rpSheets(){
   const byW={};rows.forEach(x=>{const w=weekStart(x.b.pickFrom);(byW[w]=byW[w]||{c:0,teu:0,b:new Set()}).c++;byW[w].teu+=teu(x.b);byW[w].b.add(x.b.id);});
   const sem=[['Semana (lunes)','Bookings','Contenedores','TEU']].concat(Object.keys(byW).map(Number).sort((a,b)=>a-b).map(w=>[fx(w).slice(0,10),byW[w].b.size,byW[w].c,byW[w].teu]));
   const det=[['Booking','Naviera','Tamaño','#','Contenedor','Transportista','Estado','Publicado','Confirmado','Min. a confirmar','Confirmado ≤1 h','Retiro desde','Retiro hasta','Retiro real','Retiro en ventana','Entrega desde','Entrega hasta','Entrega real','Entrega en ventana','Pruebas (de 3)','Pruebas completas','Terminal','Mercancía']];
-  rows.forEach(x=>{const b=x.b,c=x.c,t=x.t;det.push([b.ref,b.naviera,b.size,c.seq,c.number,CN[c.carrierId]||'',LBL[c.status],fx(t.publicado),fx(t.confirmado),x.conf.min===null?'':Math.round(x.conf.min),yn(x.conf),fx(b.pickFrom),fx(b.pickTo),fx(t.retiro),yn(x.ret),fx(b.delFrom),fx(b.delTo),fx(t.entregado),yn(x.ent),x.prf.ev?x.prf.n:'',yn(x.prf),b.delLoc,(b.cargo||{}).desc||'']);});
+  rows.forEach(x=>{const b=x.b,c=x.c,t=x.t;det.push([b.ref,b.naviera,b.size,c.seq,c.number,CN[c.carrierId]||'',lbl(b,c.status),fx(t.publicado),fx(t.confirmado),x.conf.min===null?'':Math.round(x.conf.min),yn(x.conf),fx(b.pickFrom),fx(b.pickTo),fx(t.retiro),yn(x.ret),fx(b.delFrom),fx(b.delTo),fx(t.entregado),yn(x.ent),x.prf.ev?x.prf.n:'',yn(x.prf),b.delLoc,(b.cargo||{}).desc||'']);});
   return {res:res,car:car,sem:sem,det:det,per:per};
 }
 function bajar(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);}
@@ -844,7 +911,7 @@ function detail(id){
   '<div class="sh-b"><div class="bk" style="box-shadow:none">'+windows(b)+'<div class="bk-main">'+idRow(b,stagePill(b,r))+bar(b)+'<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div></div></div>'+
   (r!=='transportista'?cargoHtml(b):'')+
   '<div class="tw"><table class="t"><thead><tr><th>#</th><th>Contenedor</th><th>Estado</th><th>Chofer</th><th>Placa</th>'+(isAdmin?'<th>Transportista real</th>':'')+'<th>Sello</th><th>Pruebas</th></tr></thead><tbody>'+
-  b.containers.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por asignar</span>')+'</td><td>'+(isAdmin?'<select data-act="fix" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Corregir estado">'+ST.map(s=>'<option value="'+s.k+'"'+(s.k===c.status?' selected':'')+'>'+esc(s.l)+'</option>').join('')+'</select>':(r==='cliente'&&IDX[c.status]<=1?'<span class="cli-badge wait">Programando</span>':statusPill(c.status,c)))+'</td>'+
+  b.containers.map(c=>'<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">Por asignar</span>')+'</td><td>'+(isAdmin?'<select data-act="fix" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Corregir estado">'+ST.map(s=>'<option value="'+s.k+'"'+(s.k===c.status?' selected':'')+'>'+esc(s.l)+'</option>').join('')+'</select>':(r==='cliente'&&IDX[c.status]<=1?'<span class="cli-badge wait">Programando</span>':statusPill(c.status,c,b)))+'</td>'+
     '<td>'+(c.driver?esc(c.driver)+(r==='cliente'?' <span class="muted" style="font-size:12px">· DP World</span>':''):'<span class="muted">—</span>')+'</td><td>'+(c.plate?esc(c.plate):'<span class="muted">—</span>')+'</td>'+
     (isAdmin?'<td>'+(IDX[c.status]<=2?'<select data-act="reassign" data-b="'+b.id+'" data-c="'+c.id+'" aria-label="Transportista"><option value="">— Sin asignar —</option>'+CARRIERS.filter(k=>k.active!==false||k.id===c.carrierId).map(k=>'<option value="'+k.id+'"'+(k.id===c.carrierId?' selected':'')+'>'+esc(k.name)+'</option>').join('')+'</select>':esc(CN[c.carrierId]||'—'))+'</td>':'')+
     '<td class="mono">'+(esc(c.seal)||'<span class="muted">—</span>')+'</td><td style="font-size:12.5px">'+(c.proofs.length?'<div class="docs">'+c.proofs.map(p=>docBtn(b.id+'/'+c.id+'/'+p.name,p.name,b.ref,p.type)).join('')+'</div>':'<span class="muted">—</span>')+'</td></tr>').join('')+
@@ -855,10 +922,36 @@ function detail(id){
 
 /* ===== forms ===== */
 function toLocalInput(t){const d=new Date(t-new Date(t).getTimezoneOffset()*MIN);return d.toISOString().slice(0,16);}
-function newBooking(){
-  const base=D('2026-10-16T07:00:00-05:00')+SHIFT;
-  openModal('<div class="sh-h"><div><span class="flbl">'+esc(CL(ui.client).name)+'</span><h3 class="mtitle">Nuevo booking</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
-  '<form class="sh-b form" id="nbForm" novalidate>'+
+function newBooking(tipo){
+  const base=D('2026-10-16T07:00:00-05:00')+SHIFT,imp=tipo==='impo';
+  const head='<div class="sh-h"><div><span class="flbl">'+esc(CL(ui.client).name)+'</span><h3 class="mtitle">Nuevo booking</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>';
+  const tabs='<div class="htabs nb-tipo" role="group" aria-label="Tipo de operación">'+[['expo','Exportación'],['impo','Importación']].map(x=>'<button type="button" class="htab'+((imp?'impo':'expo')===x[0]?' active':'')+'" data-act="nbTipo" data-v="'+x[0]+'" aria-pressed="'+((imp?'impo':'expo')===x[0])+'">'+x[1]+'</button>').join('')+'</div>';
+  const foot='<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="submitNew">Enviar booking</button></div>';
+  if(imp){openModal(head+'<form class="sh-b form" id="nbForm" data-tipo="impo" novalidate>'+tabs+
+   '<fieldset><legend>Ventanas</legend><div class="fgrid">'+
+    '<label class="f"><span class="flbl">Disponible en puerto desde</span><input class="fin" type="datetime-local" id="pf" required value="'+toLocalInput(base)+'"></label>'+
+    '<label class="f"><span class="flbl">Último día libre en puerto</span><input class="fin" type="datetime-local" id="pt" required value="'+toLocalInput(base+53*HOUR)+'"></label>'+
+    '<label class="f"><span class="flbl">Devolución de vacío desde</span><input class="fin" type="datetime-local" id="df" required value="'+toLocalInput(base+24*HOUR)+'"></label>'+
+    '<label class="f"><span class="flbl">Límite de devolución sin demora</span><input class="fin" type="datetime-local" id="dt" required value="'+toLocalInput(base+155*HOUR)+'"></label>'+
+    '<label class="f"><span class="flbl">Terminal de retiro</span><select class="fin" id="pl">'+DELIV.map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></label>'+
+    '<label class="f"><span class="flbl">Patio de devolución del vacío</span><select class="fin" id="dl">'+PICK.map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></label></div></fieldset>'+
+   '<fieldset><legend>Embarque</legend><div class="fgrid">'+
+    '<label class="f"><span class="flbl">Número de BL</span><input class="fin mono" id="rf" required placeholder="Ej. MEDU 7781204"></label>'+
+    '<label class="f"><span class="flbl">Tamaño de contenedor</span><select class="fin" id="sz">'+SIZES.map(z=>'<option'+(z==='40\' HC'?' selected':'')+'>'+esc(z)+'</option>').join('')+'</select></label>'+
+    '<label class="f"><span class="flbl">Cantidad</span><input class="fin" type="number" id="qt" min="1" max="60" value="4" required></label>'+
+    '<label class="f"><span class="flbl">Naviera</span><select class="fin" id="nv">'+NAVIERAS.map(n=>'<option>'+esc(n)+'</option>').join('')+'</select></label>'+
+    '<label class="f"><span class="flbl">Trámite de aduana</span><select class="fin" id="adr"><option value="dp">Lo gestiona DP World</option><option value="cliente">Lo gestiona el cliente</option></select></label></div>'+
+    '<label class="f"><span class="flbl">Números de contenedor · uno por línea (opcional)</span><textarea class="fin mono" id="cnums" placeholder="MEDU 4471203-5"></textarea></label>'+
+    '<label class="f"><span class="flbl">BL (PDF)</span><input class="fin" type="file" id="dcb" accept=".pdf,application/pdf"></label>'+
+    '<label class="f"><span class="flbl">Otros documentos · liberación, levante, packing list</span><input class="fin" type="file" id="dc" multiple accept=".pdf,application/pdf,image/*"></label></fieldset>'+
+   '<fieldset class="wh"><legend>Mercancía · solo para bodega</legend><p class="lock" style="margin:0">El transportista no ve esta sección.</p><div class="fgrid">'+
+    '<label class="f"><span class="flbl">Descripción de la mercancía</span><input class="fin" id="cd" value="Latas de aluminio vacías 355 ml"></label>'+
+    '<label class="f"><span class="flbl">Bultos esperados por contenedor</span><input class="fin" type="number" id="bx" min="0" value="22"></label></div>'+
+    '<label class="f"><span class="flbl">Instrucciones de descarga</span><textarea class="fin" id="cn">Descargar con montacargas. Pallets de 2,1 m: no apilar.</textarea></label>'+
+    '<div class="abox inf"><div>La recepción detallada por SKU sigue en el WMS. Last Mile coordina el transporte y da visibilidad.</div></div></fieldset>'+
+   '<div class="abox inf"><div>Al enviar, el booking se publica '+(state.settings.mode==='directo'?'directo a nuestro proveedor de transporte':'a los transportistas')+'. El retiro en puerto se habilita cuando estén listas la liberación de la naviera y el levante.</div></div><div class="err" id="nbErr"></div></form>'+foot,false);return;}
+  openModal(head+
+  '<form class="sh-b form" id="nbForm" data-tipo="expo" novalidate>'+tabs+
   '<fieldset><legend>Ventanas</legend><div class="fgrid">'+
    '<label class="f"><span class="flbl">Retiro vacío desde</span><input class="fin" type="datetime-local" id="pf" required value="'+toLocalInput(base)+'"></label>'+
    '<label class="f"><span class="flbl">Retiro vacío hasta</span><input class="fin" type="datetime-local" id="pt" required value="'+toLocalInput(base+29*HOUR)+'"></label>'+
@@ -878,34 +971,37 @@ function newBooking(){
    '<div class="f"><span class="flbl">SKU por contenedor</span><div id="skus" style="display:grid;gap:6px"></div><button type="button" class="link" data-act="addsku" style="justify-self:start">+ Agregar SKU</button></div>'+
    '<label class="f"><span class="flbl">Instrucciones especiales de carga</span><textarea class="fin" id="cn">Carga a piso. No mezclar lotes. Foto al 50 % y con puertas cerradas.</textarea></label></fieldset>'+
   '<div class="abox inf">Al enviar, el booking se publica '+(state.settings.mode==='directo'?'directo a nuestro proveedor de transporte':'a los transportistas')+' y empieza el reloj de 1 h para confirmar disponibilidad.</div><div class="err" id="nbErr"></div></form>'+
-  '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="submitNew">Enviar booking</button></div>',false);
+  foot,false);
   addSku('ATL-355-24','Atlas lata 355 ml · caja 24 u',1540);
 }
 function addSku(s,d,q){const w=document.getElementById('skus');if(!w)return;const r=document.createElement('div');r.className='skurow';r.innerHTML='<input placeholder="SKU" class="mono" value="'+esc(s||'')+'" aria-label="SKU"><input class="d" placeholder="Descripción" value="'+esc(d||'')+'" aria-label="Descripción"><input type="number" placeholder="Cajas" value="'+(q||'')+'" aria-label="Cajas por contenedor"><button type="button" class="mclose" data-act="rmsku" aria-label="Quitar">×</button>';w.appendChild(r);}
 async function submitNew(){
   const v=id=>document.getElementById(id).value.trim();
-  const err=document.getElementById('nbErr');
+  const err=document.getElementById('nbErr'),imp=document.getElementById('nbForm').dataset.tipo==='impo';
   const ref=v('rf').toUpperCase(), qty=parseInt(v('qt'),10);
   const pf=new Date(v('pf')).getTime(),pt=new Date(v('pt')).getTime(),df=new Date(v('df')).getTime(),dt=new Date(v('dt')).getTime();
-  if(!ref){err.textContent='Escribe el número de booking.';return;}
+  if(!ref){err.textContent=imp?'Escribe el número de BL.':'Escribe el número de booking.';return;}
   if(!(qty>0)){err.textContent='La cantidad debe ser al menos 1.';return;}
-  if(!(pt>pf)){err.textContent='El fin del retiro de vacío debe ser posterior al inicio.';return;}
-  if(!(dt>df)){err.textContent='El fin de la entrega lleno debe ser posterior al inicio.';return;}
-  if(df<pf){err.textContent='La entrega lleno no puede empezar antes del retiro de vacío.';return;}
+  if(!(pt>pf)){err.textContent=imp?'El último día libre debe ser posterior a la disponibilidad en puerto.':'El fin del retiro de vacío debe ser posterior al inicio.';return;}
+  if(!(dt>df)){err.textContent=imp?'El límite de devolución debe ser posterior al inicio.':'El fin de la entrega lleno debe ser posterior al inicio.';return;}
+  if(df<pf){err.textContent=imp?'La devolución no puede empezar antes del retiro en puerto.':'La entrega lleno no puede empezar antes del retiro de vacío.';return;}
+  const nums=imp?v('cnums').split(/\n+/).map(x=>x.trim().toUpperCase()).filter(Boolean):[];
+  if(nums.length>qty){err.textContent='Hay '+nums.length+' números de contenedor para una cantidad de '+qty+'.';return;}
   const bkPdf=(document.getElementById('dcb').files||[])[0];
-  if(bkPdf&&!isPdf(bkPdf)){err.textContent='El booking debe ser un archivo PDF.';return;}
+  if(bkPdf&&!isPdf(bkPdf)){err.textContent=(imp?'El BL':'El booking')+' debe ser un archivo PDF.';return;}
   const files=(bkPdf?[bkPdf]:[]).concat(Array.from(document.getElementById('dc').files||[])).filter((f,i,a)=>a.findIndex(x=>x.name===f.name)===i);
   const big=files.find(f=>f.size>MAX_MB*1048576);
   if(big){err.textContent=big.name+' pesa más de '+MAX_MB+' MB.';return;}
-  const skus=Array.from(document.querySelectorAll('#skus .skurow')).map(r=>{const i=r.querySelectorAll('input');return {sku:i[0].value.trim(),d:i[1].value.trim(),q:parseInt(i[2].value,10)||0};}).filter(x=>x.sku||x.d);
+  const skus=imp?[]:Array.from(document.querySelectorAll('#skus .skurow')).map(r=>{const i=r.querySelectorAll('input');return {sku:i[0].value.trim(),d:i[1].value.trim(),q:parseInt(i[2].value,10)||0};}).filter(x=>x.sku||x.d);
   const s=state.settings, nav=v('nv');
-  const b={id:uid('b'),clientId:ui.client||'k1',ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],declines:[],containers:mkContainers(qty,'publicado',null,nav)};
+  const b={id:uid('b'),clientId:ui.client||'k1',ref:ref,naviera:nav,size:v('sz'),qty:qty,pickFrom:pf,pickTo:pt,pickLoc:v('pl'),delFrom:df,delTo:dt,delLoc:v('dl'),docs:files.map(f=>f.name),cargo:imp?{desc:v('cd'),bultos:parseInt(v('bx'),10)||null,notes:v('cn'),skus:[]}:{desc:v('cd'),skus:skus,notes:v('cn')},createdAt:Date.now(),publishedAt:Date.now(),mode:s.mode,directTo:s.mode==='directo'?s.preferred:null,hidden:[],declines:[],containers:mkContainers(qty,'publicado',null,nav)};
+  if(imp){b.tipo='impo';b.aduana={resp:v('adr'),bl:null,lev:null};b.containers.forEach((c,i)=>{if(nums[i])c.number=nums[i];});}
   b.containers.forEach(c=>stamp(c,'publicado',b.publishedAt));
   let saved=true;
   try{await Promise.all(files.map(f=>FILES.put(b.id+'/'+f.name,f)));}catch(e){saved=false;}
   state.bookings.push(b);
-  log(CL(b.clientId).short+' creó '+ref+' · '+qty+' × '+b.size+' · '+(b.mode==='directo'?'directo a '+CN[b.directTo]:'publicado abierto'));
-  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),'Nuevo booking '+ref,qty+' × '+b.size+' · retiro desde '+fmt(pf),b.id);
+  log(CL(b.clientId).short+' creó '+(imp?'importación ':'')+ref+' · '+qty+' × '+b.size+' · '+(b.mode==='directo'?'directo a '+CN[b.directTo]:'publicado abierto'));
+  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),(imp?'Nueva importación ':'Nuevo booking ')+ref,qty+' × '+b.size+' · '+(imp?'retiro lleno en '+b.pickLoc+' desde ':'retiro desde ')+fmt(pf),b.id);
   closeModal();commit();toast('Booking '+ref+' recibido. DP World está programando el transporte.');
   if(!saved)toast('Este navegador no permitió guardar los adjuntos.',true);
 }
@@ -1014,20 +1110,33 @@ const STEP={
   transito:{t:'En tránsito',fields:[],proof:null},
   entregado:{t:'Entregado lleno',fields:[],proof:'EIR entrega lleno'},
   devuelto:{t:'Devuelto',fields:[],proof:null}};
+const STEP_I={
+  retiro:{t:'Retiro lleno en puerto',fields:[['num','Número de contenedor','text',true],['drv','Chofer','text',true],['plt','Placa del cabezal','text',true],['seal','Sello de la naviera','text',true]],proof:'EIR retiro lleno'},
+  bodega:{t:'Descarga en bodega',fields:[['box','Bultos recibidos','number',true],['wms','N.º de recepción en WMS','text',false]],proof:'Foto descarga / novedades'},
+  transito:{t:'Retiro de vacío de bodega',fields:[],proof:null},
+  devuelto:{t:'Vacío devuelto',fields:[],proof:'EIR devolución vacío'}};
+const stepOf=(b,to)=>(isImpo(b)?STEP_I:STEP)[to];
+const NOVEDADES=['Sin novedad','Faltante','Sobrante','Daño en mercancía','Sello no coincide','Contenedor dañado'];
 function advForm(bid,cid,to){
-  const b=B(bid),c=b.containers.find(x=>x.id===cid),st=STEP[to];
+  const b=B(bid),c=b.containers.find(x=>x.id===cid),st=stepOf(b,to),imp=isImpo(b);
   const planned=((b.cargo||{}).skus||[]).reduce((s,x)=>s+(x.q||0),0);
-  const def={num:cnum(b.naviera),drv:DRIVERS[rnd(DRIVERS.length)],plt:plate(),seal:String(4400000+rnd(99999)),box:planned||''};
+  const def={num:c.number||cnum(b.naviera),drv:c.driver||DRIVERS[rnd(DRIVERS.length)],plt:c.plate||plate(),seal:c.seal||String(4400000+rnd(99999)),box:imp?((b.cargo||{}).bultos||''):planned||'',wms:''};
   openModal('<div class="sh-h"><div><span class="flbl">'+esc(b.ref)+' · contenedor '+c.seq+'</span><h3 class="mtitle">'+st.t+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
   '<div class="sh-b form">'+(to==='bodega'?cargoHtml(b):'')+
   (st.fields.length?'<div class="fgrid">'+st.fields.map(f=>'<label class="f"><span class="flbl">'+f[1]+'</span><input class="fin'+(f[0]==='num'?' mono':'')+'" id="fx-'+f[0]+'" type="'+f[2]+'" value="'+esc(def[f[0]])+'"></label>').join('')+'</div>':'')+
+  (imp&&to==='bodega'?'<div class="fgrid"><label class="f"><span class="flbl">Novedades</span><select class="fin" id="fx-nov">'+NOVEDADES.map(x=>'<option>'+x+'</option>').join('')+'</select></label><label class="f"><span class="flbl">Nota de novedad</span><input class="fin" id="fx-nota" placeholder="Ej. 2 cajas golpeadas, foto adjunta"></label></div><div class="abox inf"><div>Esperados: '+(((b.cargo||{}).bultos)||'—')+' bultos. El detalle por SKU se registra en el WMS.</div></div>':'')+
   (st.proof?'<label class="f"><span class="flbl">Prueba · '+st.proof+'</span><input class="fin" type="file" id="fx-file" accept="image/*,application/pdf"></label>':'')+
-  (to==='retiro'?'<div class="abox inf">El cliente verá chofer y placa como unidad DP World. Al marcar el retiro, el contenedor entra solo a la cola de rampas de bodega.</div>':'')+
-  (planned&&to==='bodega'?'<div class="abox inf">Plan del cliente: '+planned.toLocaleString('es-PA')+' cajas por contenedor.</div>':'')+
+  (to==='retiro'?'<div class="abox inf">El cliente verá chofer y placa como unidad DP World. Al marcar el retiro, el contenedor entra solo a la cola de rampas de bodega'+(imp?' como ENTRADA':'')+'.</div>':'')+
+  (!imp&&planned&&to==='bodega'?'<div class="abox inf">Plan del cliente: '+planned.toLocaleString('es-PA')+' cajas por contenedor.</div>':'')+
   '<div class="err" id="aErr"></div></div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="doAdv" data-b="'+bid+'" data-c="'+cid+'" data-to="'+to+'">Marcar '+st.t.toLowerCase()+'</button></div>',true);
 }
 function notifyAdv(b,to,n,cid,num){
   const q=(n===1&&num?num:n+' cont.')+' · '+b.ref;
+  if(isImpo(b)){
+    if(to==='retiro'){notify([cli(b)],'Retirado del puerto',q+' en camino a bodega',b.id);notify(['bodega'],'Llegada de importación',q+' · '+CN[cid],b.id);}
+    else if(to==='bodega'){const c=b.containers.find(x=>x.number===num)||{},nv=(c.recv||{}).nov;notify([cli(b)],'Descargado en bodega',q+(nv&&nv!=='Sin novedad'?' · novedad: '+nv:''),b.id);notify([cid],'Vacío listo para devolver',q+' · CLP',b.id);}
+    else if(to==='devuelto')notify([cli(b)],'Vacío devuelto',q+' · '+b.delLoc,b.id);
+    return;}
   if(to==='retiro'){notify([cli(b)],'Vacío retirado',q+' en camino a bodega',b.id);notify(['bodega'],'Contenedor en cola de rampa',q+' · '+CN[cid],b.id);}
   else if(to==='bodega')notify([cid,cli(b)],'Cargado y sellado',q+(cid?' · listo para retirar lleno':''),b.id);
   else if(to==='transito')notify([cli(b)],'En tránsito al puerto',q,b.id);
@@ -1035,17 +1144,19 @@ function notifyAdv(b,to,n,cid,num){
   else if(to==='devuelto')notify([cli(b)],'Contenedor devuelto',q,b.id);
 }
 function doAdv(bid,cid,to){
-  const b=B(bid),c=b.containers.find(x=>x.id===cid),st=STEP[to];
+  const b=B(bid),c=b.containers.find(x=>x.id===cid),st=stepOf(b,to),imp=isImpo(b);
   const g=k=>{const el=document.getElementById('fx-'+k);return el?el.value.trim():'';};
   for(const f of st.fields){if(f[3]&&!g(f[0])){document.getElementById('aErr').textContent='Completa: '+f[1]+'.';return;}}
-  if(to==='retiro'){c.number=g('num').toUpperCase();c.driver=g('drv');c.plate=g('plt').toUpperCase();c.ramp='ESPERA_RAMPA';c.rampa=null;}
-  if(to==='bodega'){c.seal=g('seal');c.loaded=parseInt(g('box'),10)||null;log('Bodega selló '+c.number+' en '+c.rampa+' y lo pasó al buffer');c.ramp=null;c.rampa=null;}
+  if(to==='retiro'&&!liberado(b)){document.getElementById('aErr').textContent='Todavía no está liberado: falta '+ADU.filter(x=>!(b.aduana||{})[x[0]]).map(x=>x[1].toLowerCase()).join(' y ')+'.';return;}
+  if(to==='retiro'){c.number=g('num').toUpperCase();c.driver=g('drv');c.plate=g('plt').toUpperCase();if(imp)c.seal=g('seal');c.ramp='ESPERA_RAMPA';c.rampa=null;}
+  if(to==='bodega'&&imp){c.loaded=parseInt(g('box'),10)||null;c.recv={wms:g('wms'),nov:g('nov'),nota:g('nota')};log('Bodega descargó '+c.number+' en '+c.rampa+' · '+(c.loaded||0)+' bultos'+(c.recv.nov&&c.recv.nov!=='Sin novedad'?' · novedad: '+c.recv.nov:''));c.ramp=null;c.rampa=null;}
+  else if(to==='bodega'){c.seal=g('seal');c.loaded=parseInt(g('box'),10)||null;log('Bodega selló '+c.number+' en '+c.rampa+' y lo pasó al buffer');c.ramp=null;c.rampa=null;}
   const fi=document.getElementById('fx-file');
   if(st.proof){const file=fi&&fi.files&&fi.files[0];const name=file?file.name:(st.proof.replace(/\W+/g,'_')+'_'+(c.number||c.seq).toString().replace(/\W/g,'')+'.pdf');if(file){FILES.put(b.id+'/'+c.id+'/'+name,file).catch(()=>{});}c.proofs.push({type:st.proof,name:name,by:OWNER[to]});}
   c.status=to;stamp(c,to);
   log((to==='bodega'?'Bodega':CN[c.carrierId])+' marcó '+st.t.toLowerCase()+' · '+b.ref+' #'+c.seq+(c.number?' ('+c.number+')':''));
   notifyAdv(b,to,1,c.carrierId,c.number);
-  closeModal();commit();toast(st.t+' registrado. '+(to==='retiro'?'Ya aparece en la cola de rampas de bodega.':'El cliente ya lo ve.'));
+  closeModal();commit();toast((imp?'Listo: '+st.t.toLowerCase()+'. ':st.t+' registrado. ')+(to==='retiro'?'Ya aparece en la cola de rampas de bodega'+(imp?' como ENTRADA.':'.'):'El cliente ya lo ve.'));
 }
 
 /* ===== notificaciones push =====
@@ -1054,9 +1165,9 @@ function doAdv(bid,cid,to){
    Supabase y una Edge Function lo envía con web-push a cada dispositivo suscrito (ver sw.js). */
 const PUSH_KEY='dpw-lastmile-push';
 const uName=u=>{const x=USERS[u];return !x?u:x.role==='transportista'?CN[x.carrier]:x.role==='cliente'?CL(x.client).name:x.n;};
-const AVISOS={cliente:['Transporte asignado a tu booking','Vacío retirado y en camino a bodega','Contenedor cargado y sellado','Entregado en puerto y devuelto'],
-  transportista:['Booking nuevo para ti','Aprobación o rechazo de DP World','Turno de rampa asignado','Contenedor sellado, listo para retirar','Reasignación o cancelación'],
-  bodega:['Cita de retiro agendada','Vacío retirado: entra a la cola de rampa'],
+const AVISOS={cliente:['Transporte asignado a tu booking','Vacío retirado y en camino a bodega','Contenedor cargado y sellado','Entregado en puerto y devuelto','Importación: liberada, retirada del puerto, descargada y vacío devuelto'],
+  transportista:['Booking nuevo para ti','Importación liberada: ya puedes retirar en puerto','Vacío de importación listo para devolver','Aprobación o rechazo de DP World','Turno de rampa asignado','Contenedor sellado, listo para retirar','Reasignación o cancelación'],
+  bodega:['Cita de retiro agendada','Vacío retirado: entra a la cola de rampa','Llegada de importación: lleno en camino a la rampa'],
   admin:['Confirmación por revisar','Aprobación automática (con plazo para revertir)','Booking vencido sin confirmación','Cancelación del cliente']};
 let swReg=null,installEv=null;
 const pushSubs=()=>{try{return JSON.parse(localStorage.getItem(PUSH_KEY))||{};}catch(e){return {};}};
@@ -1081,12 +1192,12 @@ function notify(to,titulo,texto,bk){
   const dest=[...new Set(to.flatMap(x=>USERS[x]?[x]:act.filter(u=>USERS[u].carrier===x||USERS[u].client===x||USERS[u].role===x)))].filter(u=>subs[u]&&u!==ui.user);
   dest.forEach(u=>swReg.showNotification(titulo,{body:texto+'\nPara: '+uName(u),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n'),data:{bk:bk||null}}).catch(()=>{}));
 }
-const iosSteps=fin=>'<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> <span class="ntf-ico" aria-hidden="true">⇪</span> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>Last Mile</b> desde el ícono nuevo'+(fin?' y '+fin:'')+'.</li></ol>';
+const iosSteps=fin=>'<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>Last Mile</b> desde el ícono nuevo'+(fin?' y '+fin:'')+'.</li></ol>';
 /* botón Instalar: usa el aviso nativo del navegador cuando existe; si no, muestra los pasos */
 function installApp(){
   if(installEv){installEv.prompt();installEv.userChoice.then(c=>{installEv=null;if(c.outcome==='accepted')toast('Last Mile se está instalando.');installBtns();});return;}
   const body=isIOS()?'<p style="margin:0">Así queda Last Mile en tu pantalla de inicio, a pantalla completa y con notificaciones:</p>'+iosSteps(''):
-    '<p style="margin:0">Este navegador no ofreció la instalación automática. Puedes hacerlo desde su menú:</p><ul class="ntf-steps"><li><b>Chrome o Edge en PC:</b> ícono de instalar <span class="ntf-ico" aria-hidden="true">⊕</span> en la barra de dirección, o menú ⋮ → <b>Instalar Last Mile</b>.</li><li><b>Android:</b> menú ⋮ → <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.</li><li><b>Safari en Mac:</b> Archivo → <b>Agregar al Dock</b>.</li></ul>';
+    '<p style="margin:0">Este navegador no ofreció la instalación automática. Puedes hacerlo desde su menú:</p><ul class="ntf-steps"><li><b>Chrome o Edge en PC:</b> ícono de instalar en la barra de dirección, o menú ⋮ → <b>Instalar Last Mile</b>.</li><li><b>Android:</b> menú ⋮ → <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.</li><li><b>Safari en Mac:</b> Archivo → <b>Agregar al Dock</b>.</li></ul>';
   openModal('<div class="sh-h"><div><span class="flbl">Este dispositivo</span><h3 class="mtitle">Instalar Last Mile</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div><div class="sh-b form">'+body+'</div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Entendido</button></div>',true);
 }
 // se oculta cuando ya se abre como app instalada
@@ -1313,6 +1424,12 @@ document.addEventListener('click',e=>{
   switch(a){
    case 'menu':menu(!document.getElementById('drawer').classList.contains('open'));break;
    case 'menuClose':menu(false);break;
+   case 'adu':{const b=B(t.dataset.id),k=t.dataset.k;b.aduana=b.aduana||{};b.aduana[k]={at:Date.now(),by:ui.role};
+     log((ui.role==='admin'?'DP World':CL(cli(b)).short)+' marcó lista: '+ADU.find(x=>x[0]===k)[1].toLowerCase()+' · '+b.ref);
+     if(liberado(b)){const cs=[...new Set(b.containers.filter(c=>c.carrierId&&IDX[c.status]<=IDX.asignado).map(c=>c.carrierId))];
+       notify(cs.concat([cli(b)]),'Contenedores liberados',b.ref+' · ya se puede retirar en '+b.pickLoc+' hasta '+fmt(b.pickTo),b.id);}
+     commit();toast(liberado(b)?b.ref+' liberado: el transportista ya puede retirar.':'Listo. Falta '+ADU.filter(x=>!b.aduana[x[0]])[0][1].toLowerCase()+'.');break;}
+   case 'nbTipo':newBooking(t.dataset.v);break;
    case 'waOpen':waMenu(document.getElementById('waMenu').hidden);break;
    case 'waGo':waMenu(false);return;
    case 'theme':ui.theme=t.dataset.v;save();render();break;
@@ -1336,10 +1453,10 @@ document.addEventListener('click',e=>{
    case 'rfree':ov.dataset.detail='';freeModal(t.dataset.r);break;
    case 'toRamp':{const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c),r=t.dataset.r;
      if(rampOcc(r)){toast('La rampa '+r+' ya está ocupada.',true);break;}
-     c.rampa=r;c.ramp='PEND_INSP';log('Bodega asignó '+c.number+' ('+b.ref+') a '+r);closeModal();commit();toast(c.number+' asignado a '+r+'. Pendiente de inspección.');break;}
+     c.rampa=r;c.ramp='PEND_INSP';log('Bodega asignó '+c.number+' ('+b.ref+') a '+r);closeModal();commit();toast(c.number+' asignado a '+r+'. '+(isImpo(b)?'Revisa el sello antes de abrir.':'Pendiente de inspección.'));break;}
    case 'rstep':{const b=B(t.dataset.b),c=b.containers.find(x=>x.id===t.dataset.c),to=t.dataset.to;
      if(to==='ESPERA_RAMPA')c.rampa=null;
-     c.ramp=to;log('Bodega: '+c.number+' → '+RST[to].l.toLowerCase());closeModal();commit();toast(c.number+': '+RST[to].l+'.');break;}
+     c.ramp=to;const rl=rampLbl(c,b);log('Bodega: '+c.number+' → '+rl.toLowerCase());closeModal();commit();toast(c.number+': '+rl+'.');break;}
    case 'seal':advForm(t.dataset.b,t.dataset.c,'bodega');break;
    case 'doc':downloadDoc(t.dataset.k,t.dataset.n,t.dataset.r);break;
    case 'rp':ui.rp=t.dataset.v;save();render();break;
@@ -1396,8 +1513,8 @@ document.addEventListener('click',e=>{
    case 'load':ov.dataset.detail='';advForm(t.dataset.b,t.dataset.c,'bodega');break;
    case 'doAdv':doAdv(t.dataset.b,t.dataset.c,t.dataset.to);break;
    case 'bulk':{const b=B(t.dataset.b),to=t.dataset.to;const cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status===t.dataset.from);
-     cs.forEach(c=>{c.status=to;stamp(c,to);if(STEP[to].proof)c.proofs.push({type:STEP[to].proof,name:STEP[to].proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
-     log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+LBL[to].toLowerCase());notifyAdv(b,to,cs.length,ui.carrier,cs.length===1?cs[0].number:'');commit();toast(cs.length+' contenedores actualizados a «'+LBL[to]+'».');break;}
+     const sp=stepOf(b,to);cs.forEach(c=>{c.status=to;stamp(c,to);if(sp.proof)c.proofs.push({type:sp.proof,name:sp.proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
+     log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+lbl(b,to).toLowerCase());notifyAdv(b,to,cs.length,ui.carrier,cs.length===1?cs[0].number:'');commit();toast(cs.length+' contenedores actualizados a «'+lbl(b,to)+'».');break;}
    case 'reset':state=seed();migrate();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });

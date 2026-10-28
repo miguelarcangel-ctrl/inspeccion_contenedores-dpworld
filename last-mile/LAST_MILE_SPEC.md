@@ -151,6 +151,39 @@ Semana por horas (05:00–22:00, hora de Panamá), con navegación anterior / Ho
 
 Datos: `contenedor.cita = {at, by}` y `contenedor.turno = {at, rampa, dur}`. En Supabase: columnas `cita_retiro`, `turno_rampa`, `turno_inicio`, `turno_duracion` en `operaciones` (o tabla `citas`), con una restricción que impida turnos solapados en la misma rampa.
 
+## Importación
+- **Tipo de booking:** al crear un booking, el cliente elige Exportación o Importación. En las listas, una etiqueta lo distingue: **EXPO** en ámbar e **IMPO** en azul.
+- **Flujo:**
+  1. Publicado
+  2. Confirmado
+  3. Asignado
+  4. **Retiro lleno** en el puerto
+  5. **Descargado** en CLP
+  6. **Vacío en camino**
+  7. **Vacío devuelto** a la naviera
+
+  No tiene la etapa «Entregado». Un mismo transportista retira el lleno y devuelve el vacío.
+- **Datos del booking:** número de BL, naviera, tamaño, cantidad y números de contenedor (opcionales; si se ponen, no pueden ser más que la cantidad).
+- **Ventanas:**
+  - Retiro en puerto: desde que está disponible hasta el último día libre.
+  - Devolución del vacío: hasta el límite sin demora.
+- **Ubicaciones:** terminal de retiro y patio de devolución.
+- **Liberación aduanera:** son dos pasos, la liberación de la naviera (BL) y el levante de aduana o DMC.
+  - Los gestiona **DP World** por defecto, o **el cliente** si así se indica al crear el booking. Los marca el admin o, si el trámite es del cliente, el cliente.
+  - El transportista puede confirmar y agendar, pero no marca «Retiro lleno» hasta que ambos pasos estén listos.
+  - Al liberarse, se avisa al transportista y al cliente.
+- **Rampas:** la importación entra a la cola como **ENTRADA**, en azul, igual que en Control de Rampas.
+  1. Se revisa el sello y el estado del contenedor.
+  2. Se marca el avance de la descarga.
+  3. Al cerrar la descarga se registran los bultos recibidos, el número de recepción del **WMS** y las novedades: faltante, sobrante, daño, sello no coincide o contenedor dañado.
+  4. El vacío queda listo en el buffer.
+- **WMS:** la recepción detallada por SKU sigue en el WMS. Last Mile solo coordina el transporte y da visibilidad.
+- **Pruebas:** EIR de retiro lleno, foto de descarga o novedades y EIR de devolución del vacío.
+- **Reportes:**
+  - El indicador «Entrega o devolución en ventana» cuenta la devolución del vacío contra su límite.
+  - En importación, «Pruebas completas» exige las tres pruebas de importación.
+- **Fuera de alcance por ahora:** cruce de vacío, es decir, usar el vacío de una importación para cargar una exportación.
+
 ## Configuración
 - **Ubicación:** menú ☰ → Configuración, para todos los roles.
 - **Apariencia:** tema oscuro o claro. Se guarda por dispositivo. El tablero de rampas sigue oscuro en los dos temas.
