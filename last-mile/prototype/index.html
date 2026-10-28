@@ -1234,9 +1234,14 @@ function cfgDelDo(kind,id){
 function waMenu(open){
   const m=document.getElementById('waMenu'),b=document.querySelector('.wa-btn');
   if(open){const x=USERS[ui.user]||{},msg='Hola DP World, soy '+(x.n||ui.user)+' ('+empresa(x)+') desde Last Mile. ';
-    m.innerHTML='<div class="wa-h">¿Con quién quieres hablar?</div>'+WA.map(w=>{const n=waNum(w[0]),d=n.replace(/\D/g,'');
-      return d?'<a class="wa-i" role="menuitem" href="https://wa.me/'+d+'?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" data-act="waGo"><b>'+w[1]+'</b><span>'+w[2]+'</span><small class="mono">'+esc(n)+'</small></a>':
-        '<div class="wa-i off"><b>'+w[1]+'</b><span>Sin número configurado</span></div>';}).join('');}
+    // celular: abre la app de WhatsApp directo (wa.me en el navegador puede caer en WhatsApp Web sin sesión)
+    // PC: elegir app de escritorio o WhatsApp Web
+    const movil=isIOS()||/Android/i.test(navigator.userAgent),q=d=>'phone='+d+'&text='+encodeURIComponent(msg),app=d=>'whatsapp://send?'+q(d);
+    m.innerHTML='<div class="wa-h">¿Con quién quieres hablar?</div>'+WA.map(w=>{const n=waNum(w[0]),d=n.replace(/\D/g,''),t='<b>'+w[1]+'</b><span>'+w[2]+'</span><small class="mono">'+esc(n)+'</small>';
+      if(!d)return '<div class="wa-i off"><b>'+w[1]+'</b><span>Sin número configurado</span></div>';
+      return movil?'<a class="wa-i" role="menuitem" href="'+app(d)+'" data-act="waGo">'+t+'</a>':
+        '<div class="wa-i">'+t+'<div class="wa-acts"><a class="wa-a" role="menuitem" href="'+app(d)+'" data-act="waGo">App de escritorio</a><a class="wa-a" role="menuitem" href="https://web.whatsapp.com/send?'+q(d)+'" target="_blank" rel="noopener" data-act="waGo">WhatsApp Web</a></div></div>';}).join('')+
+      (movil?'':'<div class="wa-note">WhatsApp Web pide escanear un código QR la primera vez en cada navegador: en tu teléfono, WhatsApp → Dispositivos vinculados.</div>');}
   m.hidden=!open;b.setAttribute('aria-expanded',open);
   if(open){const f=m.querySelector('a');if(f)f.focus();}
 }
