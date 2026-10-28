@@ -38,6 +38,7 @@
 <footer class="gut"><div class="wrap"><span>Prototipo navegable · datos de ejemplo · Bodega DP World</span><button class="link" data-act="reset">Reiniciar demo</button></div></footer>
 <div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="toasts" aria-live="polite"></div>
+<div class="wa-fab" id="waFab" hidden><div class="wa-menu" id="waMenu" role="menu" aria-label="Contactar a DP World por WhatsApp" hidden></div><button type="button" class="wa-btn" data-act="waOpen" aria-label="Contactar a DP World por WhatsApp" aria-expanded="false" aria-controls="waMenu"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 6.9L3 29l6.5-2c1.9 1 4.1 1.6 6.5 1.6 7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.8-1.7l-.4-.3-3.8 1.2 1.2-3.7-.3-.4a10.5 10.5 0 0 1-1.8-5.7C5.1 9.9 10 5.3 16 5.3s10.9 4.6 10.9 10.5S22 26.4 16 26.4zm6-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2l-1 1.2c-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6.3-.5c.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.1 1.4 3.4c.2.2 2.3 3.5 5.6 4.9 2.8 1.1 3.3.9 3.9.8.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></button></div>
 <div id="vlogin" hidden>
   <button type="button" class="lg-install hdr-install" data-act="install" hidden><span>Instalar app</span></button>
   <div class="lg-map" aria-hidden="true"><svg id="lgMap"></svg></div>
@@ -118,7 +119,14 @@ let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{}
 
 /* sesión: cada usuario activa solo las vistas de su rol */
 const USERS0=[{u:'cernac',role:'cliente',client:'k1',n:'Logística CERNAC'},{u:'bodega',role:'bodega',n:'Bodega CLP'},{u:'costa',role:'transportista',carrier:'c1',n:'Despacho Costa'},{u:'istmo',role:'transportista',carrier:'c2',n:'Despacho Istmo'},{u:'caribe',role:'transportista',carrier:'c3',n:'Despacho Caribe'},{u:'admin',role:'admin',n:'DP World · Admin'}];
+const WA=[['coord','Coordinación','Retiros, citas, rampas y problemas con un viaje'],['ger','Gerencia','Escalamientos y temas de servicio importantes'],['ventas','Ventas y servicios','Cotizaciones, nuevos servicios y tarifas']];
+// WhatsApp necesita el número completo con código de país: un número local de Panamá (8 dígitos) se completa con 507
+const waIntl=v=>{let d=(v||'').replace(/\D/g,'');if(/^00/.test(d))d=d.slice(2);else if(!/^\s*\+/.test(v||'')&&d.length<=8)d='507'+d;return d;};
+const waFmt=d=>/^507\d{8}$/.test(d)?'+507 '+d.slice(3,7)+'-'+d.slice(7):'+'+d;
+const waGrupo=v=>/^https:\/\/chat\.whatsapp\.com\/\w+/.test(v||'');  // enlace de invitación a un grupo
+const waNum=k=>k==='coord'?state.settings.auto.tel:(state.settings.wa||{})[k]||'';
 function migrate(){
+  state.settings.wa=state.settings.wa||{ger:'+507 6000-0001',ventas:'+507 6000-0002'};
   state.carriers=state.carriers||CARRIERS0.map(c=>Object.assign({active:true},c));
   state.clients=state.clients||[{id:'k1',name:'Cervecería Nacional',short:'CERNAC',contacto:'',active:true}];
   state.users=state.users||USERS0.map(x=>Object.assign({pass:'demo',active:true},x));
@@ -500,7 +508,7 @@ function vTrans(){
        else if(c.status==='entregado')act='<button class="btn-p btn-navy inl" data-act="adv" data-b="'+b.id+'" data-c="'+c.id+'" data-to="devuelto">Devuelto</button>';
        else act='<span class="cli-badge on">Cerrado</span>';
        return '<tr><td class="num">'+c.seq+'</td><td class="mono">'+(esc(c.number)||'<span class="muted">—</span>')+'</td><td>'+(c.driver?esc(c.driver)+' · '+esc(c.plate):'<span class="muted">—</span>')+'</td><td>'+statusPill(c.status,c)+'</td><td class="num">'+c.proofs.length+'</td><td class="r">'+act+'</td></tr>';}).join('')+'</tbody></table></div>'+
-     (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+(cs.some(c=>c.status==='asignado')?(()=>{const tel=state.settings.auto.tel,num=tel.replace(/\D/g,'');return '<div class="contact"><span><b>¿Problema con este viaje?</b> Comunícate con coordinación de DP World y lo resolvemos.</span><span class="acts"><a class="btn-p btn-navy inl" href="tel:'+esc(tel.replace(/[^+\d]/g,''))+'">Llamar '+esc(tel)+'</a><a class="btn-p btn-green inl" href="https://wa.me/'+num+'?text='+encodeURIComponent('Hola DP World, sobre el booking '+b.ref+': ')+'" target="_blank" rel="noopener">WhatsApp</a></span></div>';})():'')+'</div></article>';};
+     (bulk?'<div class="row"><span class="flbl">Avance en bloque</span>'+bulk+'</div>':'')+(cs.some(c=>c.status==='asignado')?(()=>{const tel=state.settings.auto.tel,num=waIntl(tel),grp=waGrupo(tel);return '<div class="contact"><span><b>¿Problema con este viaje?</b> Comunícate con coordinación de DP World y lo resolvemos.</span><span class="acts">'+(grp?'':'<a class="btn-p btn-navy inl" href="tel:'+esc(tel.replace(/[^+\d]/g,''))+'">Llamar '+esc(tel)+'</a>')+'<a class="btn-p btn-green inl" href="'+(grp?esc(tel):'https://wa.me/'+num+'?text='+encodeURIComponent('Hola DP World, sobre el booking '+b.ref+': '))+'" target="_blank" rel="noopener">'+(grp?'Grupo de WhatsApp':'WhatsApp')+'</a></span></div>';})():'')+'</div></article>';};
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">'+esc(CN[me])+'</h1><p class="sc-sub">Bookings para transporte bajo bandera DP World. Confirma disponibilidad de equipo dentro de 1 hora; DP World aprueba antes de quedar en firme.</p></div></div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Disponibles para confirmar</h2><span class="psect-cnt">'+avail.length+'</span></div>'+(avail.length?bkRows('tav',avail,availCard,b=>clock(b)||'<span class="cli-badge mute">Sin cubrir '+openCount(b)+'</span>',expired):'<div class="empty">No hay bookings publicados para ti en este momento.</div>')+'</div>'+
    '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Esperando aprobación de DP World</h2><span class="psect-cnt">'+pend.length+'</span></div>'+(pend.length?'<div class="tw"><table class="t"><thead><tr><th>Booking</th><th>Tamaño</th><th>Contenedores</th><th>Enviado</th><th>Nota</th></tr></thead><tbody>'+pend.map(f=>{const b=B(f.bookingId);return '<tr><td class="mono">'+esc(b.ref)+'</td><td>'+esc(b.size)+'</td><td class="num">'+f.qty+'</td><td>'+ago(f.at)+'</td><td>'+esc(f.note||'—')+'</td></tr>';}).join('')+'</tbody></table></div>':'<div class="empty">Nada pendiente de aprobación.</div>')+'</div>'+
@@ -524,7 +532,7 @@ function vAdmin(){
   (exp.length?'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Alertas · vencieron sin cubrir</h2><span class="psect-cnt">'+exp.length+'</span></div>'+bkRows('aex',exp,b=>'<article class="bk alert">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Sin cubrir <strong>'+openCount(b)+' de '+b.qty+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]):'Abierto')+'</strong></span></div></div><div class="bk-foot">'+clock(b)+'<div class="acts"><select id="asg-'+b.id+'" aria-label="Transportista">'+CARRIERS.map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select><button class="btn-p btn-green inl" data-act="force" data-id="'+b.id+'">Asignar directo</button><button class="btn-p btn-navy inl" data-act="reopen" data-id="'+b.id+'">Reabrir 1 h a todos</button></div></div></article>',b=>'<span class="cli-badge off">Vencido</span>',()=>true)+'</div>':'')+
   '<div class="panel"><h2 class="psect-title">Aprobación automática</h2><div class="row"><div class="htabs" role="group" aria-label="Aprobación automática"><button class="htab'+(A.on?' active':'')+'" data-act="autoOn" data-v="1" aria-pressed="'+A.on+'">Encendida · por excepción</button><button class="htab'+(A.on?'':' active')+'" data-act="autoOn" data-v="0" aria-pressed="'+!A.on+'">Apagada · todo manual</button></div></div>'+
    '<div class="fgrid">'+[['perf','Desempeño mínimo (%)',50,100],['revert','Minutos para revertir',0,120],['noShowH','No-show: horas después de la cita',1,24],['reopenMin','Minutos para confirmar al republicar',10,60]].map(x=>'<label class="f"><span class="flbl">'+x[1]+'</span><input class="fin" type="number" data-act="autoSet" data-k="'+x[0]+'" min="'+x[2]+'" max="'+x[3]+'" value="'+A[x[0]]+'"></label>').join('')+
-   '<label class="f"><span class="flbl">Teléfono / WhatsApp de coordinación</span><input class="fin" type="tel" data-act="telSet" value="'+esc(A.tel)+'"></label></div>'+
+   '</div>'+
    '<p class="muted" style="margin:0;font-size:13px">Se aprueba sola si: documentos vigentes · capacidad disponible en la ventana · desempeño de 90 días sobre el mínimo · equipo compatible · carga general · máx. 2 transportistas por booking. Si falla alguna, pasa a «Por aprobar» con el motivo.</p></div>'+
   '<div class="grid2"><div class="panel"><h2 class="psect-title">Publicación de nuevos bookings</h2><div class="row"><div class="htabs" role="group" aria-label="Modo"><button class="htab'+(s.mode==='directo'?' active':'')+'" data-act="mode" data-v="directo" aria-pressed="'+(s.mode==='directo')+'">Directo a preferido</button><button class="htab'+(s.mode==='abierto'?' active':'')+'" data-act="mode" data-v="abierto" aria-pressed="'+(s.mode==='abierto')+'">Abierto · primero que confirma</button></div></div>'+
    '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+ACT().map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
@@ -1145,6 +1153,8 @@ function vConfig(){
   let h='<section class="view"><div class="vhead"><div><h1 class="sc-title">Configuración</h1><p class="sc-sub">'+(adm?'Apariencia de la app y administración de clientes, transportistas y usuarios.':'Apariencia de la app.')+'</p></div></div>'+
    '<div class="panel"><h2 class="psect-title">Apariencia</h2><div class="htabs" role="group" aria-label="Tema">'+[['dark','Oscuro'],['light','Claro']].map(x=>'<button class="htab'+(theme()===x[0]?' active':'')+'" data-act="theme" data-v="'+x[0]+'" aria-pressed="'+(theme()===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
    '<p class="muted" style="margin:0;font-size:13px">Se guarda en este dispositivo y aplica a todas las pantallas.</p></div>';
+  if(adm)h+='<div class="panel"><h2 class="psect-title">Contactos de WhatsApp</h2><p class="muted" style="margin:0;font-size:13px">Aparecen en el botón verde flotante de todas las pantallas. Pon un número con código de país o el enlace de invitación de un grupo (WhatsApp → grupo → Invitar mediante enlace). Coordinación también se usa en la caja de contacto del transportista.</p>'+
+   '<div class="fgrid">'+WA.map(x=>'<label class="f"><span class="flbl">'+x[1]+'</span><input class="fin" type="text" inputmode="url" autocapitalize="none" data-act="waSet" data-k="'+x[0]+'" value="'+esc(waNum(x[0]))+'" placeholder="+507 6000-0000 o https://chat.whatsapp.com/…"></label>').join('')+'</div></div>';
   if(adm)h+='<div class="panel"><div class="cfg-head"><div class="htabs" role="tablist" aria-label="Administración">'+Object.keys(KINDS).map(k=>'<button class="htab'+(tab===k?' active':'')+'" role="tab" aria-selected="'+(tab===k)+'" data-act="cfgTab" data-v="'+k+'">'+KINDS[k].t+' <span class="psect-cnt">'+cfgList(k).length+'</span></button>').join('')+'</div>'+
    '<button class="btn-p btn-green inl" data-act="cfgEdit" data-k="'+tab+'">+ Nuevo '+KINDS[tab].one+'</button></div>'+cfgTable(tab)+
    '<div class="abox inf"><div><b>Dar de baja</b> bloquea el acceso y lo saca de las asignaciones nuevas, pero conserva su historial y sus reportes. <b>Eliminar</b> solo se permite si no tiene historial. En la versión definitiva las contraseñas se guardan cifradas y cada usuario puede cambiar la suya; aquí el admin las edita para la demo.</div></div></div>';
@@ -1221,6 +1231,23 @@ function cfgDelDo(kind,id){
   log('DP World eliminó '+KINDS[kind].one+' '+nm);syncRef();closeModal();commit();toast(nm+' eliminado.');
 }
 
+/* ===== WhatsApp flotante ===== */
+function waMenu(open){
+  const m=document.getElementById('waMenu'),b=document.querySelector('.wa-btn');
+  if(open){const x=USERS[ui.user]||{},msg='Hola DP World, soy '+(x.n||ui.user)+' ('+empresa(x)+') desde Last Mile. ';
+    // celular: abre la app de WhatsApp directo (wa.me en el navegador puede caer en WhatsApp Web sin sesión)
+    // PC: elegir app de escritorio o WhatsApp Web
+    const movil=isIOS()||/Android/i.test(navigator.userAgent),q=d=>'phone='+d+'&text='+encodeURIComponent(msg),app=d=>'whatsapp://send?'+q(d);
+    m.innerHTML='<div class="wa-h">¿Con quién quieres hablar?</div>'+WA.map(w=>{const n=waNum(w[0]),d=n.trim()?waIntl(n):'',t='<b>'+w[1]+'</b><span>'+w[2]+'</span><small class="mono">'+waFmt(d)+'</small>';
+      if(waGrupo(n))return '<a class="wa-i" role="menuitem" href="'+esc(n)+'" target="_blank" rel="noopener" data-act="waGo"><b>'+w[1]+'</b><span>'+w[2]+'</span><small>Grupo de WhatsApp</small></a>';
+      if(!d)return '<div class="wa-i off"><b>'+w[1]+'</b><span>Sin número configurado</span></div>';
+      return movil?'<a class="wa-i" role="menuitem" href="'+app(d)+'" data-act="waGo">'+t+'</a>':
+        '<div class="wa-i">'+t+'<div class="wa-acts"><a class="wa-a" role="menuitem" href="'+app(d)+'" data-act="waGo">App de escritorio</a><a class="wa-a" role="menuitem" href="https://web.whatsapp.com/send?'+q(d)+'" target="_blank" rel="noopener" data-act="waGo">WhatsApp Web</a></div></div>';}).join('')+
+      (movil?'':'<div class="wa-note">WhatsApp Web pide escanear un código QR la primera vez en cada navegador: en tu teléfono, WhatsApp → Dispositivos vinculados.</div>');}
+  m.hidden=!open;b.setAttribute('aria-expanded',open);
+  if(open){const f=m.querySelector('a');if(f)f.focus();}
+}
+
 /* ===== modal / toast ===== */
 let lastFocus=null;
 function openModal(html,narrow){const ov=document.getElementById('ov'),sh=document.getElementById('sheet');lastFocus=document.activeElement;sh.className='sheet'+(narrow?' narrow':'');sh.innerHTML=html;ov.hidden=false;const f=sh.querySelector('input,select,textarea,button.btn');if(f)f.focus();}
@@ -1252,6 +1279,7 @@ function accordion(root){
 function render(){
   const lg=document.getElementById('vlogin');
   lg.hidden=!!ui.auth;
+  document.getElementById('waFab').hidden=!ui.auth;if(!ui.auth)waMenu(false);
   if(!ui.auth){lgPlay();document.getElementById('lg-demo').innerHTML=state.users.filter(x=>x.active!==false).map(x=>x.u).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
   if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
   applyTheme();
@@ -1276,6 +1304,7 @@ function checkExpiry(){
 }
 
 document.addEventListener('click',e=>{
+  if(!e.target.closest('#waFab')&&!document.getElementById('waMenu').hidden)waMenu(false);
   const t=e.target.closest('[data-act]');
   if(e.target.id==='ov'){closeModal();document.getElementById('ov').dataset.detail='';return;}
   if(!t)return;
@@ -1284,6 +1313,8 @@ document.addEventListener('click',e=>{
   switch(a){
    case 'menu':menu(!document.getElementById('drawer').classList.contains('open'));break;
    case 'menuClose':menu(false);break;
+   case 'waOpen':waMenu(document.getElementById('waMenu').hidden);break;
+   case 'waGo':waMenu(false);return;
    case 'theme':ui.theme=t.dataset.v;save();render();break;
    case 'cfgTab':ui.cfgTab=t.dataset.v;save();render();break;
    case 'cfgEdit':cfgForm(t.dataset.k,t.dataset.id||null);break;
@@ -1370,7 +1401,7 @@ document.addEventListener('click',e=>{
    case 'reset':state=seed();migrate();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });
-document.addEventListener('change',e=>{const t=e.target;if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='telSet'){state.settings.auto.tel=t.value.trim()||state.settings.auto.tel;log('Teléfono de coordinación: '+state.settings.auto.tel);commit();}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='waSet'){const k=t.dataset.k,v=t.value.trim(),c=WA.find(x=>x[0]===k)[1];const ok=!v||waGrupo(v)||(!/[a-z]/i.test(v)&&waIntl(v).length>=10&&waIntl(v).length<=15);if(!ok){toast('Revisa '+c+': pon un celular de WhatsApp (6123-4567 o +507 6123-4567) o el enlace de un grupo (https://chat.whatsapp.com/…).',true);return;}if(v&&!waGrupo(v)){t.value=waFmt(waIntl(v));}const val=t.value.trim();if(k==='coord'){if(!val){toast('Coordinación necesita un número.',true);t.value=waNum(k);return;}state.settings.auto.tel=val;}else state.settings.wa[k]=val;log('WhatsApp de '+c+': '+(v||'sin número'));save();toast('Número de '+c+' guardado.');}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='cq'){const box=document.getElementById('rgBox');if(box){const q=parseInt(t.value,10)||0;box.innerHTML=reglasHtml(reglas(B(box.dataset.b),ui.carrier,q));}}});
 document.addEventListener('change',e=>{
   const t=e.target, a=t.dataset&&t.dataset.act;
@@ -1405,6 +1436,7 @@ document.getElementById('lgForm').addEventListener('submit',e=>{
   document.getElementById('lg-pass').value='';save();render();window.scrollTo(0,0);
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!document.getElementById('waMenu').hidden){waMenu(false);document.querySelector('.wa-btn').focus();return;}
   if(e.key==='Escape'&&document.getElementById('drawer').classList.contains('open')){menu(false);return;}
   if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click();return;}if(e.key==='Escape'&&!document.getElementById('ov').hidden){document.getElementById('ov').dataset.detail='';closeModal();}});
 
