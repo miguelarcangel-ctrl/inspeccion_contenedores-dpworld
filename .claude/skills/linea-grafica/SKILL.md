@@ -17,7 +17,7 @@ El kit está en `kit/` junto a este archivo:
 | `dpw-mapa.js` | Escena `mapa` (Panamá y rutas a 14 puertos). Solo la cargan las apps que la usan (35 KB). |
 | `plantilla.html` | Ejemplo completo y vista previa: `plantilla.html?escena=patio`, `&login=0`, `&tema=light`. |
 | `assets/` | Logos para fondo claro y oscuro. |
-| `pwa/` | `sw.js` y `manifest.webmanifest` de partida, íconos de la app (192, 512, Apple) y favicon. |
+| `pwa/` | `sw.js` y `manifest.webmanifest` de partida y `generar_iconos.py`, que crea los íconos de la app instalada (512, 192, Apple y favicon). |
 
 En cada app, el kit se copia a una carpeta `dpw/` servida junto al `index.html` (en Next.js: `public/dpw/` para los scripts y logos, y `src/app/dpw-shell.css` importado en `layout.tsx`; la cinta y el menú van como componentes React con las mismas clases, ver `alertas-calidad-app/src/components/AppHeader.tsx` y `Portada.tsx`). Si se cambia el kit, se cambia aquí en HubApp y se vuelve a copiar a cada repo; no se edita la copia de una sola app.
 
@@ -29,6 +29,7 @@ En cada app, el kit se copia a una carpeta `dpw/` servida junto al `index.html` 
 4. **Navegación en el menú desplegable.** Toda sección de la app va como fila del menú lateral (botón de tres rayas a la izquierda de la cinta). Las vistas especiales (Insights, Vista TV, Reportes, Configuración) también. La cinta solo lleva Instalar, Claro/Oscuro, el rol y Salir.
 5. **Tema claro y oscuro en todas**, con el botón de texto de la cinta (`Claro` / `Oscuro`, muestra a cuál cambia). Se guarda en `localStorage` con la clave común `dpw_tema` y vive en `<html data-theme="light|dark">`. Cada app elige su tema por defecto (Cotizador, Alertas y Control de Horas: claro; Inspección y Hub: oscuro). Las vistas de TV o piso de operación pueden quedarse oscuras, y la vista previa de documentos sigue siendo papel blanco.
 6. **Botón Instalar en todas**: en la cinta y como píldora en el login. Aparece solo cuando el navegador permite instalar; en iPhone explica el paso manual. Cada app lleva `manifest.webmanifest`, `sw.js` y los íconos de `kit/pwa/`.
+   **Ícono de la app instalada igual en todas**: fondo índigo `#1A1060`, logo DP World en blanco, línea verde `#00C389` y el nombre corto de la app en Barlow Condensed 800 (HORAS, RAMPAS, COTIZADOR, ALERTAS, PORTAL, LAST MILE). Se genera con `python3 kit/pwa/generar_iconos.py "NOMBRE" carpeta`; no se dibujan íconos a mano.
 7. **Tipografía y color**: Barlow (cuerpo) y Barlow Condensed 700–800 en mayúsculas (títulos, etiquetas, botones). Índigo `#1A1060` (hover `#2A1F8F`), verde `#00C389` para acentos, ámbar `#f5a20b` advertencia, rojo `#E8003D` error. Fondo oscuro `#0d0b28`, superficies `#16143d` / `#1e1c50`; en claro, fondo `#F2F3F8` y tarjetas blancas.
 
 ## Escenas por app
