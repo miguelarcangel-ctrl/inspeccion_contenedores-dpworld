@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Plantilla — DP World</title>
+<!-- Tema antes de pintar: lee la preferencia guardada; el valor por defecto de cada app va al final ('dark' o 'light') -->
+<script>(function(){var t;try{t=localStorage.getItem('dpw_tema')}catch(e){}document.documentElement.setAttribute('data-theme',t==='light'||t==='dark'?t:'dark');})();</script>
+<link rel="manifest" href="pwa/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="pwa/favicon-32.png">
+<link rel="apple-touch-icon" href="pwa/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1A1060">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="dpw-shell.css">
@@ -19,7 +26,7 @@ html[data-theme="light"] body{background:#F2F3F8;color:#1B1B2F}
 <body>
 <!-- LOGIN: frase de la app + escena animada propia + tarjeta blanca -->
 <div class="dpw-login" id="dpwLogin">
-  <button type="button" class="dpw-lg-install" hidden>Instalar app</button>
+  <button type="button" class="dpw-lg-install" data-dpw="instalar" hidden>Instalar app</button>
   <div class="dpw-lg-art" aria-hidden="true"><svg data-dpw-art></svg></div>
   <div class="dpw-lg-hero">
     <div class="dpw-lg-kick">DP World · Nombre de la app</div>
@@ -51,8 +58,8 @@ html[data-theme="light"] body{background:#F2F3F8;color:#1B1B2F}
     <div><div class="dpw-title">DP WORLD</div><div class="dpw-sub" id="dpwSub">Nombre de la app</div></div>
   </div>
   <div class="dpw-hdr-r">
-    <button type="button" class="dpw-hbtn dpw-install dpw-hide-sm" hidden>Instalar</button>
-    <button type="button" class="dpw-hbtn" id="temaBtn">Claro</button>
+    <button type="button" class="dpw-hbtn dpw-install dpw-hide-sm" data-dpw="instalar" hidden>Instalar</button>
+    <button type="button" class="dpw-hbtn" data-dpw="tema">Claro</button>
     <span class="dpw-role dpw-hide-sm">Supervisor</span>
     <button type="button" class="dpw-salir" id="salirBtn">Salir</button>
   </div>
@@ -74,8 +81,9 @@ html[data-theme="light"] body{background:#F2F3F8;color:#1B1B2F}
 <script src="dpw-mapa.js"></script>
 <script>
 // ?escena=bodega|patio|flujo|radar|mapa  ·  ?tema=light  ·  ?login=0 abre la app directo
+// Tema e Instalar no necesitan código: los botones data-dpw los maneja dpw-shell.js
 const q=new URLSearchParams(location.search),escena=q.get('escena')||'mapa';
-if(q.get('tema')==='light')document.documentElement.dataset.theme='light';
+if(q.get('tema'))DPW.ponerTema(q.get('tema'));
 const login=document.getElementById('dpwLogin');
 const vistas={inicio:'Inicio',reportes:'Reportes',insights:'Insights',tv:'Vista TV',config:'Configuración'};
 let actual='inicio';
@@ -89,15 +97,14 @@ function pintar(){
     {id:'config',label:'Configuración',group:'Administración',on:()=>ir('config')}
   ],actual);
   DPW.quien('Sesión','Supervisor · Turno A');
-  DPW.botonTema(document.getElementById('temaBtn'),document.documentElement.dataset.theme==='light');
 }
 function ir(k){actual=k;pintar();}
-document.getElementById('temaBtn').onclick=()=>{const h=document.documentElement;h.dataset.theme=h.dataset.theme==='light'?'dark':'light';pintar();};
 document.getElementById('lgForm').onsubmit=e=>{e.preventDefault();login.hidden=true;pintar();};
 ['salirBtn','salirBtn2'].forEach(id=>document.getElementById(id).onclick=()=>{DPW.cerrarMenu();login.hidden=false;});
 if(q.get('login')==='0'){login.hidden=true;}
 pintar();
 DPW.escena(escena,login);
+DPW.pwa('pwa/sw.js');
 </script>
 </body>
 </html>

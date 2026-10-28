@@ -2,7 +2,7 @@
    Login con escena animada propia de cada app, cinta superior blanca, menú desplegable lateral y tema claro/oscuro.
    Todo va con prefijo dpw- para no chocar con el CSS de cada app. Sin íconos ni emojis: solo texto.
    Las fuentes (Barlow y Barlow Condensed) las carga cada app.
-   Tema: oscuro por defecto; claro con html[data-theme="light"], body.theme-light o body.dpw-light. */
+   Tema: html[data-theme="light"|"dark"] (Last Mile usa body.theme-light). Ver dpw-shell.js y SKILL.md. */
 :root{
   --dpw-indigo:#1A1060;--dpw-indigo-h:#2A1F8F;--dpw-primary:#3E3C90;
   --dpw-green:#00C389;--dpw-red:#E8003D;--dpw-amber:#f5a20b;--dpw-blue:#0099e6;--dpw-violet:#8a88e0;
@@ -11,7 +11,7 @@
   --dpw-active:rgba(62,60,144,.3);--dpw-ov:rgba(0,0,0,.55);--dpw-shadow:8px 0 32px rgba(0,0,0,.45);
   --dpw-fd:'Barlow Condensed','Arial Narrow',Arial,sans-serif;--dpw-fb:'Barlow','Segoe UI',Arial,sans-serif;
 }
-html[data-theme="light"],body.theme-light,body.dpw-light{
+html[data-theme="light"],body.theme-light{
   --dpw-green:#00996b;--dpw-surf:#fff;--dpw-b0:rgba(26,16,96,.04);--dpw-b1:rgba(26,16,96,.12);--dpw-b2:rgba(26,16,96,.22);
   --dpw-t:#1B1B2F;--dpw-t2:rgba(27,27,47,.72);--dpw-t3:rgba(27,27,47,.52);
   --dpw-active:rgba(26,16,96,.07);--dpw-ov:rgba(26,16,96,.35);--dpw-shadow:8px 0 32px rgba(26,16,96,.2);
@@ -55,7 +55,7 @@ html[data-theme="light"],body.theme-light,body.dpw-light{
 .dpw-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;border:0;border-left:3px solid transparent;background:transparent;color:var(--dpw-t2);font:700 16px var(--dpw-fd);letter-spacing:.6px;text-transform:uppercase;text-align:left;text-decoration:none;cursor:pointer}
 .dpw-item:hover{background:var(--dpw-b0);color:var(--dpw-t)}
 .dpw-item.active{color:var(--dpw-t);background:var(--dpw-active);border-left-color:var(--dpw-green)}
-html[data-theme="light"] .dpw-item.active,body.theme-light .dpw-item.active,body.dpw-light .dpw-item.active{color:var(--dpw-indigo)}
+html[data-theme="light"] .dpw-item.active,body.theme-light .dpw-item.active{color:var(--dpw-indigo)}
 .dpw-item small{margin-left:auto;font:600 11px var(--dpw-fb);letter-spacing:0;text-transform:none;color:var(--dpw-t3)}
 .dpw-badge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--dpw-red);color:#fff;font:800 11px/20px var(--dpw-fb);text-align:center;letter-spacing:0}
 .dpw-drawer-f{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-top:1px solid var(--dpw-b1)}
