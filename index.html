@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Control de Rampas — DP World</title>
+<script>/* Tema antes de pintar (skill linea-grafica): oscuro por defecto */(function(){var t;try{t=localStorage.getItem('dpw_tema')}catch(e){}document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');})();</script>
+<meta name="theme-color" content="#0d0b28">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="dpw/pwa/favicon-32.png">
+<link rel="apple-touch-icon" href="dpw/pwa/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rampas">
+<link rel="stylesheet" href="dpw/dpw-shell.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="dpw/dpw-shell.js"></script>
+<script src="dpw/dpw-escenas.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
@@ -23,13 +34,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
 
-/* HEADER */
-.hdr{background:#fff;border-bottom:1px solid #e2e2e2;padding:0 14px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.07)}
-.hdr-l{display:flex;align-items:center;gap:10px}
-.hdr-logo{flex-shrink:0}.hdr-logo img{height:34px;display:block}
-.hdr-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#1a1760;letter-spacing:.5px;line-height:1}
-.hdr-sub{font-size:9px;color:var(--primary);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
-
+/* CINTA SUPERIOR, MENÚ DESPLEGABLE Y LOGIN: dpw/dpw-shell.css (línea gráfica común, molde Last Mile) */
 /* STATS */
 .stats{display:flex;background:rgba(13,10,46,.8);border-bottom:1px solid var(--b0)}
 .sbox{flex:1;padding:8px 4px;text-align:center;border-right:1px solid var(--b0)}
@@ -233,7 +238,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .ib{width:32px;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;cursor:pointer;color:var(--t3);transition:all .15s;touch-action:manipulation}
 .ib.si{background:rgba(0,195,137,.15);border-color:var(--green);color:var(--green)}
 .ib.no{background:rgba(232,0,61,.12);border-color:var(--red);color:#ff6680}
-.icam{width:26px;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t4);transition:all .15s;flex-shrink:0;touch-action:manipulation}
+.icam{min-width:26px;padding:0 7px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;height:26px;border-radius:4px;border:1px solid var(--b1);background:var(--b0);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t4);transition:all .15s;flex-shrink:0;touch-action:manipulation}
 .icam:active,.icam.hph{border-color:var(--green);color:var(--green);background:rgba(0,195,137,.1)}
 .iphrow{padding:4px 10px 8px 38px;display:none}
 .iphrow.vis{display:flex;align-items:center;gap:7px}
@@ -287,13 +292,8 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--t);min-hei
 .toast.warn{background:rgba(245,162,11,.1);border-color:rgba(245,162,11,.3);color:var(--amber)}
 input[type=file]{display:none}
 
-/* ── BOTTOM NAV ── */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surf);border-top:1px solid var(--b1);display:flex;z-index:85;height:56px}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;color:var(--t4);transition:color .2s;padding:4px 0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.bnav-btn.active{color:var(--green)}
-.bnav-lbl{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 /* ── SCREENS ── */
-.screen{display:none;padding-bottom:72px}
+.screen{display:none;padding-bottom:24px}
 .screen.active{display:block}
 .sc-hdr{padding:14px 14px 10px;border-bottom:1px solid var(--b0)}
 .sc-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800}
@@ -340,55 +340,57 @@ input[type=file]{display:none}
 .cli-actions{display:flex;gap:6px;margin-top:8px}
 .cli-act-btn{flex:1;padding:7px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--b1);background:var(--b0);color:var(--t3);touch-action:manipulation}
 .cli-act-btn:active{background:var(--b2);color:var(--t)}
-.fab{position:fixed;bottom:66px;right:14px;background:var(--green);color:var(--bg);border:none;border-radius:50%;width:46px;height:46px;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 14px var(--gg);z-index:80;display:none;align-items:center;justify-content:center;touch-action:manipulation}
+.fab{position:fixed;bottom:20px;right:14px;background:var(--green);color:var(--bg);border:none;border-radius:50%;width:46px;height:46px;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 14px var(--gg);z-index:80;display:none;align-items:center;justify-content:center;touch-action:manipulation}
 .fab.show{display:flex}
 .sup-only{display:none}
 
 /* ── LOGIN ── */
-.lg-err{background:#FEE;border:1px solid #FCC;color:#E8003D;font-size:.78rem;font-weight:600;padding:10px 12px;border-radius:8px;margin-bottom:14px;display:none;text-align:left}
-.lg-err.show{display:block}
-.lg-fg{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left}
-.lg-lbl{font-size:.65rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.07em}
-.lg-in{border:1.5px solid #E2E8F0;border-radius:10px;padding:12px 14px;font-family:'Barlow',sans-serif;font-size:.9rem;font-weight:500;color:#1B1B2F;background:#F8F9FC;width:100%;transition:all .2s cubic-bezier(.4,0,.2,1)}
-.lg-in:focus{outline:none;border-color:#1A1060;background:#fff;box-shadow:0 0 0 3px rgba(26,16,96,.08)}
-.lg-in::placeholder{color:#94A3B8}
-.lg-btn{width:100%;background:#1A1060;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);margin-top:8px}
-.lg-btn:hover{background:#2A1F8F}
-.login-footer{font-size:.65rem;color:#94A3B8;margin-top:16px;letter-spacing:.07em;text-align:center}
-.login-logo{text-align:center;margin-bottom:20px}
-.login-logo img{height:48px;width:auto;margin:0 auto 6px;display:block;object-fit:contain}
-.login-sub{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:#1A1060;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
-.login-ref{font-size:.72rem;color:#64748B;margin-top:4px}
-.login-card{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(26,16,96,.14);display:flex;flex-direction:column;animation:lgUp .3s ease}
-@keyframes lgUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-#vlogin{position:fixed;inset:0;background:linear-gradient(135deg,#1A1060 0%,#2D1B8E 50%,#1A1060 100%);display:flex;align-items:center;justify-content:center;padding:20px;z-index:999}
-.hdr-user{display:flex;align-items:center;gap:8px}
-.hdr-role{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:rgba(62,60,144,.1);color:var(--primary);border:1px solid rgba(62,60,144,.2)}
-.hdr-logout{background:#f4f4f7;border:1px solid #ddd;color:#555;padding:5px 10px;border-radius:5px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
-.hdr-logout:hover{background:#e0e0ec;color:#1a1760}
+
+/* ── TEMA CLARO (skill linea-grafica; mismos valores que el tema claro de Last Mile). El muelle de rampas
+   (#dockArea) se queda oscuro a propósito: es la vista de bodega y sus colores de estado brillan sobre negro. ── */
+html[data-theme="light"]{color-scheme:light;
+  --bg:#F2F3F8;--surf:#FFFFFF;--card:#FFFFFF;--raised:#FFFFFF;
+  --b0:rgba(26,16,96,.04);--b1:rgba(26,16,96,.12);--b2:rgba(26,16,96,.22);
+  --t:#1B1B2F;--t2:rgba(27,27,47,.72);--t3:rgba(27,27,47,.52);--t4:rgba(27,27,47,.34);
+  --green:#00996b;--amber:#b86e00;--blue:#0070b8;--red:#d10037;--primary:#1A1060}
+html[data-theme="light"] #dockArea{color-scheme:dark;--bg:#0d0b28;--surf:#16143d;--card:#1e1c50;--raised:#252368;--b0:rgba(255,255,255,.05);--b1:rgba(255,255,255,.1);--b2:rgba(255,255,255,.18);--t:#fff;--t2:rgba(255,255,255,.6);--t3:rgba(255,255,255,.3);--t4:rgba(255,255,255,.12);--green:#00C389;--amber:#f5a20b;--blue:#0099e6;--red:#E8003D;--primary:#3E3C90;color:var(--t)}
+html[data-theme="light"] .tab.active{background:rgba(26,16,96,.08);color:var(--primary);box-shadow:none}
+html[data-theme="light"] .stats{background:#fff;border-bottom:1px solid var(--b1)}
+html[data-theme="light"] .sbox{border-right-color:var(--b1)}
+html[data-theme="light"] .sn.sl{color:var(--t4)}
+html[data-theme="light"] .pip-d.cur{background:rgba(26,16,96,.08)}
+html[data-theme="light"] .fin,html[data-theme="light"] .hist-search,html[data-theme="light"] .flag-btn{background:#fff;color:var(--t)}
+html[data-theme="light"] .bprog{background:rgba(26,16,96,.08)}
+html[data-theme="light"] .btn-navy{background:#fff;color:var(--primary);border-color:var(--b2)}
+html[data-theme="light"] .btn-navy:active{background:var(--b0)}
+html[data-theme="light"] .msheet{background:#fff;box-shadow:0 -12px 40px rgba(26,16,96,.18)}
+html[data-theme="light"] .mov{background:rgba(26,16,96,.35)}
+html[data-theme="light"] .toast{background:#fff;box-shadow:0 8px 24px rgba(26,16,96,.18)}
 </style>
 </head>
 <body>
 
-<!-- ════ LOGIN ════ -->
-<div id="vlogin">
-  <div class="login-card">
-    <div class="login-logo">
-      <img src="https://raw.githubusercontent.com/miguelarcangel-ctrl/cotizador-dpworld/main/logo_white.png" alt="DP World">
-      <div class="login-sub">Control de Rampas</div>
-      <div class="login-ref">SL-02-007 &middot; DAL Col&#243;n Logistics Park &middot; Panam&#225;</div>
+<!-- ════ LOGIN: molde Last Mile, escena «patio» ════ -->
+<div id="vlogin" class="dpw-login">
+  <button type="button" class="dpw-lg-install" data-dpw="instalar" hidden>Instalar app</button>
+  <div class="dpw-lg-art" aria-hidden="true"><svg data-dpw-art></svg></div>
+  <div class="dpw-lg-hero">
+    <div class="dpw-lg-kick">DP World · Control de Rampas</div>
+    <h1 class="dpw-lg-h1"><span>Cada</span> <span>contenedor,</span> <em>a tiempo.</em></h1>
+    <p class="dpw-lg-lead">Rampas, inspección y seguimiento post-rampa de cada contenedor, en vivo.</p>
+  </div>
+  <svg class="dpw-lg-ground" data-dpw-ground aria-hidden="true"></svg>
+  <div class="dpw-lg-card">
+    <div class="dpw-lg-logo">
+      <img src="dpw/assets/dpworld-logo-fondo-claro.png" alt="DP World">
+      <div class="dpw-lg-app">Control de Rampas</div>
+      <div class="dpw-lg-ref">SL-02-007 · DAL Colón Logistics Park · Panamá</div>
     </div>
-    <div class="lg-err" id="lg-err">Usuario o contrase&#241;a incorrectos</div>
-    <div class="lg-fg">
-      <div class="lg-lbl">Usuario</div>
-      <input type="text" class="lg-in" id="lg-user" placeholder="Ingresa tu usuario" autocomplete="username">
-    </div>
-    <div class="lg-fg">
-      <div class="lg-lbl">Contrase&#241;a</div>
-      <input type="password" class="lg-in" id="lg-pass" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="lg-btn" onclick="doLogin()">INGRESAR</button>
-    <div class="login-footer">&#128274; USO INTERNO EXCLUSIVO &middot; DP WORLD PANAM&#193;</div>
+    <div class="dpw-lg-err" id="lg-err">Usuario o contraseña incorrectos</div>
+    <div class="dpw-lg-fg"><label class="dpw-lg-lbl" for="lg-user">Usuario</label><input type="text" class="dpw-lg-in" id="lg-user" placeholder="Ingresa tu usuario" autocomplete="username"></div>
+    <div class="dpw-lg-fg"><label class="dpw-lg-lbl" for="lg-pass">Contraseña</label><input type="password" class="dpw-lg-in" id="lg-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="dpw-lg-btn" id="lgBtn" onclick="doLogin()">Ingresar</button>
+    <div class="dpw-lg-foot">Uso interno exclusivo · DP World Panamá</div>
   </div>
 </div>
 
@@ -406,19 +408,27 @@ input[type=file]{display:none}
 <input type="file" id="gfInput" accept="image/*" multiple>
 
 <div id="vdash" style="display:none">
-  <div class="hdr">
-    <div class="hdr-l">
-      <div class="hdr-logo"><img src="https://raw.githubusercontent.com/miguelarcangel-ctrl/cotizador-dpworld/main/logo_white.png" alt="DP World"></div>
-      <div>
-        <div class="hdr-title">DP WORLD</div>
-        <div class="hdr-sub">Control de Rampas</div>
-      </div>
+  <!-- CINTA SUPERIOR Y MENÚ DESPLEGABLE (dpw/dpw-shell.css) -->
+  <header class="dpw-hdr">
+    <div class="dpw-hdr-l">
+      <button type="button" class="dpw-burger" data-dpw="menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="dpwDrawer"><span></span><span></span><span></span></button>
+      <div class="dpw-logo"><img src="dpw/assets/dpworld-logo-fondo-claro.png" alt="DP World"></div>
+      <div><div class="dpw-title">DP WORLD</div><div class="dpw-sub">Control de Rampas</div></div>
     </div>
-    <div class="hdr-user">
-      <span class="hdr-role" id="hdr-role"></span>
-      <button class="hdr-logout" onclick="doLogout()">SALIR</button>
+    <div class="dpw-hdr-r">
+      <button type="button" class="dpw-hbtn dpw-install dpw-hide-sm" data-dpw="instalar" hidden>Instalar</button>
+      <button type="button" class="dpw-hbtn" data-dpw="tema">Claro</button>
+      <span class="dpw-role dpw-hide-sm" id="hdr-role"></span>
+      <button type="button" class="dpw-salir" onclick="doLogout()">Salir</button>
     </div>
-  </div>
+  </header>
+  <div class="dpw-ov" id="dpwOv" data-dpw="menu-close" hidden></div>
+  <nav class="dpw-drawer" id="dpwDrawer" aria-label="Menú principal" aria-hidden="true">
+    <div class="dpw-drawer-h"><div class="dpw-logo"><img src="dpw/assets/dpworld-logo-fondo-claro.png" alt="DP World"></div><div><div class="dpw-title">DP WORLD</div><div class="dpw-sub">Control de Rampas</div></div><button type="button" class="dpw-close" data-dpw="menu-close" aria-label="Cerrar menú">×</button></div>
+    <div class="dpw-who" id="dpwWho"></div>
+    <div class="dpw-items" id="dpwItems"></div>
+    <div class="dpw-drawer-f"><span></span><button type="button" class="dpw-salir" onclick="DPW.cerrarMenu();doLogout()">Salir</button></div>
+  </nav>
 
   <!-- RAMPAS SCREEN -->
   <div id="sc-rampas" class="screen active">
@@ -472,26 +482,6 @@ input[type=file]{display:none}
     <div id="cli-body" style="padding:12px;"><div class="sc-empty">Cargando...</div></div>
   </div>
 
-  <!-- BOTTOM NAV -->
-  <nav class="bnav">
-    <button class="bnav-btn active" id="bn-rampas" onclick="switchScreen('rampas')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="7" height="18"/><rect x="9" y="8" width="7" height="13"/><rect x="16" y="12" width="7" height="9"/></svg>
-      <span class="bnav-lbl">Rampas</span>
-    </button>
-    <button class="bnav-btn" id="bn-historial" onclick="switchScreen('historial')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
-      <span class="bnav-lbl">Historial</span>
-    </button>
-    <button class="bnav-btn" id="bn-reportes" onclick="switchScreen('reportes')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <span class="bnav-lbl">Reportes</span>
-    </button>
-
-    <button class="bnav-btn sup-only" id="bn-clientes" onclick="switchScreen('clientes')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span class="bnav-lbl">Clientes</span>
-    </button>
-  </nav>
   <button class="fab" id="fab" onclick="openNewCliente()">+</button>
 </div>
 
@@ -605,8 +595,8 @@ async function doLogin(){
     showDash();return;
   }
   _loginPending=true;
-  var btn=document.querySelector('.lg-btn');
-  if(btn)btn.textContent='VERIFICANDO...';
+  var btn=document.getElementById('lgBtn');
+  if(btn)btn.textContent='Verificando…';
   try{
     var res=await sb.from('clientes').select('*').eq('usuario',user).eq('activo',true);
     var match=(res.data||[]).find(function(c){return c.password===pass;});
@@ -614,7 +604,7 @@ async function doLogin(){
     else{currentUser={role:'cliente',label:match.nombre,nombre:match.nombre,clienteId:match.id};showDash();}
   }catch(e){errEl.textContent='Error de conexión';errEl.classList.add('show');}
   _loginPending=false;
-  if(btn)btn.textContent='INGRESAR';
+  if(btn)btn.textContent='Ingresar';
 }
 
 function showDash(){
@@ -622,7 +612,7 @@ function showDash(){
   document.getElementById('hdr-role').textContent=currentUser.label;
   document.getElementById('vlogin').style.display='none';
   document.getElementById('vdash').style.display='';
-  document.querySelectorAll('.sup-only').forEach(function(el){el.style.display=currentUser.role==='supervisor'?'flex':'none';});
+  DPW.quien('Sesión',currentUser.label+(currentUser.role==='supervisor'?'':' · Cliente'));
   switchScreen('rampas');
   dbInit();
 }
@@ -639,7 +629,7 @@ function doLogout(){
 }
 
 function requireSup(msg){
-  if(!currentUser||currentUser.role!=='supervisor'){showToast(msg||'⚠ Solo supervisores',false,true);return false;}
+  if(!currentUser||currentUser.role!=='supervisor'){showToast(msg||'Solo supervisores',false,true);return false;}
   return true;
 }
 
@@ -647,13 +637,26 @@ function requireSup(msg){
 var currentScreen='rampas';
 var _histFilter='all';
 
+// Menú desplegable: secciones de la app (molde Last Mile, sin íconos)
+DPW.escena('patio',document.getElementById('vlogin'));
+DPW.pwa('sw.js');
+DPW.aviso=function(m){showToast(m,true);};
+function pintarMenu(){
+  var sup=!!currentUser&&currentUser.role==='supervisor';
+  DPW.menu([
+    {id:'rampas',label:'Rampas',on:function(){switchScreen('rampas');}},
+    {id:'historial',label:'Historial',on:function(){switchScreen('historial');}},
+    {id:'reportes',label:'Reportes',on:function(){switchScreen('reportes');}},
+    {id:'clientes',label:'Clientes',group:'Administración',hidden:!sup,on:function(){switchScreen('clientes');}}
+  ],currentScreen);
+}
 function switchScreen(name){
   if((name==='clientes')&&currentUser&&currentUser.role!=='supervisor')name='rampas';
   currentScreen=name;
   ['rampas','historial','reportes','clientes'].forEach(function(s){
     var sc=document.getElementById('sc-'+s);if(sc)sc.classList.toggle('active',s===name);
-    var bn=document.getElementById('bn-'+s);if(bn)bn.classList.toggle('active',s===name);
   });
+  pintarMenu();window.scrollTo(0,0);
   var fab=document.getElementById('fab');
   if(fab)fab.className=(name==='clientes'&&currentUser&&currentUser.role==='supervisor')?'fab show':'fab';
   if(name==='rampas'){startDockTimer();renderStats();renderDockView();renderPost();}
@@ -960,7 +963,7 @@ function openClientDetail(opId){
   }
   if(op.tipo==='SALIDA'&&op.inspeccionCompleta&&op.inspeccion){
     h+='<div class="abox suc" style="margin-bottom:8px;">Inspeccion '+(op.inspeccion.result==='apto'?'APTO':'NO APTO')+' &middot; '+escHtml(op.inspeccion.inspector||'')+'</div>';
-    h+='<button class="btn-p btn-blue" style="margin-bottom:8px;" onclick="buildAndSharePDF(getOps().find(function(o){return o.id===\''+opId+'\'}))"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF inspeccion</button>';
+    h+='<button class="btn-p btn-blue" style="margin-bottom:8px;" onclick="buildAndSharePDF(getOps().find(function(o){return o.id===\''+opId+'\'}))"> Descargar PDF inspeccion</button>';
   }
   if(op.log&&op.log.length){
     h+='<div class="tl"><div class="tl-h">Actividad</div>';
@@ -1051,7 +1054,7 @@ function buildFreeBox(b, r, isDA) {
   var daCls = isDA ? ' dest-av' : '';
   return '<div class="cbox libre' + daCls + '" onclick="onRampTap(\'' + b + '\',\'' + r + '\',\'\')">' +
     '<div class="ccont"><div class="libre-plus">' +
-    '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+    '+' +
     '</div><div class="libre-lbl">Libre</div></div></div>';
 }
 
@@ -1078,7 +1081,7 @@ function onBufTap(b, pos, opId) {
 
 // ═══ MOVE MODE ═══
 function startMove(opId) {
-  if(!requireSup('⚠ Solo supervisores pueden mover contenedores')) return;
+  if(!requireSup('Solo supervisores pueden mover contenedores')) return;
   mvState = {active:true, opId:opId};
   closeMod();
   document.getElementById('mvbanner').classList.add('on');
@@ -1095,7 +1098,7 @@ function openMoveToRamp(opId, b, r) {
   document.getElementById('mtitle').textContent = 'Mover a ' + r + ' \u2014 ' + b;
   var h = '<div class="abox warn">Mover ' + op.contenedor + ' a rampa ' + r + '</div>';
   h += '<button class="btn-p btn-green" onclick="execMove(\''+opId+'\',\'rampa\',\''+b+'\',\''+r+'\')">';
-  h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Confirmar traslado</button>';
+  h += 'Confirmar traslado</button>';
   h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="cancelMove();closeMod()">Cancelar</button>';
   document.getElementById('mbody').innerHTML = h;
   openMod();
@@ -1107,7 +1110,7 @@ function openMoveToBuf(opId, b, pos) {
   var h = '<div class="abox warn">Mover ' + op.contenedor + ' al buffer</div>';
   h += '<div class="abox warn">El cargue/descargue esta completado?</div>';
   h += '<button class="btn-p btn-green" onclick="execMove(\''+opId+'\',\'buf-done\',\''+b+'\',\''+pos+'\')">';
-  h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Si - completado, mover a buffer</button>';
+  h += 'Si - completado, mover a buffer</button>';
   h += '<button class="btn-p btn-amber" style="margin-top:4px;" onclick="execMove(\''+opId+'\',\'buf-move\',\''+b+'\',\''+pos+'\')">Solo reubicar</button>';
   h += '<button class="btn-p btn-navy" style="margin-top:4px;" onclick="cancelMove();closeMod()">Cancelar</button>';
   document.getElementById('mbody').innerHTML = h;
@@ -1136,15 +1139,13 @@ function execMove(opId,type,b,dest){
 // ═══ ASSIGN ═══
 var aData = {b:null, r:null, tipo:'ENTRADA'};
 function openAssign(b, r) {
-  if(!requireSup('⚠ Solo supervisores pueden asignar rampas')) return;
+  if(!requireSup('Solo supervisores pueden asignar rampas')) return;
   aData = {b:b, r:r, tipo:'ENTRADA', flags:[]};
   document.getElementById('mtitle').textContent = r + ' \u2014 ' + b;
   var h = '<div class="tipo-sel">';
   h += '<div class="tipo-btn ent act" id="tbent" onclick="setTipo(\'ENTRADA\')">';
-  h += '<svg width="28" height="22" viewBox="0 0 24 24" fill="none" stroke="#0099e6" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
   h += '<span class="tipo-lbl">ENTRADA</span><span class="tipo-sub">Descarga</span></div>';
   h += '<div class="tipo-btn sal" id="tbsal" onclick="setTipo(\'SALIDA\')">';
-  h += '<svg width="28" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5a20b" stroke-width="1.5"><path d="M2 20h.01M7 20v-4"/><path d="M12 20V10"/><path d="M17 20V4"/><path d="M22 20h.01"/></svg>';
   h += '<span class="tipo-lbl">SALIDA</span><span class="tipo-sub">Carga/Exportacion</span></div>';
   h += '</div>';
   h += '<div id="iwarn" class="abox warn" style="display:none;">Salida requiere inspeccion SL-02-007 antes del cargue.</div>';
@@ -1259,7 +1260,7 @@ function openDetail(opId) {
   } else if(op.tipo==='SALIDA' && op.inspeccionCompleta && op.inspeccion) {
     h += '<div class="abox suc">Inspeccion OK \u2014 ' + (op.inspeccion.result==='apto'?'APTO':'NO APTO') + ' &middot; ' + (op.inspeccion.inspector||'') + '</div>';
     h += '<button class="btn-p btn-blue" style="margin-top:0;margin-bottom:6px;" onclick="buildAndSharePDF(getOps().find(function(o){return o.id===\''+opId+'\'}))">';
-    h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF inspecci\u00f3n</button>';
+    h += 'Descargar PDF inspecci\u00f3n</button>';
   }
   if(sp&&isSup) {
     h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">ACTUALIZAR PROGRESO</div>';
@@ -1271,7 +1272,7 @@ function openDetail(opId) {
   }
   if((op.estado==='ESPERA_TRANS'||op.estado==='ESPERA_DOCS')&&isSup){
     var rEst=op.rampa?'EN_RAMPA':'BUFFER_POST';
-    h+='<button class="btn-p btn-green" style="margin-bottom:6px;" onclick="setWaitState(\''+opId+'\',\''+rEst+'\')">&#9654; Reanudar operacion</button>';
+    h+='<button class="btn-p btn-green" style="margin-bottom:6px;" onclick="setWaitState(\''+opId+'\',\''+rEst+'\')">Reanudar operación</button>';
   }
   if(sd&&isSup) {
     h += '<div style="font-size:9px;font-weight:700;color:var(--t4);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;margin-top:4px;">DESTINO FINAL</div>';
@@ -1314,13 +1315,10 @@ function openDetail(opId) {
 function buildDestButtons(opId) {
   var h = '<div class="dest-col">';
   h += '<div class="dbtn puerto" onclick="setDest(\''+opId+'\',\'TRANSITO\')">';
-  h += '<div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#00C389" stroke-width="1.5"><circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg></div>';
   h += '<div><span class="dt">PUERTO</span><span class="ds">Enviar a puerto de salida</span></div></div>';
   h += '<div class="dbtn buffer" onclick="setDest(\''+opId+'\',\'BUFFER_POST\')">';
-  h += '<div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#f5a20b" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>';
   h += '<div><span class="dt">BUFFER</span><span class="ds">Zona de espera</span></div></div>';
   h += '<div class="dbtn docs" onclick="setDest(\''+opId+'\',\'ESPERA_DOCS\')">';
-  h += '<div class="dic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6680" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>';
   h += '<div><span class="dt">DOCS PENDIENTES</span><span class="ds">Falta documentacion</span></div></div>';
   h += '</div>';
   return h;
@@ -1478,7 +1476,7 @@ function buildPipeSteps(steps, ci) {
   var h = '';
   for(var i=0; i<steps.length; i++) {
     var cls = i<ci ? 'done' : i===ci ? 'cur' : 'fut';
-    var inner = i<ci ? '&#10003;' : i===ci ? '&#9679;' : '';
+    var inner = i<ci ? (i+1) : i===ci ? (i+1) : '';
     h += '<div class="cstep"><div class="pip-d ' + cls + '">' + inner + '</div>';
     if(i < steps.length-1) { h += '<div class="pip-l ' + (i<ci?'done':'fut') + '"></div>'; }
     h += '</div>';
@@ -1531,7 +1529,6 @@ function openPostMod(opId) {
     var st = postSts[i]; var ss = ST[st] || {l:st,c:'#fff',g:'rgba(255,255,255,.1)'};
     var isNext = i===ci || (ci<0 && i===0);
     h += '<div class="psbtn" style="border-color:'+ss.c+(isNext?'':44)+';background:'+(isNext?ss.g.replace('.4','.08').replace('.5','.08'):'rgba(255,255,255,.02)')+'" onclick="updEstado(\''+opId+'\',\''+st+'\')">';
-    h += '<div class="psic"><svg viewBox="0 0 24 24" fill="none" stroke="'+ss.c+'" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg></div>';
     h += '<div><span class="pslbl" style="color:'+ss.c+';">'+ss.l+'</span>'+(isNext?'<span class="pssub">Siguiente paso</span>':'')+'</div>';
     h += '</div>';
   }
@@ -1560,7 +1557,7 @@ function openInsp(opId) {
       h += '<button class="ib" id="ib-si-'+it.id+'" onclick="setIA(\''+opId+'\',\''+it.id+'\',\'SI\')">SI</button>';
       h += '<button class="ib" id="ib-no-'+it.id+'" onclick="setIA(\''+opId+'\',\''+it.id+'\',\'NO\')">NO</button>';
       h += '<button class="icam" id="icam-'+it.id+'" onclick="triggerCam(\''+opId+'\',\''+it.id+'\')">';
-      h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+      h += 'Foto';
       h += '</button></div></div>';
       h += '<div class="iphrow" id="iph-'+it.id+'"><div class="iphthumb"><img id="iphimg-'+it.id+'" src="" alt=""><button class="iphdel" onclick="delIPh(\''+it.id+'\')">x</button></div><div style="font-size:10px;color:var(--green);font-weight:600;">Foto OK</div></div>';
     }
