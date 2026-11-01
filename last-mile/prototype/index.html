@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Last Mile — DP World</title>
+<title>DP Bridge — DP World</title>
 <link rel="stylesheet" href="../../dpworld.css">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1A1060">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Last Mile">
+<meta name="apple-mobile-web-app-title" content="DP Bridge">
 </head>
 <body class="lm">
 <div class="hdr">
@@ -19,7 +20,7 @@
     <div class="hdr-logo"><img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World"></div>
     <div>
       <div class="hdr-title">DP WORLD</div>
-      <div class="hdr-sub" id="hdr-sub">Last Mile</div>
+      <div class="hdr-sub" id="hdr-sub">DP Bridge</div>
     </div>
   </div>
   <div class="hdr-user"><button type="button" class="hdr-btn hdr-install" data-act="install" hidden><span>INSTALAR</span></button><button type="button" class="hdr-btn hdr-theme" data-act="themeToggle" id="themeBtn"></button><span class="hdr-role" id="hdr-role"></span><button class="hdr-logout" data-act="logout">SALIR</button></div>
@@ -27,7 +28,7 @@
 <div class="gut"><div class="wrap"><nav class="tabs" role="tablist" aria-label="Secciones" id="roles" hidden></nav></div></div>
 <div class="drawer-ov" id="drawerOv" data-act="menuClose" hidden></div>
 <nav class="drawer" id="drawer" aria-label="Menú principal" aria-hidden="true">
-  <div class="drawer-h"><div class="hdr-logo"><img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World"></div><div><div class="hdr-title">DP WORLD</div><div class="hdr-sub">Last Mile</div></div><button type="button" class="mclose" data-act="menuClose" aria-label="Cerrar menú">×</button></div>
+  <div class="drawer-h"><div class="hdr-logo"><img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World"></div><div><div class="hdr-title">DP WORLD</div><div class="hdr-sub">DP Bridge</div></div><button type="button" class="mclose" data-act="menuClose" aria-label="Cerrar menú">×</button></div>
   <div class="drawer-who" id="drawerWho"></div>
   <div class="drawer-items" id="drawerItems"></div>
   <div class="drawer-items drawer-extra"><button type="button" class="drawer-item" data-act="notif" id="drawerNotif"></button></div>
@@ -42,7 +43,7 @@
 <div id="vlogin" hidden>
   <button type="button" class="lg-install hdr-install" data-act="install" hidden><span>Instalar app</span></button>
   <div class="lg-map" aria-hidden="true"><svg id="lgMap"></svg></div>
-  <div class="lg-hero"><div class="lg-kick">DP World · Last Mile</div><h1 class="lg-h1"><span>Conectamos</span> <span>cada entrega</span> <em>contigo.</em></h1><p class="lg-lead">Del patio a la rampa y al puerto: cada contenedor, en vivo.</p></div>
+  <div class="lg-hero"><div class="lg-kick">DP World · DP Bridge</div><h1 class="lg-h1"><span>Conectamos</span> <span>cada entrega</span> <em>contigo.</em></h1><p class="lg-lead">Del patio a la rampa y al puerto: cada contenedor, en vivo.</p></div>
   <svg class="lg-scene" viewBox="0 0 1400 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <rect y="118" width="1400" height="32" fill="#0b0924"/><rect y="117" width="1400" height="2" fill="#00C389" opacity=".6"/>
     <path d="M0 134h1400" stroke="rgba(255,255,255,.18)" stroke-dasharray="18 14"/>
@@ -58,7 +59,7 @@
   <div class="login-card">
     <div class="login-logo">
       <img src="../assets/dpworld-logo-fondo-claro.png" alt="DP World">
-      <div class="login-sub">Last Mile</div>
+      <div class="login-sub">DP Bridge</div>
       <div class="login-ref">Prototipo · DAL Colón Logistics Park · Panamá</div>
     </div>
     <div class="lg-err" id="lg-err">Usuario o contraseña incorrectos</div>
@@ -147,7 +148,7 @@ function migrate(){
   if(ui.auth&&ui.role==='cliente'&&!ui.client)ui.client=(USERS[ui.user]||{}).client||'k1';
 }
 function syncRef(){CARRIERS=state.carriers;CN=Object.fromEntries(CARRIERS.map(c=>[c.id,c.name]));USERS=Object.fromEntries(state.users.map(x=>[x.u,x]));}
-const SECTIONS={cliente:[['main','Bookings Last Mile'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['config','Configuración']],ventas:[['cotiz','Cotizaciones'],['emb','Embarques'],['config','Configuración']],opsff:[['emb','Embarques'],['cotiz','Cotizaciones'],['config','Configuración']],transportista:[['main','Bookings Last Mile'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings Last Mile'],['cal','Calendario'],['rampas','Rampas'],['emb','Llegadas internacionales'],['config','Configuración']],admin:[['main','Panel'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['config','Configuración']]};
+const SECTIONS={cliente:[['main','Bookings Last Mile'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['config','Configuración']],ventas:[['cotiz','Cotizaciones'],['emb','Embarques'],['config','Configuración']],opsff:[['emb','Embarques'],['cotiz','Cotizaciones'],['bit','Bitácora'],['config','Configuración']],transportista:[['main','Bookings Last Mile'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings Last Mile'],['cal','Calendario'],['rampas','Rampas'],['emb','Llegadas internacionales'],['bit','Bitácora'],['config','Configuración']],admin:[['main','Panel'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['bit','Bitácora'],['config','Configuración']]};
 
 /* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
 const RAMPS=6, BUFFER=16;
@@ -259,7 +260,7 @@ function samplePdf(lines){
 }
 async function downloadDoc(key,name,ref){
   let blob=null;try{blob=await FILES.get(key);}catch(e){}
-  if(!blob){blob=samplePdf(['DP World · Last Mile','Documento de ejemplo: '+name,'Booking: '+ref,'Generado por el prototipo: el archivo original no se subió en esta demo.']);name=name.replace(/\.[^.]+$/,'')+'_ejemplo.pdf';}
+  if(!blob){blob=samplePdf(['DP World · DP Bridge','Documento de ejemplo: '+name,'Booking: '+ref,'Generado por el prototipo: el archivo original no se subió en esta demo.']);name=name.replace(/\.[^.]+$/,'')+'_ejemplo.pdf';}
   bajar(blob,name);
 }
 
@@ -306,7 +307,8 @@ function seedHistory(now,cargos){
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify({state:state,ui:ui}));}catch(e){}}
 function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&r.state&&r.state.bookings){state=r.state;state.hist=state.hist||[];state.incid=state.incid||[];state.settings.auto=state.settings.auto||{on:true,perf:95,revert:15,noShowH:3,reopenMin:30,tel:'+507 6000-0000'};ui=Object.assign(ui,r.ui||{});ui.open=ui.open||{};ui.secOpen=ui.secOpen||{};}}catch(e){state=null;}if(!state||!state.bookings)state=seed();migrate();}
-function log(t){state.log.unshift({at:Date.now(),t:t});state.log=state.log.slice(0,60);}
+function log(t,refs){state.log.unshift({at:Date.now(),t:t,u:ui.auth?ui.user:'',r:ui.auth?ui.role:'',refs:(refs||[]).filter(Boolean)});state.log=state.log.slice(0,3000);}
+const numsDe=cs=>cs.map(c=>c.number).filter(Boolean);
 
 /* derived */
 const B=id=>state.bookings.find(x=>x.id===id);
@@ -438,7 +440,7 @@ function renderRoles(){
   nav.hidden=true;
   document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   const cur=(secs.find(x=>x[0]===ui.sec)||secs[0]||[])[1];
-  document.getElementById('hdr-sub').textContent='Last Mile'+(cur?' · '+cur:'');
+  document.getElementById('hdr-sub').textContent='DP Bridge'+(cur?' · '+cur:'');
   const tot=Object.keys(badge).reduce((n,k)=>n+(badge[k]||0),0),bg=document.querySelector('.hdr-burger');
   bg.classList.toggle('has-badge',tot>0);bg.dataset.n=tot||'';
   nav.innerHTML=secs.length<2?'':secs.map(x=>'<button class="tab'+(ui.sec===x[0]?' active':'')+'" role="tab" aria-selected="'+(ui.sec===x[0])+'" data-act="sec" data-k="'+x[0]+'">'+x[1]+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
@@ -756,7 +758,7 @@ function citaSave(bid,at0){
   if(at0){cs=mine.filter(c=>c.cita&&c.cita.at===+at0);}
   else{const n=parseInt(document.getElementById('ag-n').value,10),sin=mine.filter(c=>!c.cita);if(!(n>=1&&n<=sin.length)){err.textContent='Indica entre 1 y '+sin.length+' contenedores.';return;}cs=sin.slice(0,n);}
   let freed=0;cs.forEach(c=>{if(c.turno&&at0&&t!==+at0){delete c.turno;freed++;}c.cita={at:t,by:me};});
-  log(CN[me]+(at0?' reprogramó':' agendó')+' retiro de '+cs.length+' cont. de '+b.ref+' para '+fmt(t)+(freed?' · '+freed+' turno(s) liberados':''));
+  log(CN[me]+(at0?' reprogramó':' agendó')+' retiro de '+cs.length+' cont. de '+b.ref+' para '+fmt(t)+(freed?' · '+freed+' turno(s) liberados':''),numsDe(cs));
   notify(['bodega'],at0?'Cita reprogramada':'Cita de retiro',CN[me]+' · '+cs.length+' cont. de '+b.ref+' · '+fmt(t),b.id);
   closeModal();commit();toast('Retiro '+(at0?'reprogramado':'agendado')+': '+fmt(t)+' · '+cs.length+' cont.'+(freed?' Bodega reasignará '+freed+' turno(s).':''));
 }
@@ -788,7 +790,7 @@ function turnoSave(bid,cid){
   let choque=null;state.bookings.forEach(ob=>ob.containers.forEach(oc=>{if(oc!==c&&oc.turno&&oc.turno.rampa===r&&IDX[oc.status]<IDX.bodega&&oc.turno.at<t+dur*HOUR&&oc.turno.at+oc.turno.dur*HOUR>t)choque={b:ob,c:oc};}));
   if(choque){err.textContent=r+' está ocupada de '+hm(choque.c.turno.at)+' a '+hm(choque.c.turno.at+choque.c.turno.dur*HOUR)+' ('+choque.b.ref+' #'+choque.c.seq+'). Elige otra rampa u hora.';return;}
   c.turno={at:t,rampa:r,dur:dur};
-  log('Bodega asignó turno '+r+' '+fmt(t)+' ('+dur+' h) a '+b.ref+' #'+c.seq);
+  log('Bodega asignó turno '+r+' '+fmt(t)+' ('+dur+' h) a '+b.ref+' #'+c.seq,[c.number]);
   notify([c.carrierId],'Turno de rampa',b.ref+' #'+c.seq+' · '+r+' · '+fmt(t),b.id);
   commit();turnoList(b.id);toast('Turno '+r+' · '+fmt(t)+' asignado.');
   if(t+dur*HOUR>b.delTo-3*HOUR)toast('Atención: el turno termina cerca del cierre de la entrega ('+fmt(b.delTo)+').',true);
@@ -887,7 +889,7 @@ function loadXLSX(){return window.XLSX?Promise.resolve(window.XLSX):new Promise(
 const fx=t=>t?new Date(t).toLocaleString('sv-SE',{timeZone:'America/Panama',hour12:false}).slice(0,16):'';
 function rpSheets(){
   const rows=rpRows(),per=(PERIODOS.find(p=>p[0]===ui.rp)||[])[1],yn=(m)=>m.ev?(m.ok?'Sí':'No'):'—';
-  const res=[['DP World · Last Mile · Reporte de cumplimiento'],['Período',per,'Generado',fx(Date.now())],[],['Indicador','Valor %','Medidos','A tiempo / completos','Meta %','Estado']];
+  const res=[['DP World · DP Bridge · Reporte de cumplimiento'],['Período',per,'Generado',fx(Date.now())],[],['Indicador','Valor %','Medidos','A tiempo / completos','Meta %','Estado']];
   [['conf','Confirmados ≤ 1 h'],['ret','Retiro en ventana'],['ent','Entrega en ventana'],['prf','Pruebas completas']].forEach(k=>{const v=kpi(rows,k[0]);res.push([k[1],v.v,v.d,v.n,METAS[k[0]],NIVEL[nivel(v.v,METAS[k[0]])][2]]);});
   res.push([],['No disponible aún','Incidencias por cada 100 contenedores; conciliación semanal (no se registran todavía)']);
   const car=[['Transportista','Contenedores','TEU','Confirmación ≤1 h %','Retiro en ventana %','Entrega en ventana %','Pruebas completas %','Rechazos','Asignados directo']];
@@ -1048,7 +1050,7 @@ function reasignDo(bid,cid,at){
   else sel.forEach(c=>{c.carrierId=a;c.confId=null;c.status='asignado';delete c.cita;delete c.turno;stamp(c,'asignado');});
   const o=document.getElementById('rx-o').value;
   state.incid.push({type:'dp',origen:o,carrierId:cid,bookingId:b.id,ref:b.ref,n:n,motivo:m,at:Date.now(),destino:a});
-  log('DP World '+(a==='pub'?'republicó':'reasignó a '+CN[a])+' '+n+' cont. de '+b.ref+' quitados a '+CN[cid]+' ('+m+')');
+  log('DP World '+(a==='pub'?'republicó':'reasignó a '+CN[a])+' '+n+' cont. de '+b.ref+' quitados a '+CN[cid]+' ('+m+')',numsDe(sel));
   notify([cid],'Contenedores reasignados',n+' cont. de '+b.ref+' ya no están a tu cargo ('+m+').',b.id);
   if(a==='pub')notify(ACT().map(c=>c.id).filter(x=>x!==cid),'Booking republicado',b.ref+' · '+n+' cont. disponibles · retiro hasta '+fmt(b.pickTo),b.id);else notify([a],'Contenedores asignados',n+' cont. de '+b.ref+' · retiro hasta '+fmt(b.pickTo),b.id);
   closeModal();commit();toast(a==='pub'?'Republicado a todos los transportistas.':'Reasignado a '+CN[a]+'.');
@@ -1069,7 +1071,7 @@ function cliCancelDo(bid){
   b.containers=b.containers.filter(c=>quitar.indexOf(c)<0);b.qty-=n;
   state.incid.push({type:'c',carrierId:null,bookingId:b.id,ref:b.ref,n:n,motivo:m,at:Date.now()});
   if(!b.containers.length){state.bookings=state.bookings.filter(x=>x!==b);b.cancelado=true;state.hist.push(b);}
-  log(CL(cli(b)).short+' canceló '+n+' cont. de '+b.ref+' ('+m+')'+(avisar.length?' · aviso a '+avisar.map(x=>CN[x]).join(', '):''));
+  log(CL(cli(b)).short+' canceló '+n+' cont. de '+b.ref+' ('+m+')'+(avisar.length?' · aviso a '+avisar.map(x=>CN[x]).join(', '):''),numsDe(quitar));
   notify(avisar.concat('admin'),'Cancelación del cliente',CL(cli(b)).short+' canceló '+n+' cont. de '+b.ref+' ('+m+').',b.id);
   closeModal();commit();toast(n+' contenedores cancelados.'+(avisar.length?' Se avisó al transportista.':''));
 }
@@ -1235,13 +1237,13 @@ function notify(to,titulo,texto,bk){
   const dest=[...new Set(to.flatMap(x=>USERS[x]?[x]:act.filter(u=>USERS[u].carrier===x||USERS[u].client===x||USERS[u].role===x)))].filter(u=>subs[u]&&u!==ui.user&&ntOn(u,ntKey(USERS[u].role,titulo)));
   dest.forEach(u=>swReg.showNotification(titulo,{body:texto+'\nPara: '+uName(u),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n'),data:{bk:bk||null}}).catch(()=>{}));
 }
-const iosSteps=fin=>'<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>Last Mile</b> desde el ícono nuevo'+(fin?' y '+fin:'')+'.</li></ol>';
+const iosSteps=fin=>'<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>DP Bridge</b> desde el ícono nuevo'+(fin?' y '+fin:'')+'.</li></ol>';
 /* botón Instalar: usa el aviso nativo del navegador cuando existe; si no, muestra los pasos */
 function installApp(){
-  if(installEv){installEv.prompt();installEv.userChoice.then(c=>{installEv=null;if(c.outcome==='accepted')toast('Last Mile se está instalando.');installBtns();});return;}
-  const body=isIOS()?'<p style="margin:0">Así queda Last Mile en tu pantalla de inicio, a pantalla completa y con notificaciones:</p>'+iosSteps(''):
-    '<p style="margin:0">Este navegador no ofreció la instalación automática. Puedes hacerlo desde su menú:</p><ul class="ntf-steps"><li><b>Chrome o Edge en PC:</b> ícono de instalar en la barra de dirección, o menú ⋮ → <b>Instalar Last Mile</b>.</li><li><b>Android:</b> menú ⋮ → <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.</li><li><b>Safari en Mac:</b> Archivo → <b>Agregar al Dock</b>.</li></ul>';
-  openModal('<div class="sh-h"><div><span class="flbl">Este dispositivo</span><h3 class="mtitle">Instalar Last Mile</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div><div class="sh-b form">'+body+'</div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Entendido</button></div>',true);
+  if(installEv){installEv.prompt();installEv.userChoice.then(c=>{installEv=null;if(c.outcome==='accepted')toast('DP Bridge se está instalando.');installBtns();});return;}
+  const body=isIOS()?'<p style="margin:0">Así queda DP Bridge en tu pantalla de inicio, a pantalla completa y con notificaciones:</p>'+iosSteps(''):
+    '<p style="margin:0">Este navegador no ofreció la instalación automática. Puedes hacerlo desde su menú:</p><ul class="ntf-steps"><li><b>Chrome o Edge en PC:</b> ícono de instalar en la barra de dirección, o menú ⋮ → <b>Instalar DP Bridge</b>.</li><li><b>Android:</b> menú ⋮ → <b>Instalar app</b> o <b>Agregar a pantalla de inicio</b>.</li><li><b>Safari en Mac:</b> Archivo → <b>Agregar al Dock</b>.</li></ul>';
+  openModal('<div class="sh-h"><div><span class="flbl">Este dispositivo</span><h3 class="mtitle">Instalar DP Bridge</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div><div class="sh-b form">'+body+'</div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Entendido</button></div>',true);
 }
 // se oculta cuando ya se abre como app instalada
 const installBtns=()=>document.querySelectorAll('.hdr-install').forEach(b=>b.hidden=standalone());
@@ -1389,7 +1391,7 @@ function cfgDelDo(kind,id){
 /* ===== WhatsApp flotante ===== */
 function waMenu(open){
   const m=document.getElementById('waMenu'),b=document.querySelector('.wa-btn');
-  if(open){const x=USERS[ui.user]||{},msg='Hola DP World, soy '+(x.n||ui.user)+' ('+empresa(x)+') desde Last Mile. ';
+  if(open){const x=USERS[ui.user]||{},msg='Hola DP World, soy '+(x.n||ui.user)+' ('+empresa(x)+') desde DP Bridge. ';
     // celular: abre la app de WhatsApp directo (wa.me en el navegador puede caer en WhatsApp Web sin sesión)
     // PC: elegir app de escritorio o WhatsApp Web
     const movil=isIOS()||/Android/i.test(navigator.userAgent),q=d=>'phone='+d+'&text='+encodeURIComponent(msg),app=d=>'whatsapp://send?'+q(d);
@@ -1721,6 +1723,37 @@ function seedFF(){
   return {quotes:qs,ships:ships};
 }
 
+/* ===== bitácora: trazabilidad de acciones por usuario, día y hora ===== */
+const bNorm=x=>String(x||'').toUpperCase().replace(/[\s\-./]/g,'');
+function vBit(){
+  const us=[...new Set(state.log.map(e=>e.u).filter(Boolean))].sort();
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bitácora</h1><p class="sc-sub">Todas las acciones con usuario, día y hora. Busca un contenedor, un booking, un BL o una cotización para ver su trazabilidad completa.</p></div></div>'+
+   '<div class="panel bit-f"><label class="f bit-q"><span class="flbl">Buscar</span><input class="fin mono" id="bitQ" type="search" autocomplete="off" placeholder="Ej. MSKU 482915-3, MAEU 258741963, HBL DPWPA-24118, COT-2610-021" value="'+esc(ui.bitQ||'')+'"></label>'+
+   '<label class="f"><span class="flbl">Usuario</span><select class="fin" id="bitU"><option value="">Todos</option>'+us.map(u=>'<option value="'+esc(u)+'"'+(ui.bitU===u?' selected':'')+'>'+esc(u)+' · '+esc(uName(u))+'</option>').join('')+'</select></label>'+
+   '<label class="f"><span class="flbl">Desde</span><input class="fin" type="date" id="bitD" value="'+esc(ui.bitD||'')+'"></label><label class="f"><span class="flbl">Hasta</span><input class="fin" type="date" id="bitH" value="'+esc(ui.bitH||'')+'"></label></div>'+
+   '<div id="bitRes">'+bitRes()+'</div></section>';
+}
+function bitRes(){
+  const q=bNorm(ui.bitQ),d=ui.bitD?fromPa(ui.bitD+'T00:00'):0,h=ui.bitH?fromPa(ui.bitH+'T23:59'):Infinity;
+  // coincidencias: contenedores y bookings (activos e históricos), embarques y cotizaciones
+  let ficha='';
+  if(q.length>=4){
+    const cs=[];state.bookings.concat(state.hist||[]).forEach(b=>b.containers.forEach(c=>{if(c.number&&bNorm(c.number).includes(q))cs.push({b:b,c:c});}));
+    const bks=state.bookings.concat(state.hist||[]).filter(b=>bNorm(b.ref).includes(q));
+    const shs=(state.ships||[]).filter(x=>bNorm(x.docRef).includes(q)||bNorm(x.ref).includes(q)),qs=(state.quotes||[]).filter(x=>bNorm(x.num).includes(q));
+    ficha=cs.slice(0,6).map(x=>'<div class="bit-card"><div class="bit-ch"><b class="mono">'+esc(x.c.number)+'</b>'+tipoTag(x.b)+'<span class="muted">Booking '+esc(x.b.ref)+' · #'+x.c.seq+' · '+esc(CN[x.c.carrierId]||'Sin transportista')+'</span>'+statusPill(x.c.status,x.c,x.b)+'</div>'+
+      '<div class="bit-st">'+stagesOf(x.b).filter(s=>(x.c.t||{})[s.k]).map(s=>'<span><b>'+esc(lbl(x.b,s.k))+'</b>'+fmt(x.c.t[s.k])+'</span>').join('')+'</div>'+
+      ([x.c.driver?'Chofer '+x.c.driver+' · '+x.c.plate:'',x.c.rampa?'Rampa '+x.c.rampa:'',x.c.seal?'Sello '+x.c.seal:'',x.c.recv&&x.c.recv.wms?'Recepción WMS '+x.c.recv.wms:''].filter(Boolean).map(esc).join(' · ').replace(/^(.+)$/,'<div class="muted bit-x">$1</div>'))+'</div>').join('')+
+     bks.slice(0,4).map(b=>'<div class="bit-card"><div class="bit-ch"><b class="mono">'+esc(b.ref)+'</b>'+tipoTag(b)+'<span class="muted">Booking Last Mile · '+b.qty+' × '+esc(b.size)+' · '+esc(b.naviera)+'</span>'+stagePill(b,ui.role)+'</div>'+trk(b)+'</div>').join('')+
+     shs.slice(0,4).map(x=>'<div class="bit-card"><div class="bit-ch"><b class="mono">'+esc(x.docRef)+'</b>'+ffTag(x.modo)+'<span class="muted">'+esc(x.origen)+' → '+esc(x.destino)+' · '+esc(CL(x.clientId).short)+'</span>'+sPill(x)+'</div>'+ffTrk(x)+'</div>').join('')+
+     qs.slice(0,4).map(x=>'<div class="bit-card"><div class="bit-ch"><b class="mono">'+esc(x.num)+'</b>'+ffTag(x.modo)+'<span class="muted">'+esc(x.origen)+' → '+esc(x.destino)+' · '+esc(CL(x.clientId).short)+'</span>'+qPill(x)+'</div></div>').join('');
+  }
+  const all=state.log.filter(e=>e.at>=d&&e.at<=h&&(!ui.bitU||e.u===ui.bitU)&&(!q||bNorm(e.t).includes(q)||(e.refs||[]).some(x=>bNorm(x).includes(q)))),L=all.slice(0,300);
+  return (ficha?'<div class="bit-cards">'+ficha+'</div>':'')+
+   '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Acciones</h2><span class="psect-cnt">'+all.length+'</span></div>'+
+   (L.length?'<div class="tw"><table class="t bit-t"><thead><tr><th>Día y hora</th><th>Usuario</th><th>Rol</th><th>Acción</th></tr></thead><tbody>'+L.map(e=>'<tr><td data-l="Día y hora" class="mono">'+fmt(e.at)+'</td><td data-l="Usuario">'+(e.u?'<b>'+esc(e.u)+'</b> <span class="muted">'+esc(uName(e.u))+'</span>':'<span class="muted">Sistema / datos de ejemplo</span>')+'</td><td data-l="Rol">'+esc(ROLES[e.r]||'—')+'</td><td data-l="Acción">'+esc(e.t)+((e.refs||[]).length&&!q?'<div class="muted bit-x">'+esc(e.refs.join(' · '))+'</div>':'')+'</td></tr>').join('')+'</tbody></table></div>'+(all.length>L.length?'<p class="muted" style="font-size:12px">Mostrando las 300 más recientes de '+all.length+'. Usa los filtros para acotar.</p>':''):'<div class="empty">'+(q?'Sin acciones registradas para «'+esc(ui.bitQ)+'».':'Sin acciones en este período.')+'</div>')+'</div>';
+}
+
 /* ===== modal / toast ===== */
 let lastFocus=null;
 function openModal(html,narrow){const ov=document.getElementById('ov'),sh=document.getElementById('sheet');lastFocus=document.activeElement;sh.className='sheet'+(narrow?' narrow':'');sh.innerHTML=html;ov.hidden=false;const f=sh.querySelector('input,select,textarea,button.btn');if(f)f.focus();}
@@ -1762,7 +1795,7 @@ function render(){
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
-  v.innerHTML=ui.sec==='cotiz'?vCotiz():ui.sec==='emb'?vEmb():ui.sec==='config'?vConfig():ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  v.innerHTML=ui.sec==='bit'?vBit():ui.sec==='cotiz'?vCotiz():ui.sec==='emb'?vEmb():ui.sec==='config'?vConfig():ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
   accordion(v);
   window.scrollTo(0,sy);
   tickClocks();
@@ -1829,7 +1862,7 @@ document.addEventListener('click',e=>{
    case 'notif':menu(false);ov.dataset.detail='';notifSheet();break;
    case 'pushOn':pushActivate();break;
    case 'pushOff':{const s=pushSubs();delete s[ui.user];pushSet(s);renderRoles();notifSheet();toast('Notificaciones desactivadas para '+uName(ui.user)+'.');break;}
-   case 'pushTest':swReg.showNotification('Prueba de Last Mile',{body:'Así te llegarán los avisos.\nPara: '+uName(ui.user),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n')}).catch(()=>{});toast('Aviso de prueba enviado.');break;
+   case 'pushTest':swReg.showNotification('Prueba de DP Bridge',{body:'Así te llegarán los avisos.\nPara: '+uName(ui.user),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n')}).catch(()=>{});toast('Aviso de prueba enviado.');break;
    case 'install':installApp();break;
    case 'themeToggle':ui.theme=theme()==='light'?'dark':'light';save();render();break;
    case 'sec':closeModal();if(document.getElementById('drawer').classList.contains('open'))menu(false);ui.sec=t.dataset.k;save();render();window.scrollTo(0,0);break;
@@ -1887,7 +1920,7 @@ document.addEventListener('click',e=>{
    case 'approve':case 'reject':{const f=state.confs.find(x=>x.id===t.dataset.id),b=B(f.bookingId);
      b.containers.filter(c=>c.confId===f.id&&c.status==='confirmado').forEach(c=>{if(a==='approve'){c.status='asignado';stamp(c,'asignado');}else{c.status='publicado';c.carrierId=null;c.confId=null;if(c.t)delete c.t.confirmado;}});
      f.status=a==='approve'?'aprobada':'rechazada';
-     log('DP World '+(a==='approve'?'aprobó':'rechazó')+' '+f.qty+' cont. de '+b.ref+' para '+CN[f.carrierId]);
+     log('DP World '+(a==='approve'?'aprobó':'rechazó')+' '+f.qty+' cont. de '+b.ref+' para '+CN[f.carrierId],numsDe(b.containers.filter(c=>c.confId===f.id)));
      notify([f.carrierId],a==='approve'?'Confirmación aprobada':'Confirmación rechazada',f.qty+' cont. de '+b.ref+(a==='approve'?' · ya puedes agendar el retiro.':' · vuelven a publicarse.'),b.id);if(a==='approve')notify([cli(b)],'Transporte asignado',f.qty+' cont. de '+b.ref+' ya tienen transporte DP World.',b.id);
      commit();toast(a==='approve'?'Aprobado. '+CN[f.carrierId]+' ya puede operar.':'Rechazado. Los contenedores vuelven a publicarse.',a!=='approve');break;}
    case 'force':{const b=B(t.dataset.id),cid=document.getElementById('asg-'+b.id).value,n=openCount(b);
@@ -1900,12 +1933,12 @@ document.addEventListener('click',e=>{
    case 'doAdv':doAdv(t.dataset.b,t.dataset.c,t.dataset.to);break;
    case 'bulk':{const b=B(t.dataset.b),to=t.dataset.to;const cs=b.containers.filter(c=>c.carrierId===ui.carrier&&c.status===t.dataset.from);
      const sp=stepOf(b,to);cs.forEach(c=>{c.status=to;stamp(c,to);if(sp.proof)c.proofs.push({type:sp.proof,name:sp.proof.replace(/\W+/g,'_')+'_'+c.number.replace(/\W/g,'')+'.pdf',by:'transportista'});});
-     log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+lbl(b,to).toLowerCase());notifyAdv(b,to,cs.length,ui.carrier,cs.length===1?cs[0].number:'');commit();toast(cs.length+' contenedores actualizados a «'+lbl(b,to)+'».');break;}
+     log(CN[ui.carrier]+' marcó '+cs.length+' cont. de '+b.ref+' como '+lbl(b,to).toLowerCase(),numsDe(cs));notifyAdv(b,to,cs.length,ui.carrier,cs.length===1?cs[0].number:'');commit();toast(cs.length+' contenedores actualizados a «'+lbl(b,to)+'».');break;}
    case 'reset':state=seed();migrate();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });
-document.addEventListener('change',e=>{const t=e.target;if(t.closest&&t.closest('#qfForm')){qVis();}if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='waSet'){const k=t.dataset.k,v=t.value.trim(),c=WA.find(x=>x[0]===k)[1];const ok=!v||waGrupo(v)||(!/[a-z]/i.test(v)&&waIntl(v).length>=10&&waIntl(v).length<=15);if(!ok){toast('Revisa '+c+': pon un celular de WhatsApp (6123-4567 o +507 6123-4567) o el enlace de un grupo (https://chat.whatsapp.com/…).',true);return;}if(v&&!waGrupo(v)){t.value=waFmt(waIntl(v));}const val=t.value.trim();if(k==='coord'){if(!val){toast('Coordinación necesita un número.',true);t.value=waNum(k);return;}state.settings.auto.tel=val;}else state.settings.wa[k]=val;log('WhatsApp de '+c+': '+(v||'sin número'));save();toast('Número de '+c+' guardado.');}});
-document.addEventListener('input',e=>{const t=e.target;if(t.id==='cq'){const box=document.getElementById('rgBox');if(box){const q=parseInt(t.value,10)||0;box.innerHTML=reglasHtml(reglas(B(box.dataset.b),ui.carrier,q));}}});
+document.addEventListener('change',e=>{const t=e.target;if(['bitU','bitD','bitH'].indexOf(t.id)>=0){ui[t.id]=t.value;save();document.getElementById('bitRes').innerHTML=bitRes();return;}if(t.closest&&t.closest('#qfForm')){qVis();}if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='waSet'){const k=t.dataset.k,v=t.value.trim(),c=WA.find(x=>x[0]===k)[1];const ok=!v||waGrupo(v)||(!/[a-z]/i.test(v)&&waIntl(v).length>=10&&waIntl(v).length<=15);if(!ok){toast('Revisa '+c+': pon un celular de WhatsApp (6123-4567 o +507 6123-4567) o el enlace de un grupo (https://chat.whatsapp.com/…).',true);return;}if(v&&!waGrupo(v)){t.value=waFmt(waIntl(v));}const val=t.value.trim();if(k==='coord'){if(!val){toast('Coordinación necesita un número.',true);t.value=waNum(k);return;}state.settings.auto.tel=val;}else state.settings.wa[k]=val;log('WhatsApp de '+c+': '+(v||'sin número'));save();toast('Número de '+c+' guardado.');}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id==='bitQ'){ui.bitQ=t.value;save();document.getElementById('bitRes').innerHTML=bitRes();return;}if(t.id==='cq'){const box=document.getElementById('rgBox');if(box){const q=parseInt(t.value,10)||0;box.innerHTML=reglasHtml(reglas(B(box.dataset.b),ui.carrier,q));}}});
 document.addEventListener('change',e=>{
   const t=e.target, a=t.dataset&&t.dataset.act;
   if(a==='autoSet'){const v=parseInt(t.value,10);if(v>=+t.min&&v<=+t.max){state.settings.auto[t.dataset.k]=v;log('Aprobación automática: '+t.dataset.k+' = '+v);commit();}return;}

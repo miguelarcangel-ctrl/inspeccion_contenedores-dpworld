@@ -1,4 +1,4 @@
-/* Last Mile · service worker
+/* DP Bridge · service worker
    Muestra los avisos push aunque la app esté cerrada y, al tocarlos, abre el booking.
    En el prototipo los avisos los genera la misma app; en producción llegan del
    servidor (Supabase Edge Function con web-push) por el evento 'push'. */
@@ -8,7 +8,7 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { texto: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.titulo || 'Last Mile · DP World', {
+  e.waitUntil(self.registration.showNotification(d.titulo || 'DP Bridge · DP World', {
     body: d.texto || '', icon: 'icon-192.png', badge: 'badge-96.png',
     tag: d.tag, data: { bk: d.bk || null }
   }));

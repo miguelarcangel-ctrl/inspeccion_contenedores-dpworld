@@ -948,3 +948,22 @@ main.lm-main{padding-block:18px 56px}
 .lm .trk-d.late{color:#ff6680;font-weight:700}
 .lm.theme-light .trk-d.late{color:var(--red)}
 @media (max-width:520px){.lm .trk-d{font-size:8.5px;white-space:normal}}
+
+/* bitácora */
+.lm .bit-f{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:10px;align-items:end}
+.lm .bit-cards{display:grid;gap:10px;margin-bottom:14px}
+.lm .bit-card{display:grid;gap:10px;padding:12px 14px;border:1px solid var(--b1);border-radius:var(--r);background:var(--card)}
+.lm .bit-ch{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lm .bit-ch b{font-size:16px}
+.lm .bit-st{display:flex;flex-wrap:wrap;gap:8px}
+.lm .bit-st span{display:grid;gap:1px;padding:6px 10px;border:1px solid var(--b1);border-radius:var(--r2);background:var(--b0);font-size:12.5px}
+.lm .bit-st b{font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--t2)}
+.lm .bit-x{font-size:12px}
+.lm .bit-t td{vertical-align:top}
+@media (max-width:820px){.lm .bit-f{grid-template-columns:1fr 1fr}.lm .bit-q{grid-column:1/-1}}
+@media (max-width:640px){
+  .lm .bit-t,.lm .bit-t tbody{display:block;width:100%;min-width:0!important}.lm .bit-t thead{display:none}
+  .lm .bit-t tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;padding:10px 12px;border-top:1px solid var(--b1)}
+  .lm .bit-t td{display:block;padding:0;border:0}.lm .bit-t td::before{content:attr(data-l);display:block;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
+  .lm .bit-t td:last-child{grid-column:1/-1}
+}
