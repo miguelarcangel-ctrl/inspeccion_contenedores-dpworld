@@ -138,6 +138,8 @@ const waNum=k=>k==='coord'?state.settings.auto.tel:(state.settings.wa||{})[k]||'
 function migrate(){
   // freight forwarding: datos de ejemplo y usuarios de ventas y operaciones FF para demos ya guardadas
   if(!state.ffSeeded){const f=seedFF();state.quotes=state.quotes||f.quotes;state.ships=state.ships||f.ships;if(state.users)USERS0.filter(x=>x.role==='ventas'||x.role==='opsff').forEach(x=>{if(!state.users.some(u=>u.u===x.u))state.users.push(Object.assign({pass:'demo',active:true},x));});state.ffSeeded=true;}
+  // cotizaciones aceptadas sin embarque (demos anteriores): se crean por reservar
+  (state.quotes||[]).forEach(q=>{if(q.status==='aceptada'&&!q.shipId)ffPorReservar(q);});
   // demos guardadas antes del módulo de importación reciben los ejemplos sin perder lo demás
   if(!state.impoSeeded){if(!state.bookings.some(isImpo))state.bookings.push(...seedImpo(Date.now()));state.impoSeeded=true;}
   state.settings.wa=state.settings.wa||{ger:'+507 6000-0001',ventas:'+507 6000-0002'};
@@ -436,7 +438,7 @@ function attention(){
 function renderRoles(){
   const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
   const qn=st=>misQ().filter(q=>st.indexOf(qSt(q))>=0).length,sAtt=()=>state.ships.filter(s=>!ffDone(s)&&(ffLate(s)||ffStale(s))).length;
-  const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin,cotiz:qn(['solicitada'])},cliente:{cotiz:qn(['cotizada','info'])},ventas:{cotiz:qn(['solicitada','cotizando'])},opsff:{emb:sAtt(),cotiz:state.quotes.filter(q=>qSt(q)==='aceptada'&&!q.shipId).length}}[ui.role]||{};
+  const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin,cotiz:qn(['solicitada'])},cliente:{cotiz:qn(['cotizada','info'])},ventas:{cotiz:qn(['solicitada','cotizando'])},opsff:{emb:sAtt()+state.ships.filter(s=>s.pend&&!ffStale(s)).length}}[ui.role]||{};
   nav.hidden=true;
   document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   const cur=(secs.find(x=>x[0]===ui.sec)||secs[0]||[])[1];
@@ -1563,7 +1565,6 @@ function qActs(q){
   if(r==='ventas'||r==='admin'){if(st==='solicitada')h+=A('qTomar','Tomar','btn-green');if(st==='solicitada'||st==='cotizando')h+=A('qPedir','Pedir datos')+A('qCotizar','Enviar cotización','btn-green');
     if(st==='cotizada')h+=A('qAcepta','Aceptó','btn-green')+A('qRechaza','No aceptó','btn-red');}
   if(r==='cliente'){if(st==='info')h+=A('qResp','Responder','btn-green');if(st==='cotizada')h+=A('qAcepta','Aceptar','btn-green')+A('qRechaza','Rechazar','btn-red');}
-  if((r==='opsff'||r==='admin')&&st==='aceptada'&&!q.shipId)h+=A('sNuevo','Crear embarque','btn-green');
   if(q.quote&&q.quote.pdf)h+=docBtn('q/'+q.id+'/'+q.quote.pdf,'Cotización '+q.num+'.pdf',q.num);
   return h;
 }
@@ -1582,8 +1583,7 @@ function vCotiz(){
   const sec=(t,l,e)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+t+'</h2><span class="psect-cnt">'+l.length+'</span></div>'+(l.length?qRows(l):'<div class="empty">'+e+'</div>')+'</div>';
   return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Cotizaciones</h1><p class="sc-sub">'+(cli?'Pide la cotización de tu carga internacional: marítima, aérea o terrestre. Te respondemos con la propuesta y, si la aceptas, la convertimos en tu embarque.':'Solicitudes de los clientes. Ventas cotiza con su propio formato (PDF); si el cliente acepta, operaciones FF la convierte en embarque.')+'</p></div>'+(cli||ui.role==='ventas'||ui.role==='admin'?'<button class="btn-p btn-green inl" data-act="qNueva">Solicitar cotización</button>':'')+'</div>'+
    '<div class="stats">'+sb(L.filter(q=>st(q)==='solicitada').length,'sa',cli?'Enviadas':'Nuevas')+sb(L.filter(q=>st(q)==='cotizada').length,'en','Esperando respuesta')+sb(tasa===null?'—':tasa+' %','ok','Tasa de cierre')+(cli?'':sb(prom===null?'—':prom+' h','sl','Tiempo de respuesta'))+'</div>'+
-   (ui.role==='opsff'?sec('Aceptadas · crear embarque',ganadas.filter(q=>!q.shipId),'Nada pendiente de convertir en embarque.'):'')+
-   sec('En proceso',abiertas,'No hay solicitudes en proceso.')+sec('Aceptadas',ui.role==='opsff'?ganadas.filter(q=>q.shipId):ganadas,'Aún no hay cotizaciones aceptadas.')+sec('No cerradas',cerradas,'Ninguna.')+'</section>';
+   sec('En proceso',abiertas,'No hay solicitudes en proceso.')+sec('Aceptadas',ganadas,'Aún no hay cotizaciones aceptadas.')+sec('No cerradas',cerradas,'Ninguna.')+'</section>';
 }
 function qVer(id){const q=state.quotes.find(x=>x.id===id);
   openModal('<div class="sh-h"><div><span class="flbl">'+esc(CL(q.clientId).name)+' · '+ffTipo(q.tipo)+' · '+FF_MODOS[q.modo].t+'</span><h3 class="mtitle">'+esc(q.num)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
@@ -1601,7 +1601,7 @@ function qDo(a,id){
   if(a==='qCotizarDo'){const vig=fromPa(g('qm-vig')+'T23:59'),f=(document.getElementById('qm-pdf').files||[])[0];if(!(vig>Date.now()))return err('La vigencia debe ser una fecha futura.');
     if(f&&!isPdf(f))return err('La cotización debe ser un PDF.');const pdf=f?f.name:'Cotizacion_'+q.num+'.pdf';if(f)FILES.put('q/'+q.id+'/'+pdf,f).catch(()=>{});
     q.quote={at:Date.now(),vig:vig,monto:parseFloat(g('qm-monto'))||null,nota:g('qm-nota'),pdf:pdf};q.status='cotizada';notify([q.clientId],'Tu cotización está lista',q.num+' · vigente hasta '+fmtDia(vig));}
-  if(a==='qAceptaDo'){q.status='aceptada';q.decision={at:Date.now(),by:ui.role};notify(['ventas','opsff'],'Cotización aceptada',q.num+' · '+CL(q.clientId).short+' · listo para crear el embarque');}
+  if(a==='qAceptaDo'){q.status='aceptada';q.decision={at:Date.now(),by:ui.role};const sh=ffPorReservar(q);log('Embarque '+sh.ref+' creado por reservar desde '+q.num);notify(['ventas','opsff'],'Cotización aceptada',q.num+' · '+CL(q.clientId).short+' · embarque '+sh.ref+' creado, falta confirmar la reserva');}
   if(a==='qRechazaDo'){q.status='rechazada';q.rechazo={m:g('qm-m'),nota:g('qm-nota'),at:Date.now(),by:ui.role};notify(['ventas'],'Cotización no aceptada',q.num+' · '+g('qm-m'));}
   log((ui.role==='cliente'?CL(q.clientId).short:'Ventas')+': '+q.num+' → '+Q_ST[q.status][0].toLowerCase());closeModal();commit();toast(q.num+': '+Q_ST[q.status][0]+'.');
 }
@@ -1609,7 +1609,7 @@ function qDo(a,id){
 const ffDone=s=>s.hitos.every(h=>h.real);
 const ffCur=s=>s.hitos.findIndex(h=>!h.real);
 const ffLate=s=>s.eta&&s.etaPlan&&s.eta>s.etaPlan+12*HOUR?Math.round((s.eta-s.etaPlan)/DAY):0;
-const ffStale=s=>!ffDone(s)&&Date.now()-Math.max(...s.hitos.filter(h=>h.real).map(h=>h.real))>48*HOUR;
+const ffStale=s=>!ffDone(s)&&Date.now()-Math.max(s.creado||0,...s.hitos.filter(h=>h.real).map(h=>h.real))>48*HOUR;
 const misS=()=>state.ships.filter(s=>ui.role==='cliente'?s.clientId===ui.client:ui.role==='bodega'?s.bodega:true);
 function ffMap(s){
   const o=ffLug(s.origen),d=ffLug(s.destino);if(!o||!d||!window.LM_DOTS)return '';
@@ -1650,17 +1650,17 @@ function ffDet(s){
    '<div style="display:grid;gap:12px;align-content:start"><div><span class="flbl">Hitos</span><div class="ff-tl">'+s.hitos.map((h,i)=>{const c=!ffDone(s)&&i===ffCur(s),eta=h.l==='Arribo'&&!h.real;
      return '<div class="ff-h'+(h.real?' ok':c?' cur':'')+'"><span class="ff-dot"></span><div><b>'+esc(h.l)+'</b>'+(c?'<small>Siguiente paso</small>':'')+(h.nota?'<small>'+esc(h.nota)+'</small>':'')+'</div><div class="when">'+(h.real?fmtDia(h.real)+(ffDep(h.l)&&s.etd?'<small>ETD '+fmtDia(s.etd)+'</small>':'')+(h.l==='Arribo'&&s.etaPlan?'<small>ETA '+fmtDia(s.etaPlan)+'</small>':''):ffDep(h.l)&&s.etd?'ETD '+fmtDia(s.etd):eta&&s.eta?(ffLate(s)?'<span class="ff-late">ETA '+fmtDia(s.eta)+'</span><small>antes '+fmtDia(s.etaPlan)+'</small>':'ETA '+fmtDia(s.eta)):'—')+'</div></div>';}).join('')+'</div></div>'+
    (lm?'<div class="ff-link"><span>Último tramo en Last Mile: booking de importación <b class="mono">'+esc(lm.ref)+'</b>.</span>'+stagePill(lm,ui.role)+'</div>':s.transporte&&s.bodega&&s.modo==='fcl'&&!ffDone(s)?'<div class="ff-link"><span>Al marcar el arribo se crea el booking de importación en Last Mile para el retiro en puerto y la descarga en CLP.</span></div>':'')+
-   ((ui.role==='opsff'||ui.role==='admin')&&!ffDone(s)?'<div class="row"><button class="btn-p btn-green inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[ffCur(s)].l)+'</button><button class="btn-p btn-navy inl" data-act="sEta" data-id="'+s.id+'">Cambiar ETA</button></div>':'')+'</div></div>';
+   ((ui.role==='opsff'||ui.role==='admin')&&!ffDone(s)?'<div class="row">'+(s.pend?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">Confirmar reserva</button>':'<button class="btn-p btn-green inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[ffCur(s)].l)+'</button><button class="btn-p btn-navy inl" data-act="sEta" data-id="'+s.id+'">Cambiar ETA</button>')+'</div>':'')+'</div></div>';
 }
 function sRows(list,right){
   if(!list.length)return '';
   return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Arribo estimado</span><span>Embarque</span><span class="trk-key">Avance · <b>azul</b> es el siguiente paso</span><span>Estado</span></div>'+list.map(s=>{const k='emb:'+s.id,dn=ffDone(s),lt=ffLate(s),i=ffCur(s);
    return '<details class="bkr'+(lt||ffStale(s)?' alert':'')+'" data-key="'+k+'"'+(ui.open[k]?' open':'')+'><summary class="bkr-s"><span class="bkr-chev" aria-hidden="true">›</span>'+
-    '<span class="bkr-p '+(dn?'done':lt?'over':'soon')+'"><span class="bkr-pl">'+(dn?'Completado':'ETA '+esc(s.destino.split(',')[0]))+'</span><b>'+(dn?fmtDia(s.hitos[s.hitos.length-1].real):s.eta?fmtDia(s.eta):'Por confirmar')+'</b><span class="bkr-st">'+(dn?ffFinal(s)[0]:lt?'Retraso +'+lt+' d · antes '+fmtDia(s.etaPlan):'A tiempo')+'</span></span>'+
+    '<span class="bkr-p '+(dn?'done':lt?'over':'soon')+'"><span class="bkr-pl">'+(dn?'Completado':'ETA '+esc(s.destino.split(',')[0]))+'</span><b>'+(dn?fmtDia(s.hitos[s.hitos.length-1].real):s.eta?fmtDia(s.eta):'Por confirmar')+'</b><span class="bkr-st">'+(dn?ffFinal(s)[0]:s.pend?'Por reservar':lt?'Retraso +'+lt+' d · antes '+fmtDia(s.etaPlan):'A tiempo')+'</span></span>'+
     '<span class="bkr-id"><span class="bk-ref">'+esc(s.docRef||s.ref)+'</span><span class="bkr-tags">'+ffTag(s.modo)+'<span class="tag">'+ffTipo(s.tipo)+'</span></span><span class="ff-route">'+esc(s.origen)+' → '+esc(s.destino)+'</span><span class="ff-route">'+ffEtdEta(s)+'</span></span>'+ffTrk(s)+
     '<span class="bkr-r">'+right(s)+'</span></summary><div class="bkr-b">'+ffDet(s)+'</div></details>';}).join('')+'</div>';
 }
-const sPill=s=>ffDone(s)?'<span class="cli-badge on">'+ffFinal(s)[1]+'</span>':'<span class="cli-badge '+(ffLate(s)?'off':ffStale(s)?'wait':'tr')+'">'+esc(s.hitos[Math.max(0,ffCur(s)-1)].l)+'</span>';
+const sPill=s=>s.pend?'<span class="cli-badge '+(ffStale(s)?'wait':'tr')+'">Por reservar</span>':ffDone(s)?'<span class="cli-badge on">'+ffFinal(s)[1]+'</span>':'<span class="cli-badge '+(ffLate(s)?'off':ffStale(s)?'wait':'tr')+'">'+esc(s.hitos[Math.max(0,ffCur(s)-1)].l)+'</span>';
 function vEmb(){
   if(kbVista()==='tab'){const cli=ui.role==='cliente';return kbView(ui.role==='bodega'?'Llegadas internacionales':cli?'Mis embarques':'Embarques',cli?'Tu carga internacional con DP World, por etapa. Toca una tarjeta para ver ruta e hitos.':ui.role==='bodega'?'Embarques que vienen a la bodega CLP, por etapa.':'Cada tarjeta es un embarque; registra el siguiente hito desde la tarjeta.',cli?'<button class="btn-p btn-green inl" data-act="qNueva">Solicitar cotización</button>':'',kbShips(misS()));}
   const L=misS(),act=L.filter(s=>!ffDone(s)),done=L.filter(ffDone),ops=ui.role==='opsff'||ui.role==='admin',cli=ui.role==='cliente';
@@ -1674,24 +1674,28 @@ function vEmb(){
    '<div class="stats">'+sb(act.length,'en','En camino')+sb(act.filter(ffLate).length,act.filter(ffLate).length?'er':'sl','Con retraso')+(ops?sb(act.filter(ffStale).length,act.filter(ffStale).length?'sa':'sl','Sin hito hace 48 h'):'')+sb(sem.length,'sa','Arriban en 7 días')+sb(done.length,'ok','Completados')+'</div>'+
    (ops?sec('Requieren atención',att,'Todo al día.'):'')+sec(ops?'Todos los activos':'En camino',ops?act:act,'Sin embarques en camino.')+sec('Completados',done,'Aún no hay embarques completados.')+'</section>';
 }
-function sNuevo(qid){const q=state.quotes.find(x=>x.id===qid),M=FF_MODOS[q.modo],d=t=>toPa(t).slice(0,10);
-  openModal('<div class="sh-h"><div><span class="flbl">'+esc(q.num)+' · '+esc(CL(q.clientId).short)+' · '+M.t+'</span><h3 class="mtitle">Crear embarque</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
-   '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">'+M.ref+'</span><input class="fin mono" id="sn-ref" placeholder="DPWPA-24140"></label><label class="f"><span class="flbl">'+M.carrier+'</span><input class="fin" id="sn-car" value="'+esc(q.pref||'')+'"></label>'+
-   '<label class="f"><span class="flbl">'+M.veh+' (opcional)</span><input class="fin" id="sn-veh"></label><label class="f"><span class="flbl">Salida estimada (ETD)</span><input class="fin" type="date" id="sn-etd" value="'+d(Date.now()+5*DAY)+'"></label><label class="f"><span class="flbl">Arribo estimado (ETA)</span><input class="fin" type="date" id="sn-eta" value="'+d(Date.now()+(q.modo==='aer'?8:q.modo==='ftl'?9:30)*DAY)+'"></label></div>'+
-   '<div class="abox inf"><div>Toma los datos de la solicitud: ruta, carga, incoterm y el último tramo (transporte interno: <b>'+(yes(q.transporte)?'sí':'no')+'</b> · bodega DP World: <b>'+(yes(q.bodega)?'sí':'no')+'</b>). La reserva queda registrada como primer hito.</div></div><div class="err" id="snErr"></div></div>'+
-   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="sNuevoDo" data-id="'+qid+'">Crear embarque</button></div>',true);}
-function ffCarga(q){return q.modo==='fcl'?(q.conts||[]).map(c=>c.n+' × '+c.t).join(' · '):q.modo==='lcl'?(q.bultos||'')+' bultos'+(qCalc(q)?' · '+qCalc(q):''):q.modo==='aer'?(q.bultos||'')+' bultos'+(qCalc(q)?' · '+qCalc(q).split(' · ')[1]:''):(q.unidad||'');}
-function sNuevoDo(qid){const q=state.quotes.find(x=>x.id===qid),g=k=>document.getElementById(k).value.trim(),err=t=>{document.getElementById('snErr').textContent=t;};
-  if(!g('sn-ref')||!g('sn-car'))return err('Completa '+FF_MODOS[q.modo].ref+' y '+FF_MODOS[q.modo].carrier.toLowerCase()+'.');
-  const etd=fromPa(g('sn-etd')+'T12:00'),eta=fromPa(g('sn-eta')+'T12:00');if(!(eta>etd))return err('El arribo debe ser después de la salida.');
-  const s={id:uid('s'),ref:'FF-'+(24140+state.ships.length),quoteId:q.id,clientId:q.clientId,tipo:q.tipo,modo:q.modo,origen:q.origen,destino:q.destino,docRef:FF_MODOS[q.modo].ref+' '+g('sn-ref').toUpperCase(),carrier:g('sn-car'),veh:g('sn-veh'),
-    carga:ffCarga(q),conts:q.conts||[],peso:q.peso,incoterm:q.incoterm,desc:q.desc,transporte:yes(q.transporte),bodega:yes(q.bodega),etd:etd,eta:eta,etaPlan:eta};
-  s.hitos=ffHitos(s).map(l=>({l:l,real:null}));s.hitos[0].real=Date.now();
-  state.ships.unshift(s);q.shipId=s.id;log('Operaciones FF creó el embarque '+s.docRef+' desde '+q.num);
-  notify([q.clientId],'Tu embarque está reservado',s.docRef+' · '+s.origen+' → '+s.destino+' · ETA '+fmtDia(eta));
-  closeModal();ui.sec='emb';ui.open['emb:'+s.id]=1;ui.secOpen[ui.role+'|emb|Todos los activos']=true;commit();toast('Embarque '+s.docRef+' creado.');
+function ffPorReservar(q){
+  // al aceptar la cotización el embarque nace solo con los datos de la solicitud; Operaciones FF completa la reserva
+  const s={id:uid('s'),ref:'FF-'+(24140+state.ships.length),quoteId:q.id,clientId:q.clientId,tipo:q.tipo,modo:q.modo,origen:q.origen,destino:q.destino,docRef:'',carrier:q.pref||'',veh:'',
+    carga:ffCarga(q),conts:q.conts||[],peso:q.peso,incoterm:q.incoterm,desc:q.desc,transporte:yes(q.transporte),bodega:yes(q.bodega),etd:null,eta:null,etaPlan:null,pend:true,creado:Date.now()};
+  s.hitos=ffHitos(s).map(l=>({l:l,real:null}));state.ships.unshift(s);q.shipId=s.id;return s;
 }
-function sHito(id){const s=state.ships.find(x=>x.id===id),h=s.hitos[ffCur(s)];
+function sNuevo(id){const s=state.ships.find(x=>x.id===id),q=state.quotes.find(x=>x.id===s.quoteId)||{},M=FF_MODOS[s.modo],d=t=>toPa(t).slice(0,10);
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(s.ref)+(q.num?' · '+esc(q.num):'')+' · '+esc(CL(s.clientId).short)+' · '+M.t+'</span><h3 class="mtitle">Confirmar reserva</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">'+M.ref+'</span><input class="fin mono" id="sn-ref" placeholder="DPWPA-24140"></label><label class="f"><span class="flbl">'+M.carrier+'</span><input class="fin" id="sn-car" value="'+esc(s.carrier||'')+'"></label>'+
+   '<label class="f"><span class="flbl">'+M.veh+' (opcional)</span><input class="fin" id="sn-veh"></label><label class="f"><span class="flbl">Salida estimada (ETD)</span><input class="fin" type="date" id="sn-etd" value="'+d(Date.now()+5*DAY)+'"></label><label class="f"><span class="flbl">Arribo estimado (ETA)</span><input class="fin" type="date" id="sn-eta" value="'+d(Date.now()+(s.modo==='aer'?8:s.modo==='ftl'?9:30)*DAY)+'"></label></div>'+
+   '<div class="abox inf"><div>El embarque se creó al aceptar la cotización con ruta, carga, incoterm y último tramo (transporte interno: <b>'+(s.transporte?'sí':'no')+'</b> · bodega DP World: <b>'+(s.bodega?'sí':'no')+'</b>). Al confirmar, la reserva queda como primer hito y el cliente recibe el aviso.</div></div><div class="err" id="snErr"></div></div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="sNuevoDo" data-id="'+id+'">Confirmar reserva</button></div>',true);}
+function ffCarga(q){return q.modo==='fcl'?(q.conts||[]).map(c=>c.n+' × '+c.t).join(' · '):q.modo==='lcl'?(q.bultos||'')+' bultos'+(qCalc(q)?' · '+qCalc(q):''):q.modo==='aer'?(q.bultos||'')+' bultos'+(qCalc(q)?' · '+qCalc(q).split(' · ')[1]:''):(q.unidad||'');}
+function sNuevoDo(id){const s=state.ships.find(x=>x.id===id),g=k=>document.getElementById(k).value.trim(),err=t=>{document.getElementById('snErr').textContent=t;},M=FF_MODOS[s.modo];
+  if(!g('sn-ref')||!g('sn-car'))return err('Completa '+M.ref+' y '+M.carrier.toLowerCase()+'.');
+  const etd=fromPa(g('sn-etd')+'T12:00'),eta=fromPa(g('sn-eta')+'T12:00');if(!(eta>etd))return err('El arribo debe ser después de la salida.');
+  Object.assign(s,{docRef:M.ref+' '+g('sn-ref').toUpperCase(),carrier:g('sn-car'),veh:g('sn-veh'),etd:etd,eta:eta,etaPlan:eta,pend:false});s.hitos[0].real=Date.now();
+  log('Operaciones FF confirmó la reserva del embarque '+s.ref+' · '+s.docRef);
+  notify([s.clientId],'Tu embarque está reservado',s.docRef+' · '+s.origen+' → '+s.destino+' · ETA '+fmtDia(eta));
+  closeModal();ui.open['emb:'+s.id]=1;commit();toast('Reserva confirmada · '+s.docRef+'.');
+}
+function sHito(id){const s=state.ships.find(x=>x.id===id),h=s.hitos[ffCur(s)];if(s.pend)return sNuevo(id);
   openModal('<div class="sh-h"><div><span class="flbl">'+esc(s.docRef)+' · '+esc(CL(s.clientId).short)+'</span><h3 class="mtitle">Registrar: '+esc(h.l)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
    '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">Fecha y hora real (Panamá)</span><input class="fin" type="datetime-local" id="sh-t" value="'+toPa(Date.now())+'"></label>'+(h.l!=='Arribo'&&s.hitos.some((x,i)=>x.l==='Arribo'&&i>ffCur(s))?'<label class="f"><span class="flbl">Nueva ETA (opcional)</span><input class="fin" type="date" id="sh-eta"></label>':'')+
    '<label class="f" style="grid-column:1/-1"><span class="flbl">Nota para el cliente (opcional)</span><input class="fin" id="sh-n" placeholder="Ej. transbordo en Busan, zarpa el 17 oct"></label></div>'+
@@ -1817,6 +1821,7 @@ function semBk(b,cs){
 }
 function semShip(s){
   if(ffDone(s))return ['ok','Completado'];
+  if(s.pend)return ffStale(s)?['warn','Sin reservar hace 48 h']:['ok','Por reservar'];
   const lt=ffLate(s);if(lt)return ['bad','Retraso +'+lt+' d'];
   if(ffStale(s))return ['warn','Sin hito hace 48 h'];
   return ['ok','A tiempo'];
@@ -1901,9 +1906,9 @@ function kbShips(list){
   const items=list.map(s=>{const sem=semShip(s),i=ffCur(s),dn=ffDone(s);
     return {col:shipCol(s),sem:sem,html:kbCard({act:'embOpen',id:s.id,sem:sem,ref:s.docRef||s.ref,tags:ffTag(s.modo),
       lines:['<span class="muted">'+esc(s.origen.split(',')[0])+' → '+esc(s.destino.split(',')[0])+'</span>','<span>'+ffEtdEta(s)+'</span>',
-        dn?'<span class="muted">'+esc(ffFinal(s)[1])+'</span>':'<span class="muted">Siguiente</span><b>'+esc(s.hitos[i].l)+'</b>',cli?'':'<span class="muted">'+esc(CL(s.clientId).short)+' · '+ffTipo(s.tipo)+'</span>'],
+        dn?'<span class="muted">'+esc(ffFinal(s)[1])+'</span>':'<span class="muted">Siguiente</span><b>'+(s.pend?'Confirmar reserva':esc(s.hitos[i].l))+'</b>',cli?'':'<span class="muted">'+esc(CL(s.clientId).short)+' · '+ffTipo(s.tipo)+'</span>'],
       prog:(dn?s.hitos.length:i)+'/'+s.hitos.length,
-      btn:ops&&!dn?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[i].l)+'</button>':''})};});
+      btn:ops&&!dn?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">'+(s.pend?'Confirmar reserva':'Registrar: '+esc(s.hitos[i].l))+'</button>':''})};});
   return kbBoard([['orig','En origen'],['tran','En tránsito'],['arr','Arribado · último tramo'],['done','Completados']],items);
 }
 function embModal(id){const s=state.ships.find(x=>x.id===id);if(!s){closeModal();return;}const sem=semShip(s);
