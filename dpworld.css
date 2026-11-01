@@ -941,3 +941,10 @@ main.lm-main{padding-block:18px 56px}
 .lm .sw.on i{transform:translateX(20px)}
 .lm .sw:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.lm .sw,.lm .sw i{transition:none}}
+
+/* fechas bajo cada etapa del tracking: cumplida (normal), plan / ETD / ETA (tenue), vencida (rojo) */
+.lm .trk-d{font-size:9.5px;line-height:1.1;color:var(--t2);text-align:center;white-space:nowrap;min-height:11px;font-variant-numeric:tabular-nums}
+.lm .trk-d.plan{color:var(--t3)}
+.lm .trk-d.late{color:#ff6680;font-weight:700}
+.lm.theme-light .trk-d.late{color:var(--red)}
+@media (max-width:520px){.lm .trk-d{font-size:8.5px;white-space:normal}}
