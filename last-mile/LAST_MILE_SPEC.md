@@ -239,6 +239,14 @@ En la bandeja se ven la tasa de cierre y el tiempo de respuesta.
 
 **Pendiente:** para que Last Mile entregue en la dirección del cliente, hoy el booking siempre va a CLP; falta también el último tramo de LCL y aéreo en Last Mile.
 
+## Tablero (vista por defecto)
+Bookings Last Mile (cliente, transportista y admin) y Embarques se ven como tablero: una columna por etapa y una tarjeta por booking o embarque, en una sola pantalla sin scroll (cada columna hace scroll por dentro; en celular las columnas se deslizan de lado).
+- **Semáforo** en cada tarjeta: rojo = alerta (venció sin cubrir, posible no-show, retiro o entrega atrasados, embarque con retraso), ámbar = en riesgo (sin cubrir, por aprobar, pendiente de liberación, sin cita a menos de 24 h, ventana por cerrar, embarque sin hito hace 48 h), verde = a tiempo o completado. Las etiquetas de tipo (Expo, Impo, FCL…) son neutras: el color solo indica estado.
+- **Resumen Alertas · En riesgo · Todo bien**: al tocar uno quedan en pantalla solo esas tarjetas, hasta tocar «Ver todo».
+- Columnas de bookings: Por cubrir, Por retirar, En operación, Por cerrar, Completados (el transportista ve además Disponibles y Por aprobar, solo con sus contenedores). Embarques: En origen, En tránsito, Arribado · último tramo, Completados.
+- La acción principal va en la tarjeta (Confirmar disponibilidad, Agendar retiro, Revisar y aprobar, Asignar o reabrir, Registrar hito); tocar la tarjeta abre el detalle completo.
+- «Lista» (admin: «Lista y ajustes») mantiene la vista anterior con todos los paneles.
+
 ## Bitácora
 - **Acceso:** menú ☰ → Bitácora, para admin, bodega y operaciones FF.
 - **Qué registra cada acción:** día y hora, usuario y rol, y los contenedores que tocó.
