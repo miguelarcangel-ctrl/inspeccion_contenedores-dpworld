@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DP Bridge Flujogramas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F3F8;--surf:#fff;--t:#1B1B2F;--t2:rgba(27,27,47,.72);--t3:rgba(27,27,47,.5);--line:rgba(26,16,96,.14);--soft:#E9EBF3;--pri:#1A1060;--ind:#5b5bd6;
+  --ok:#00996b;--ok-bg:#e3f5ee;--warn:#b86e00;--warn-bg:#fbf0dc;--bad:#d10037;--bad-bg:#fbe3ea;--inf:#0070b8;--inf-bg:#e2eef8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d0b28;--surf:#16143d;--t:#fff;--t2:rgba(255,255,255,.72);--t3:rgba(255,255,255,.5);--line:rgba(255,255,255,.12);--soft:#1e1c50;--pri:#c9c6ff;--ind:#8f8df0;
+  --ok:#00C389;--ok-bg:rgba(0,195,137,.12);--warn:#f5a20b;--warn-bg:rgba(245,162,11,.12);--bad:#ff4d7a;--bad-bg:rgba(232,0,61,.14);--inf:#4db8ff;--inf-bg:rgba(0,153,230,.14)}}
+:root[data-theme="dark"]{--bg:#0d0b28;--surf:#16143d;--t:#fff;--t2:rgba(255,255,255,.72);--t3:rgba(255,255,255,.5);--line:rgba(255,255,255,.12);--soft:#1e1c50;--pri:#c9c6ff;--ind:#8f8df0;
+  --ok:#00C389;--ok-bg:rgba(0,195,137,.12);--warn:#f5a20b;--warn-bg:rgba(245,162,11,.12);--bad:#ff4d7a;--bad-bg:rgba(232,0,61,.14);--inf:#4db8ff;--inf-bg:rgba(0,153,230,.14)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:15px/1.55 Barlow,system-ui,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 64px}
+header.top{background:var(--surf);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-top:10px;padding-bottom:10px}
+header.top b{font:800 18px 'Barlow Condensed';letter-spacing:.5px;text-transform:uppercase;color:var(--pri)}
+header.top span{color:var(--t3);font-size:13px}
+header.top button{margin-left:auto;background:none;border:1px solid var(--line);color:var(--t);border-radius:8px;padding:6px 12px;font:700 12px 'Barlow Condensed';letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+h1{font:800 clamp(28px,5vw,40px)/1.05 'Barlow Condensed';text-transform:uppercase;margin:28px 0 6px;letter-spacing:.3px}
+h2{font:800 26px/1.1 'Barlow Condensed';text-transform:uppercase;margin:44px 0 6px;letter-spacing:.3px;scroll-margin-top:70px}
+h3{font:700 18px 'Barlow Condensed';text-transform:uppercase;letter-spacing:.5px;margin:22px 0 6px}
+.lead{color:var(--t2);max-width:80ch;margin:0 0 12px}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.toc a{color:var(--t);text-decoration:none;border:1px solid var(--line);background:var(--surf);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600}
+.toc a:hover{border-color:var(--ind)}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
+.kpi div{background:var(--surf);border:1px solid var(--line);border-left:5px solid var(--k);border-radius:12px;padding:12px 14px}
+.kpi b{display:block;font:800 30px/1 'Barlow Condensed';color:var(--k)}.kpi span{font-size:13px;color:var(--t2)}
+.k-ok{--k:var(--ok)}.k-warn{--k:var(--warn)}.k-bad{--k:var(--bad)}.k-inf{--k:var(--ind)}
+.dg{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px;overflow-x:auto;margin:10px 0}
+.dg .mermaid{min-width:760px;text-align:center}
+.dg.wide .mermaid{min-width:980px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--t2);margin:6px 0}
+.legend i{display:inline-block;width:22px;height:0;border-top:2px solid var(--t2);vertical-align:middle;margin-right:6px}
+.legend i.d{border-top-style:dashed;border-color:var(--ind)}
+.legend i.r{border-color:var(--bad)}
+.legend em{font-style:normal;display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:6px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surf);margin:10px 0}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13.5px}
+th{text-align:left;font:700 11.5px 'Barlow Condensed';letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);padding:10px 12px;border-bottom:1px solid var(--line);background:var(--soft)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.p{display:inline-flex;align-items:center;gap:6px;font:700 12px Barlow;border-radius:20px;padding:2px 10px;white-space:nowrap}
+.p::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
+.p.ok{color:var(--ok);background:var(--ok-bg)}.p.warn{color:var(--warn);background:var(--warn-bg)}.p.bad{color:var(--bad);background:var(--bad-bg)}.p.inf{color:var(--ind);background:var(--inf-bg)}
+.note{border-left:4px solid var(--ind);background:var(--surf);border-radius:0 10px 10px 0;padding:10px 14px;margin:10px 0;color:var(--t2)}
+.note b{color:var(--t)}
+ul.c{margin:6px 0;padding-left:18px}ul.c li{margin:3px 0}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:0 6px;font:700 11px 'Barlow Condensed';letter-spacing:1px;text-transform:uppercase;color:var(--t2)}
+.road{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.road .card h3{margin-top:0}
+.foot{margin-top:40px;color:var(--t3);font-size:13px}
+@media print{header.top{position:static}.dg{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap"><b>DP Bridge</b><span>Flujogramas, convergencias y brechas · versión 1 · 1 nov 2026</span><button type="button" id="thm">Tema</button></div></header>
+<main class="wrap">
+
+<h1>Flujogramas y análisis del proceso</h1>
+<p class="lead">Mapa completo de lo que hace hoy el prototipo DP Bridge (Freight forwarding, Bookings Last Mile, bodega con Control de Rampas, flota con NFC): quién hace cada paso, dónde se cruzan los roles, qué condiciones deciden el camino, qué le falta para operar a nivel regional y qué conviene optimizar. Cada flujograma está dibujado en carriles por rol.</p>
+<div class="legend"><span><i></i>Paso dentro del mismo rol</span><span><i class="d"></i>Traspaso entre roles o sistemas (punto de convergencia)</span><span><i class="r"></i>Camino de excepción</span><span><em style="background:var(--bad-bg);border:1px solid var(--bad)"></em>Alerta</span><span><em style="background:var(--warn-bg);border:1px solid var(--warn)"></em>En riesgo</span><span><em style="background:var(--ok-bg);border:1px solid var(--ok)"></em>Cierre correcto</span></div>
+<nav class="toc">
+<a href="#resumen">Resumen</a><a href="#mapa">1 · Mapa general</a><a href="#cotiz">2 · Cotización</a><a href="#emb">3 · Embarque</a><a href="#cobertura">4 · Cobertura del booking</a><a href="#expo">5 · Exportación</a><a href="#impo">6 · Importación</a><a href="#flota">7 · Flota y NFC</a><a href="#conv">8 · Convergencias</a><a href="#reglas">9 · Condiciones</a><a href="#ux">10 · Experiencia por rol</a><a href="#brechas">11 · Brechas</a><a href="#regional">12 · Regional</a><a href="#opt">13 · Optimizaciones</a><a href="#kpi">14 · Indicadores</a>
+</nav>
+
+<h2 id="resumen">Resumen ejecutivo</h2>
+<div class="kpi">
+<div class="k-inf"><b>7</b><span>roles con vista propia: cliente, empresa transportista, chofer, bodega, admin, Ventas FF, Operaciones FF</span></div>
+<div class="k-inf"><b>14</b><span>puntos de convergencia entre roles o sistemas</span></div>
+<div class="k-ok"><b>11</b><span>de 14 ya tienen registro, aviso y responsable</span></div>
+<div class="k-bad"><b>6</b><span>brechas de alto impacto, 4 de ellas propias del salto regional</span></div>
+</div>
+<div class="grid g2">
+<div class="card"><h3 style="margin-top:0">Lo que ya está bien resuelto</h3><ul class="c">
+<li><b>Un solo hilo de punta a punta:</b> cotización → embarque → arribo → booking de importación → retiro → bodega → devolución, sin volver a digitar datos entre módulos.</li>
+<li><b>Trabajo por excepción:</b> la aprobación automática con 6 reglas deja al admin solo lo que falla; lo vencido, el no-show y los retrasos suben solos como alerta.</li>
+<li><b>Trazabilidad:</b> bitácora por usuario, día y hora, con búsqueda por contenedor, booking o BL; cada contenedor guarda la hora en que entró a cada etapa.</li>
+<li><b>Visibilidad sin exponer al subcontratado:</b> el cliente ve todo como DP World; el transportista no ve la mercancía.</li>
+<li><b>Semáforo único</b> en tableros, cola y flota: verde, ámbar, rojo con el mismo significado en toda la app.</li>
+</ul></div>
+<div class="card"><h3 style="margin-top:0">Lo que falta cubrir</h3><ul class="c">
+<li><b>Cierre económico:</b> no hay traspaso a facturación al cliente ni liquidación al transportista; el proceso termina en «Devuelto» y ahí se corta.</li>
+<li><b>Prueba de entrega y reclamos:</b> la novedad de descarga existe en importación, pero no hay POD firmado en exportación ni flujo de reclamo por daño o faltante.</li>
+<li><b>Cambios después de crear el booking:</b> el cliente puede cancelar contenedores, pero no mover una ventana ni cambiar el lugar de entrega con un flujo controlado.</li>
+<li><b>Regional:</b> país, zona horaria, moneda, aduana y bodegas están fijos en Panamá; no hay separación de datos por país ni un rol regional.</li>
+<li><b>Chofer como rol propio:</b> está diseñado (maqueta NFC), pero en la app el chofer aún lo opera la empresa transportista.</li>
+</ul></div>
+</div>
+<p class="note"><b>Madurez estimada:</b> nivel 4 de 5 (controlado) en cobertura, ejecución y embarques: hay reglas, indicadores y control de excepciones. Nivel 2 a 3 en el cierre económico y en reclamos, que hoy viven fuera de la app. Para el salto regional, el diseño del proceso sirve tal cual; lo que cambia es la configuración por país.</p>
+
+<h2 id="mapa">1 · Mapa general de punta a punta</h2>
+<p class="lead">Cómo se conectan los módulos y los sistemas. Las flechas punteadas son los traspasos: ahí es donde se pierde información si no hay un dato compartido.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  subgraph CLI["Cliente"]
+    C1(["Necesita mover carga"]) --> C2{"¿Tipo de servicio?"}
+  end
+  subgraph FF["Freight forwarding · Ventas y Operaciones FF"]
+    F1["Cotizar"] --> F2["Crear embarque"] --> F3["Registrar hitos hasta el arribo"]
+    F3 --> F4{"¿FCL con transporte
+interno y bodega?"}
+  end
+  subgraph LM["Bookings Last Mile · Admin y transportistas"]
+    L1["Publicar booking"] --> L2["Cubrir con transportista"] --> L3["Retiro, entrega y devolución"]
+  end
+  subgraph BOD["Bodega · Control de Rampas"]
+    B1["Cola de rampa"] --> B2["Inspeccionar, cargar o descargar, sellar"]
+  end
+  subgraph EXT["Sistemas externos"]
+    X1[("WMS · inventario por SKU")]
+    X2[("Aduana · BL y levante")]
+    X3[("Naviera o aerolínea · estatus")]
+    X4[("Facturación · ERP")]
+  end
+  C2 -- "Internacional" --> F1
+  C2 -- "Solo transporte" --> L1
+  F4 -- "Sí: se crea booking de importación" --> L1
+  F4 -- "No" --> FIN1(["Cliente retira o mueve por su cuenta"])
+  L3 -.->|"Retiro marcado"| B1
+  B2 -.->|"Listo para salir"| L3
+  B2 -.->|"Recepción por SKU"| X1
+  X2 -.->|"Liberación"| L2
+  X3 -.->|"Hoy manual: Operaciones FF digita"| F3
+  L3 -.->|"Brecha: no existe el traspaso"| X4
+  L3 --> FIN2(["Devuelto · ciclo operativo cerrado"])
+  classDef gap fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class X4 gap
+  class FIN2 okc
+</pre></div>
+
+<h2 id="cotiz">2 · Solicitud y cotización (freight forwarding)</h2>
+<p class="lead">Del pedido del cliente a la cotización aceptada. El formulario pide solo lo obligatorio para cada modalidad (FCL, LCL, aéreo, terrestre FTL) y muestra los campos según las respuestas.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  subgraph CLI["Cliente"]
+    A(["Solicita cotización"]) --> A1["Elige modalidad: FCL, LCL, aéreo, FTL"]
+    A1 --> A2["Completa ruta, carga, incoterm, fechas"]
+    A2 --> A3["Indica último tramo: transporte interno sí o no, bodega DP World sí o no"]
+    A3 --> A4{"¿Completo?"}
+    A4 -- "No" --> A2
+    R1["Recibe cotización y aviso"] --> R2{"¿Responde?"}
+    R2 -- "Rechaza" --> FR(["Fin: rechazada"])
+    R2 -- "Vence sin respuesta" --> FV(["Fin: vencida"])
+    I1["Completa datos faltantes"]
+  end
+  subgraph VEN["Ventas FF"]
+    V1["Toma la solicitud: En cotización"] --> V2{"¿Datos suficientes?"}
+    V2 -- "No" --> V3["Marca Faltan datos con nota"]
+    V2 -- "Sí" --> V4["Cotiza con naviera o aerolínea"] --> V5["Envía cotización PDF con vigencia"]
+  end
+  subgraph OPS["Operaciones FF"]
+    O1["Ve la aceptada en Aceptadas · crear embarque"] --> O2[["Crear embarque · ver flujo 3"]]
+  end
+  A4 -. "Sí · Aviso a Ventas y admin" .-> V1
+  V3 -.->|"Aviso al cliente"| I1
+  I1 -.-> V2
+  V5 -.->|"Aviso al cliente"| R1
+  R2 -. "Acepta · Aviso a Operaciones FF" .-> O1
+  classDef bad fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class FV,FR bad
+  class O2 okc
+</pre></div>
+<div class="grid g2">
+<div class="card"><h3 style="margin-top:0">Convergencias</h3><ul class="c"><li>Cliente → Ventas: la solicitud ya llega estructurada; no hay que llamar para pedir lo básico.</li><li>Ventas → Operaciones FF: el embarque se crea con los datos de la solicitud; solo se agrega el documento (HBL, AWB, carta de porte), transportista y fechas.</li></ul></div>
+<div class="card"><h3 style="margin-top:0">Brechas</h3><ul class="c"><li><span class="p warn">Media</span> No hay tarifa estructurada: la cotización es un PDF. Sin el monto no se puede comparar cotizado contra facturado ni medir margen.</li><li><span class="p warn">Media</span> No hay aviso de cotización por vencer al cliente ni a Ventas.</li><li><span class="p warn">Media</span> Sin control de doble cotización si dos vendedores atienden al mismo cliente.</li></ul></div>
+</div>
+
+<h2 id="emb">3 · Embarque y conexión con el último tramo</h2>
+<p class="lead">Operaciones FF registra cada hito; el cliente lo ve al momento. La convergencia más importante del sistema está aquí: el arribo de un FCL con transporte interno y bodega crea solo el booking de importación.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  subgraph OPS["Operaciones FF"]
+    E1(["Embarque creado · hito Reserva"]) --> E2["Registra siguiente hito con fecha real"]
+    E2 --> E3{"¿Cambia ETA?"}
+    E3 -- "Sí" --> E4["Registra nueva ETA"]
+    E3 -- "No" --> E5{"¿Es el arribo?"}
+    E4 --> E5
+    E5 -- "No" --> E2
+    E5 -- "Sí" --> E6{"¿FCL + transporte
++ bodega?"}
+    E6 -- "No" --> E7["Registra hitos finales: Liberado, Retirado"]
+    E7 --> EF(["Completado"])
+  end
+  subgraph SIS["DP Bridge · automático"]
+    S1{"¿ETA +12 h?"} -- "Sí" --> S2["Alerta: Retraso +n días"]
+    S3{"¿48 h sin hito?"} -- "Sí" --> S4["En riesgo: sin hito"]
+    S5["Crea booking de importación con contenedores, BL y ventanas"]
+  end
+  subgraph CLI["Cliente"]
+    K1["Ve mapa, hitos, ETD y ETA"]
+    K2["Puede cambiar transporte interno y bodega hasta el arribo"]
+  end
+  subgraph LM["Last Mile"]
+    L1[["Cobertura del booking · flujo 4"]]
+  end
+  E2 -.->|"Aviso"| K1
+  E4 --> S1
+  E2 --> S3
+  K2 -.->|"Define el camino"| E6
+  E6 -- "Sí" --> S5
+  S5 -.->|"Aviso a transportistas y admin"| L1
+  classDef bad fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef warn fill:#fbf0dc,stroke:#b86e00,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class S2 bad
+  class S4 warn
+  class EF,S5 okc
+</pre></div>
+<div class="grid g2">
+<div class="card"><h3 style="margin-top:0">Condiciones que deciden el camino</h3><ul class="c"><li>Solo FCL con <b>ambos</b> interruptores encendidos crea el booking. LCL y aéreo con transporte interno hoy no generan un booking (se mueve carga suelta, no contenedor).</li><li>Los interruptores se bloquean cuando ya hay arribo.</li></ul></div>
+<div class="card"><h3 style="margin-top:0">Brechas</h3><ul class="c"><li><span class="p bad">Alta</span> LCL, aéreo y FTL con transporte interno no tienen último tramo en la app: hace falta un booking de <b>carga suelta</b> (camión, no contenedor).</li><li><span class="p warn">Media</span> Hitos y ETA se digitan a mano; a escala regional conviene leer el estatus de navieras y aerolíneas.</li><li><span class="p warn">Media</span> Sin manejo de transbordo como hito propio ni de embarque parcial.</li></ul></div>
+</div>
+
+<h2 id="cobertura">4 · Cobertura del booking Last Mile</h2>
+<p class="lead">Desde que el booking se publica hasta que cada contenedor tiene transportista en firme. Es el proceso con más condiciones y donde la aprobación por excepción ahorra más trabajo.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  A(["Cliente crea booking"]) -.->|"Aviso"| P1{"¿Modo?"}
+  subgraph PUB["Publicación · automático"]
+    P1 -- "Directo" --> P2["Solo al preferido · 1 h"]
+    P1 -- "Abierto" --> P3["A todos los activos · 1 h"]
+  end
+  subgraph TRA["Empresa transportista"]
+    T1{"¿Puede cubrir?"}
+    T2["Confirma cantidad"]
+  end
+  P2 -.-> T1
+  P3 -.-> T1
+  T1 -- "No, era el preferido" --> P3
+  T1 -- "Sí" --> T2
+  subgraph AUT["Aprobación · automático"]
+    R1{"¿Pasa las 6 reglas?"}
+    R2["Aprobado solo · revertible 15 min"]
+  end
+  T2 --> R1
+  R1 -- "Sí" --> R2
+  subgraph ADM["Admin DP World"]
+    M1["Revisa el motivo"] --> M9{"¿Aprueba?"}
+    M4{"¿Qué hace con lo vencido?"}
+  end
+  R1 -. "No o auto apagada" .-> M1
+  M9 -- "Sí" --> FIN
+  M9 -- "No" --> RP["Vuelve a publicarse"]
+  R2 --> FIN(["Asignado en firme"])
+  R2 -. "Admin revierte" .-> RP
+  RP --> X1
+  P2 & P3 --> X1{"¿Pasó 1 h sin cubrir?"}
+  X1 -- "Sí" --> X2["Alerta: venció sin cubrir"] -.-> M4
+  M4 -- "Asigna directo" --> FIN
+  M4 -- "Reabre a todos" --> P3
+  FIN -.->|"Aviso al cliente"| K1(["Cliente ve: transporte asignado"])
+  classDef bad fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef warn fill:#fbf0dc,stroke:#b86e00,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class X2 bad
+  class M1 warn
+  class FIN,R2 okc
+</pre></div>
+<div class="tw"><table><thead><tr><th>Regla de aprobación automática</th><th>Si falla</th><th>Comentario para el salto regional</th></tr></thead><tbody>
+<tr><td>Documentos del transportista vigentes</td><td>Pasa a «Por aprobar» con el motivo</td><td>Cada país exige permisos distintos: la lista de documentos debe ser configurable por país.</td></tr>
+<tr><td>Capacidad: cabezales comprometidos en esa ventana ≤ flota</td><td>Por aprobar</td><td>Con el registro de flota (NFC), la capacidad sale de cabezales activos reales, no de un número declarado.</td></tr>
+<tr><td>Desempeño 90 días ≥ mínimo (retiro y entrega)</td><td>Por aprobar</td><td>Un transportista nuevo nunca pasa: conviene un período de prueba con tope de contenedores.</td></tr>
+<tr><td>Equipo compatible (refrigerado requiere genset)</td><td>Por aprobar</td><td>Agregar chasis especiales (plataforma, lowboy) y carga peligrosa.</td></tr>
+<tr><td>Carga general</td><td>Carga especial siempre la revisa DP World</td><td>Correcto; mantener.</td></tr>
+<tr><td>Máximo 2 transportistas por booking</td><td>Por aprobar</td><td>Configurable por cliente.</td></tr>
+</tbody></table></div>
+
+<h2 id="expo">5 · Ejecución de exportación</h2>
+<p class="lead">Retiro del vacío, carga en bodega y entrega lleno en el puerto. La cola de rampas es la convergencia con Control de Rampas: bodega ejecuta allá y DP Bridge solo consulta.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  subgraph TRA["Empresa transportista"]
+    T1(["Contenedores asignados"]) --> T2["Agenda cita de retiro"]
+    N1["Reasignado o cancelado"]
+  end
+  subgraph CHO["Chofer · con NFC en el cabezal"]
+    H1["Retira vacío en patio naviera · toque NFC"]
+    H2["Llega a bodega CLP o MSL · toque en portería"]
+    H3["Sale con lleno · en tránsito"]
+    H4["Entrega lleno en puerto · prueba"]
+    H5["Devuelve chasis o cierra"]
+  end
+  subgraph BOD["Bodega · Control de Rampas"]
+    B0["Asigna turno de rampa"]
+    B1{"¿Rampa libre?"}
+    B2["Espera en buffer · CLP 16 puestos · MSL sin buffer"]
+    B3["Inspecciona contenedor"]
+    B4{"¿Apto?"}
+    B5["Carga 20, 50, 100 %"]
+    B6["Sella y registra sello"]
+    B7["Rechaza contenedor: pide reemplazo"]
+  end
+  subgraph ADM["Admin DP World"]
+    M1{"¿3 h sin retiro
+tras la cita?"}
+    M2["Alerta: posible no-show"]
+    M3["Reasigna a otro transportista"]
+  end
+  subgraph CLI["Cliente"]
+    K0["Puede cancelar contenedores antes del retiro"]
+    K1["Ve cada etapa con fecha y aviso"]
+  end
+  T2 -.->|"Aviso a bodega"| B0
+  T2 --> M1
+  M1 -- "Sí" --> M2 --> M3 -.-> N1
+  M1 -- "No" --> H1
+  K0 -.-> N1
+  H1 -.->|"Entra solo a la cola de rampa"| H2
+  H2 -.-> B1
+  B1 -- "No" --> B2 --> B1
+  B1 -- "Sí" --> B3 --> B4
+  B4 -- "No" --> B7
+  B7 -.->|"Brecha: sin flujo en la app"| T1
+  B4 -- "Sí" --> B5 --> B6
+  B6 -.->|"Listo para salir"| H3 --> H4 --> H5
+  H5 --> FIN(["Devuelto"])
+  H1 & H3 & H4 -.->|"Aviso"| K1
+  classDef bad fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef warn fill:#fbf0dc,stroke:#b86e00,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class M2,B7 bad
+  class B2 warn
+  class FIN okc
+</pre></div>
+<div class="grid g2">
+<div class="card"><h3 style="margin-top:0">Fortalezas</h3><ul class="c"><li>El retiro mete el contenedor en la cola de bodega sin que nadie lo digite.</li><li>Las alertas tempranas (sin cita a menos de 24 h, rampa sin turno) se anticipan al problema.</li><li>Con NFC el chofer no escribe nada: toca la etiqueta y el estado cambia.</li></ul></div>
+<div class="card"><h3 style="margin-top:0">Brechas</h3><ul class="c"><li><span class="p bad">Alta</span> Contenedor rechazado en inspección (dañado, sucio, no apto para alimento): no hay flujo de reemplazo ni de cargo a la naviera.</li><li><span class="p bad">Alta</span> No hay prueba de entrega estructurada en el puerto (EIR, ticket de terminal) que cierre el contenedor de forma auditable.</li><li><span class="p warn">Media</span> Cambio de ventana pedido por el cliente después de asignar: hoy solo puede cancelar.</li><li><span class="p warn">Media</span> Cutoff de la naviera (cierre de recepción del buque) no está como fecha límite propia.</li></ul></div>
+</div>
+
+<h2 id="impo">6 · Ejecución de importación</h2>
+<p class="lead">Retiro del lleno en puerto, descarga en bodega y devolución del vacío. El candado es la liberación: sin BL liberado y levante, el chofer no puede marcar el retiro.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  subgraph ORI["Origen del booking"]
+    O1(["Arribo FCL en embarque · o booking creado por el cliente"])
+  end
+  subgraph ADU["Trámite de liberación · DP World o cliente"]
+    A1{"¿Quién tramita?"}
+    A2["Marca BL liberado por la naviera"]
+    A3["Marca levante de aduana o DMC"]
+    A4{"¿Ambos listos?"}
+  end
+  subgraph TRA["Transportista y chofer"]
+    T1[["Cobertura · flujo 4"]] --> T2["Agenda cita"]
+    T3["Retiro lleno del puerto"]
+    T4["Retira vacío de bodega"]
+    T5["Devuelve vacío al patio"]
+  end
+  subgraph BOD["Bodega · Control de Rampas"]
+    B1["Revisa sello"] --> B2{"¿Sello coincide?"}
+    B3["Descarga 20, 50, 100 %"]
+    B4["Registra novedades: faltante, sobrante, daño"]
+    B5["Vacío listo"]
+  end
+  subgraph WMS["WMS"]
+    W1[("Recepción por SKU")]
+  end
+  subgraph CLI["Cliente"]
+    K1["Ve liberación, retiro, descarga y devolución"]
+    K2["Recibe aviso de novedad"]
+  end
+  subgraph SIS["DP Bridge · automático"]
+    S1{"¿Pasó el día libre?"} -- "Sí" --> S2["Alerta: demora en puerto"]
+    S3{"¿Devolución vencida?"} -- "Sí" --> S4["Alerta: detención del contenedor"]
+  end
+  O1 --> A1 --> A2 --> A3 --> A4
+  O1 --> T1
+  A4 -- "No" --> A4W["Pendiente de liberación · en riesgo"]
+  A4W --> A2
+  A4 -. "Sí · Desbloquea el retiro" .-> T3
+  T2 --> T3 --> S1
+  T3 -.->|"Entrada a la cola"| B1
+  B2 -- "No" --> B4
+  B2 -- "Sí" --> B3
+  B3 --> B4 --> B5
+  B4 -.-> K2
+  B3 -.->|"Fuera de la app"| W1
+  B5 -.-> T4 --> T5 --> S3
+  T5 --> FIN(["Vacío devuelto"])
+  classDef bad fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef warn fill:#fbf0dc,stroke:#b86e00,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class S2,S4 bad
+  class A4W warn
+  class FIN okc
+</pre></div>
+<div class="grid g2">
+<div class="card"><h3 style="margin-top:0">Fortalezas</h3><ul class="c"><li>El candado de liberación evita retiros que terminan retenidos en la garita.</li><li>El trámite puede hacerlo DP World o el cliente, con la misma lista.</li><li>No reemplaza al WMS: solo coordina y da visibilidad.</li></ul></div>
+<div class="card"><h3 style="margin-top:0">Brechas</h3><ul class="c"><li><span class="p bad">Alta</span> Una novedad (faltante, daño, sello distinto) avisa al cliente pero no abre un caso con responsable, fotos y cierre.</li><li><span class="p warn">Media</span> No hay costo estimado de demora o detención cuando vence el día libre: el riesgo se ve en rojo, pero no en dinero.</li><li><span class="p warn">Media</span> La recepción por SKU vive en el WMS sin enlace de vuelta: el cliente no ve «recibido en inventario».</li><li><span class="p warn">Media</span> Importación directa a cliente (sin bodega) no está como variante.</li></ul></div>
+</div>
+
+<h2 id="flota">7 · Alta de transportista, flota y NFC</h2>
+<p class="lead">Maqueta aprobada: la empresa transportista registra su flota; el admin da de alta o de baja; bodega y Control de Rampas leen los mismos datos y ya no registran choferes ni placas a mano.</p>
+<div class="dg wide"><pre class="mermaid">
+flowchart TD
+  subgraph EMP["Empresa transportista"]
+    E1(["Solicita registro"]) --> E2["Sube documentos: aviso de operación, póliza, permisos"]
+    E3["Registra choferes: cédula, licencia, celular"]
+    E4["Registra cabezales: placa, chasis, revisado, póliza"]
+    E5["Asigna etiqueta NFC a cada cabezal"]
+  end
+  subgraph ADM["Admin DP World"]
+    A1{"¿Documentos vigentes?"}
+    A2["Da de alta la empresa"]
+    A3["Rechaza con motivo"]
+    A4{"¿Falta grave?"}
+    A5["Da de baja al chofer: su NFC queda inactivo"]
+  end
+  subgraph SIS["DP Bridge · automático"]
+    S1{"¿Vence en 30 días?"} -- "Sí" --> S2["En riesgo"]
+    S3{"¿Vencido?"} -- "Sí" --> S4["Alerta: no asignable a viajes"]
+  end
+  subgraph BOD["Bodega y portería · CLP y MSL"]
+    B1["Lee etiqueta en portería"] --> B2{"¿NFC activo?"}
+    B2 -- "Sí" --> B3["Registra llegada con chofer y placa"]
+    B2 -- "No" --> B4["No entra: aviso a admin"]
+  end
+  E2 -.-> A1
+  A1 -- "No" --> A3 -.-> E2
+  A1 -- "Sí" --> A2 -.->|"Habilita registrar flota"| E3
+  E3 --> E4 --> E5 --> S1 --> S3
+  A4 -- "Sí" --> A5
+  E5 -.->|"Datos compartidos"| B1
+  A5 -.-> B2
+  B3 --> FIN(["Viaje trazable sin digitar"])
+  classDef bad fill:#fbe3ea,stroke:#d10037,color:#1B1B2F
+  classDef warn fill:#fbf0dc,stroke:#b86e00,color:#1B1B2F
+  classDef okc fill:#e3f5ee,stroke:#00996b,color:#1B1B2F
+  class S4,B4 bad
+  class S2 warn
+  class FIN okc
+</pre></div>
+
+<h2 id="conv">8 · Matriz de convergencias</h2>
+<p class="lead">Cada punto donde el trabajo pasa de un rol o sistema a otro. Es donde más se pierde información; la columna «Estado» dice si hoy está cubierto.</p>
+<div class="tw"><table><thead><tr><th>#</th><th>De → a</th><th>Qué pasa</th><th>Medio</th><th>Riesgo si falla</th><th>Estado</th></tr></thead><tbody>
+<tr><td>1</td><td>Cliente → Ventas FF</td><td>Solicitud de cotización</td><td>Formulario + aviso</td><td>Cotizar con datos incompletos</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>2</td><td>Ventas FF → Cliente</td><td>Cotización con vigencia</td><td>PDF + aviso</td><td>Precio sin estructura, sin margen medible</td><td><span class="p warn">Parcial</span></td></tr>
+<tr><td>3</td><td>Cliente → Operaciones FF</td><td>Cotización aceptada</td><td>Estado + aviso</td><td>Embarque sin crear</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>4</td><td>Naviera → Operaciones FF</td><td>Hitos y ETA</td><td>Digitación manual</td><td>ETA desactualizada, cliente mal informado</td><td><span class="p warn">Parcial</span></td></tr>
+<tr><td>5</td><td>Embarque → Last Mile</td><td>Arribo crea booking de importación</td><td>Automático</td><td>Contenedor sin transporte tras el arribo</td><td><span class="p ok">Cubierto · solo FCL</span></td></tr>
+<tr><td>6</td><td>Cliente → Admin y transportistas</td><td>Booking publicado</td><td>Automático + aviso</td><td>Nadie lo ve a tiempo</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>7</td><td>Transportista → Admin</td><td>Confirmación por aprobar</td><td>Reglas + aviso</td><td>Aprobación tardía</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>8</td><td>Aduana o cliente → Transportista</td><td>Liberación BL y levante</td><td>Lista + candado</td><td>Retiro retenido en garita</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>9</td><td>Transportista → Bodega</td><td>Cita y turno de rampa</td><td>Aviso + cola</td><td>Camión esperando sin rampa</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>10</td><td>Chofer → Bodega</td><td>Llegada a portería</td><td>NFC (diseñado)</td><td>Llegada no registrada</td><td><span class="p ok">Cubierto en diseño</span></td></tr>
+<tr><td>11</td><td>Bodega → Transportista</td><td>Listo para salir o vacío listo</td><td>Estado compartido</td><td>Camión no regresa a tiempo</td><td><span class="p ok">Cubierto</span></td></tr>
+<tr><td>12</td><td>Bodega → WMS</td><td>Recepción o despacho por SKU</td><td>Fuera de la app</td><td>Doble captura, inventario sin enlace</td><td><span class="p warn">Parcial</span></td></tr>
+<tr><td>13</td><td>Operación → Facturación</td><td>Servicio completado listo para facturar</td><td>No existe</td><td>Servicio sin facturar o facturado sin cierre</td><td><span class="p bad">Brecha</span></td></tr>
+<tr><td>14</td><td>Operación → Transportista (pago)</td><td>Liquidación de viajes</td><td>No existe</td><td>Disputas de pago, conciliación manual</td><td><span class="p bad">Brecha</span></td></tr>
+</tbody></table></div>
+
+<h2 id="reglas">9 · Condiciones y tiempos que gobiernan el proceso</h2>
+<div class="tw"><table><thead><tr><th>Condición</th><th>Valor hoy</th><th>Qué dispara</th><th>¿Configurable?</th></tr></thead><tbody>
+<tr><td>Plazo para confirmar un booking publicado</td><td>1 h · 30 min al republicar</td><td>Alerta «venció sin cubrir»</td><td>Sí, admin</td></tr>
+<tr><td>Ventana para revertir una aprobación automática</td><td>15 min</td><td>Botón Revertir</td><td>Sí, admin</td></tr>
+<tr><td>Desempeño mínimo para aprobar solo</td><td>95 %</td><td>Por aprobar</td><td>Sí, admin</td></tr>
+<tr><td>Posible no-show</td><td>3 h después de la cita</td><td>Alerta + reasignar</td><td>Sí, admin</td></tr>
+<tr><td>Sin cita de retiro</td><td>Menos de 24 h para la ventana</td><td>En riesgo</td><td>No</td></tr>
+<tr><td>Ventana de retiro por cerrar</td><td>Menos de 6 h</td><td>En riesgo</td><td>No</td></tr>
+<tr><td>Entrega o devolución por vencer</td><td>Menos de 24 h</td><td>En riesgo</td><td>No</td></tr>
+<tr><td>Embarque con retraso</td><td>ETA más de 12 h sobre lo planeado</td><td>Alerta</td><td>No</td></tr>
+<tr><td>Embarque sin movimiento</td><td>48 h sin hito</td><td>En riesgo</td><td>No</td></tr>
+<tr><td>Documentos de flota por vencer</td><td>Menos de 30 días</td><td>En riesgo · vencido no asignable</td><td>No</td></tr>
+<tr><td>Capacidad de bodega</td><td>CLP 6 rampas + 16 buffer · MSL 20 rampas sin buffer</td><td>Semáforo de la cola</td><td>No · fijo en código</td></tr>
+</tbody></table></div>
+<p class="note"><b>Recomendación:</b> mover todos estos umbrales a una tabla de parámetros por país y por bodega. Es condición para el salto regional: cada operación tendrá su propia realidad de puerto, tráfico y aduana.</p>
+
+<h2 id="ux">10 · Experiencia por rol</h2>
+<div class="tw"><table><thead><tr><th>Rol</th><th>Qué hace bien hoy</th><th>Fricción que queda</th><th>Mejora propuesta</th></tr></thead><tbody>
+<tr><td><b>Cliente</b></td><td>Tablero con semáforo, tracking con fechas, mapa del embarque, un solo lugar para FF y Last Mile, avisos push</td><td>Dos menús separados para lo que para él es un solo envío; no ve costos ni documentos finales (EIR, POD)</td><td>Vista «Mis envíos» que une embarque y su booking de último tramo en una sola tarjeta; descarga de POD y factura</td></tr>
+<tr><td><b>Empresa transportista</b></td><td>Confirma en un toque, sabe por qué quedó por aprobar, agenda desde la tarjeta</td><td>Opera también lo que debería hacer el chofer; no ve cuánto se le pagará</td><td>Separar el rol chofer; mostrar tarifa y liquidación por viaje</td></tr>
+<tr><td><b>Chofer</b></td><td>Diseño NFC sin digitar</td><td>Aún no existe en la app; señal móvil débil en patios y puerto</td><td>Rol propio con 3 acciones y funcionamiento sin conexión (guardar el toque y enviarlo al recuperar señal)</td></tr>
+<tr><td><b>Bodega</b></td><td>Cola de trabajo con alertas tempranas, turno por rampa, CLP y MSL</td><td>Trabaja en dos apps (Control de Rampas ejecuta, Bridge consulta)</td><td>Mantener la separación, pero con enlace directo del booking a su tarjeta en Control de Rampas</td></tr>
+<tr><td><b>Admin</b></td><td>Trabajo por excepción, tablero con alertas, bitácora</td><td>Una sola persona aprueba todo: punto único de falla fuera de horario</td><td>Respaldo por turno y escalamiento: si una alerta no se atiende en X min, avisa al supervisor</td></tr>
+<tr><td><b>Ventas FF</b></td><td>Solicitudes estructuradas, estado visible</td><td>Cotiza fuera de la app; no ve historial del cliente</td><td>Plantilla de tarifa por modalidad y ficha del cliente con su historial</td></tr>
+<tr><td><b>Operaciones FF</b></td><td>Registra hitos desde la tarjeta, ETA y retraso automáticos</td><td>Digita todo a mano</td><td>Lectura de estatus de navieras y aerolíneas; registrar solo excepciones</td></tr>
+</tbody></table></div>
+
+<h2 id="brechas">11 · Brechas priorizadas</h2>
+<div class="tw"><table><thead><tr><th>Brecha</th><th>Impacto</th><th>Tipo</th><th>Cómo cerrarla</th></tr></thead><tbody>
+<tr><td>Sin traspaso a facturación ni liquidación a transportistas</td><td><span class="p bad">Alto</span></td><td>Diseño</td><td>Estado «Listo para facturar» al devolver, con conceptos (flete, demoras, extras) y exportación al ERP; liquidación por transportista con la misma base</td></tr>
+<tr><td>Novedades y reclamos sin caso con responsable</td><td><span class="p bad">Alto</span></td><td>Diseño</td><td>Caso con fotos, responsable (naviera, transportista, bodega), plazo y cierre; visible al cliente</td></tr>
+<tr><td>Último tramo de carga suelta (LCL, aéreo, FTL)</td><td><span class="p bad">Alto</span></td><td>Diseño</td><td>Booking de camión por peso y volumen además del de contenedor</td></tr>
+<tr><td>Prueba de entrega estructurada (EIR, POD)</td><td><span class="p bad">Alto</span></td><td>Diseño</td><td>Foto o documento obligatorio al cerrar entrega y devolución; NFC registra hora y lugar</td></tr>
+<tr><td>Contenedor rechazado en inspección</td><td><span class="p bad">Alto</span></td><td>Diseño</td><td>Acción «Rechazar contenedor» en Control de Rampas que vuelve el contenedor al transportista para reemplazo</td></tr>
+<tr><td>País, zona horaria, moneda y bodegas fijas</td><td><span class="p bad">Alto</span></td><td>Diseño</td><td>Ver sección regional</td></tr>
+<tr><td>Cambio de ventana o destino después de crear</td><td><span class="p warn">Medio</span></td><td>Diseño</td><td>Solicitud de cambio que el admin aprueba y que vuelve a validar capacidad del transportista</td></tr>
+<tr><td>Admin como punto único de falla</td><td><span class="p warn">Medio</span></td><td>Disciplina</td><td>Respaldo por turno y escalamiento automático</td></tr>
+<tr><td>Cutoff de naviera y costo de demora no visibles</td><td><span class="p warn">Medio</span></td><td>Diseño</td><td>Fecha cutoff en booking de exportación; costo estimado por día de demora</td></tr>
+<tr><td>Digitación manual de hitos FF</td><td><span class="p warn">Medio</span></td><td>Diseño</td><td>Integración de estatus (por API o agregador de tracking)</td></tr>
+<tr><td>Transportista nuevo nunca aprueba solo</td><td><span class="p ok">Bajo</span></td><td>Diseño</td><td>Período de prueba con tope de contenedores</td></tr>
+<tr><td>Avisos solo dentro de la app</td><td><span class="p ok">Bajo</span></td><td>Decisión</td><td>Correo como respaldo para alertas rojas (WhatsApp descartado por ahora)</td></tr>
+</tbody></table></div>
+
+<h2 id="regional">12 · Llevarlo a nivel regional</h2>
+<p class="lead">El proceso sirve igual en cada país; lo que cambia es la configuración. Estos son los puntos que deben quedar resueltos en la base de producción antes del primer país adicional.</p>
+<div class="dg"><pre class="mermaid">
+flowchart TD
+  R(["Región"]) --> P1["País · zona horaria, moneda, idioma, aduana"]
+  R --> P2["País ..."]
+  P1 --> S1["Sitio · bodega con sus rampas, buffer y horario"]
+  P1 --> S2["Sitio · puerto o terminal"]
+  P1 --> T["Transportistas del país · documentos exigidos por ley local"]
+  P1 --> C["Clientes · pueden operar en varios países"]
+  P1 --> U["Usuarios · rol + países que ven"]
+  P1 --> Q["Parámetros · SLA, umbrales, reglas de aprobación"]
+  RA["Admin regional"] -.->|"Ve todos los países · consolida indicadores"| R
+  PA["Admin de país"] -.->|"Opera solo su país"| P1
+</pre></div>
+<div class="grid g3">
+<div class="card"><h3 style="margin-top:0">Datos y seguridad</h3><ul class="c"><li>Cada registro con país y sitio; reglas de acceso por país en la base.</li><li>Rol admin regional (lee todo) y admin de país (opera lo suyo).</li><li>Cliente multinacional ve sus envíos de todos los países.</li><li>Ley de protección de datos de cada país para datos de choferes.</li></ul></div>
+<div class="card"><h3 style="margin-top:0">Operación</h3><ul class="c"><li>Hora local de cada sitio en pantallas y avisos (hoy fija en Panamá).</li><li>Moneda local y USD en cotización y facturación.</li><li>Liberación aduanera con pasos configurables por país.</li><li>Bodegas y rampas como datos, no como código (hoy CLP y MSL fijos).</li><li>Tránsito terrestre entre países con hito de frontera (ya existe en FTL).</li></ul></div>
+<div class="card"><h3 style="margin-top:0">Experiencia</h3><ul class="c"><li>Español e inglés como mínimo.</li><li>Indicadores comparables entre países con las mismas definiciones.</li><li>Bitácora y reportes filtrables por país.</li><li>Funcionar con conexión débil para choferes.</li></ul></div>
+</div>
+
+<h2 id="opt">13 · Optimizaciones recomendadas</h2>
+<div class="road">
+<div class="card"><h3>Ahora · bajo esfuerzo</h3><ul class="c">
+<li>Parámetros por país y bodega en una tabla (umbrales, SLA, rampas).</li>
+<li>Rol chofer con NFC y modo sin conexión.</li>
+<li>Foto o documento obligatorio al entregar y devolver.</li>
+<li>Escalamiento de alertas rojas no atendidas.</li>
+<li>Aviso de cotización por vencer.</li>
+</ul></div>
+<div class="card"><h3>Siguiente · producción fase 1</h3><ul class="c">
+<li>Base compartida con Control de Rampas, con país y sitio en cada registro.</li>
+<li>Rechazo de contenedor en inspección con reemplazo.</li>
+<li>Casos de novedad y reclamo con responsable y cierre.</li>
+<li>«Listo para facturar» y liquidación a transportistas.</li>
+<li>Booking de carga suelta para LCL, aéreo y FTL.</li>
+</ul></div>
+<div class="card"><h3>Después · escala regional</h3><ul class="c">
+<li>Admin regional y tablero consolidado por país.</li>
+<li>Lectura automática de estatus de navieras y aerolíneas.</li>
+<li>Enlace de vuelta desde el WMS: recibido en inventario.</li>
+<li>Vista «Mis envíos» que une embarque y último tramo.</li>
+<li>Idioma inglés y moneda por país.</li>
+</ul></div>
+</div>
+
+<h2 id="kpi">14 · Indicadores para medir el proceso</h2>
+<div class="tw"><table><thead><tr><th>Proceso</th><th>Indicador</th><th>Cómo se calcula</th><th>Ya se puede medir</th></tr></thead><tbody>
+<tr><td>Cotización</td><td>Tiempo de respuesta</td><td>Solicitada → cotizada</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Cotización</td><td>Tasa de cierre</td><td>Aceptadas ÷ cotizadas</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Embarque</td><td>Cumplimiento de ETA</td><td>Arribos dentro de 12 h de la ETA planeada</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Cobertura</td><td>Tiempo de cobertura</td><td>Publicado → asignado</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Cobertura</td><td>Aprobación automática</td><td>Automáticas ÷ total de confirmaciones</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Ejecución</td><td>Retiro a tiempo · entrega a tiempo</td><td>Dentro de la ventana, por transportista</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Ejecución</td><td>No-show</td><td>Citas sin retiro ÷ citas</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Bodega</td><td>Espera por rampa</td><td>Llegada → rampa asignada, por sitio</td><td><span class="p warn">Con NFC</span></td></tr>
+<tr><td>Importación</td><td>Días de demora y detención</td><td>Días pasados del último día libre y del límite de devolución</td><td><span class="p ok">Sí</span></td></tr>
+<tr><td>Calidad</td><td>Novedades por cada 100 contenedores</td><td>Por naviera, transportista y bodega</td><td><span class="p warn">Parcial</span></td></tr>
+<tr><td>Cierre</td><td>Días de devuelto a facturado</td><td>Devuelto → factura emitida</td><td><span class="p bad">No · falta el traspaso</span></td></tr>
+</tbody></table></div>
+
+<p class="foot">Basado en el prototipo publicado en dp-bridge.vercel.app y en las maquetas de Cola de trabajo y Flota con NFC. Los valores de la sección 9 son los que tiene configurados hoy el prototipo.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+(function(){
+  const root=document.documentElement,src=[...document.querySelectorAll('.mermaid')].map(e=>e.textContent);
+  let saved=null;try{saved=localStorage.getItem('dpb-flujo-theme');}catch(e){}
+  if(saved)root.setAttribute('data-theme',saved);
+  const dark=()=>root.getAttribute('data-theme')==='dark'||(!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+  async function draw(){
+    const d=dark();
+    mermaid.initialize({startOnLoad:false,securityLevel:'strict',theme:'base',flowchart:{curve:'basis',htmlLabels:true,nodeSpacing:28,rankSpacing:40},
+      themeVariables:{fontFamily:'Barlow, sans-serif',fontSize:'14px',primaryColor:d?'#252368':'#ffffff',primaryBorderColor:d?'#8f8df0':'#5b5bd6',primaryTextColor:d?'#ffffff':'#1B1B2F',
+        lineColor:d?'#b9b7f5':'#5b5bd6',clusterBkg:d?'#1e1c50':'#F2F3F8',clusterBorder:d?'rgba(255,255,255,.2)':'rgba(26,16,96,.2)',titleColor:d?'#ffffff':'#1A1060',edgeLabelBackground:d?'#16143d':'#ffffff',tertiaryColor:d?'#16143d':'#ffffff'}});
+    const els=[...document.querySelectorAll('.mermaid')];
+    els.forEach((e,i)=>{e.removeAttribute('data-processed');e.textContent=src[i];});
+    await mermaid.run({nodes:els});
+  }
+  draw();
+  document.getElementById('thm').onclick=()=>{const n=dark()?'light':'dark';root.setAttribute('data-theme',n);try{localStorage.setItem('dpb-flujo-theme',n);}catch(e){}draw();};
+})();
+</script>
+</body>
+</html>
