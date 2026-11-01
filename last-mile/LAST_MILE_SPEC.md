@@ -220,6 +220,11 @@ En la bandeja se ven la tasa de cierre y el tiempo de respuesta.
 - Se crea solo al aceptar la cotización, en estado **Por reservar**, con ruta, carga, incoterm y último tramo de la solicitud. El cliente lo ve desde ese momento.
 - Operaciones FF **confirma la reserva** con el HBL, HAWB o carta de porte, el transportista y las fechas estimadas de salida y arribo (ETD y ETA). Eso registra el hito de reserva y avisa al cliente.
 - Si pasan 48 h sin confirmar la reserva, el embarque se marca en riesgo.
+- **Un dato se captura una sola vez.** Lo que ya se registró en otro paso avanza solo:
+  - Ventas no «toma» la solicitud: al abrirla queda en cotización a su nombre.
+  - Exportación FCL con transporte interno y bodega: al confirmar la reserva se crea el booking Last Mile de exportación (retiro de vacío, carga en CLP, entrega lleno antes del ETD). Cuando todos los contenedores se entregan llenos, el embarque marca solo «Carga en origen».
+  - Importación FCL con transporte interno y bodega: el arribo crea el booking de importación (como antes). La liberación de BL y levante en Last Mile marca solo «Liberado», y la descarga de todos los contenedores en bodega marca el último hito.
+  - Operaciones FF no registra a mano esos hitos; el embarque no se marca «sin hito» mientras espera a Last Mile.
 - **Hitos por modalidad:**
   - FCL: reserva, carga en origen, zarpe, arribo, liberado.
   - LCL: reserva, recibido en CFS, consolidado, zarpe, arribo, desconsolidado.

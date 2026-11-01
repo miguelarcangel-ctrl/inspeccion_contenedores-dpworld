@@ -1562,7 +1562,7 @@ const misQ=()=>state.quotes.filter(q=>ui.role!=='cliente'||q.clientId===ui.clien
 function qActs(q){
   const r=ui.role,st=qSt(q),A=(a,l,c)=>'<button class="btn-p '+(c||'btn-navy')+' inl" data-act="'+a+'" data-id="'+q.id+'">'+l+'</button>';
   let h=A('qVer','Ver solicitud');
-  if(r==='ventas'||r==='admin'){if(st==='solicitada')h+=A('qTomar','Tomar','btn-green');if(st==='solicitada'||st==='cotizando')h+=A('qPedir','Pedir datos')+A('qCotizar','Enviar cotización','btn-green');
+  if(r==='ventas'||r==='admin'){if(st==='solicitada'||st==='cotizando')h+=A('qPedir','Pedir datos')+A('qCotizar','Enviar cotización','btn-green');
     if(st==='cotizada')h+=A('qAcepta','Aceptó','btn-green')+A('qRechaza','No aceptó','btn-red');}
   if(r==='cliente'){if(st==='info')h+=A('qResp','Responder','btn-green');if(st==='cotizada')h+=A('qAcepta','Aceptar','btn-green')+A('qRechaza','Rechazar','btn-red');}
   if(q.quote&&q.quote.pdf)h+=docBtn('q/'+q.id+'/'+q.quote.pdf,'Cotización '+q.num+'.pdf',q.num);
@@ -1609,7 +1609,7 @@ function qDo(a,id){
 const ffDone=s=>s.hitos.every(h=>h.real);
 const ffCur=s=>s.hitos.findIndex(h=>!h.real);
 const ffLate=s=>s.eta&&s.etaPlan&&s.eta>s.etaPlan+12*HOUR?Math.round((s.eta-s.etaPlan)/DAY):0;
-const ffStale=s=>!ffDone(s)&&Date.now()-Math.max(s.creado||0,...s.hitos.filter(h=>h.real).map(h=>h.real))>48*HOUR;
+const ffStale=s=>!ffDone(s)&&!ffAutoHito(s,ffCur(s))&&Date.now()-Math.max(s.creado||0,...s.hitos.filter(h=>h.real).map(h=>h.real))>48*HOUR;
 const misS=()=>state.ships.filter(s=>ui.role==='cliente'?s.clientId===ui.client:ui.role==='bodega'?s.bodega:true);
 function ffMap(s){
   const o=ffLug(s.origen),d=ffLug(s.destino);if(!o||!d||!window.LM_DOTS)return '';
@@ -1649,8 +1649,8 @@ function ffDet(s){
    '<div class="ff-togs"><span class="flbl">Último tramo</span>'+tog('transporte','Transporte interno con DP World','Encendido: Last Mile coordina el tramo del puerto a destino.')+tog('bodega','Va a bodega DP World (CLP)','Encendido: la carga entra a nuestra bodega.')+'</div></div>'+
    '<div style="display:grid;gap:12px;align-content:start"><div><span class="flbl">Hitos</span><div class="ff-tl">'+s.hitos.map((h,i)=>{const c=!ffDone(s)&&i===ffCur(s),eta=h.l==='Arribo'&&!h.real;
      return '<div class="ff-h'+(h.real?' ok':c?' cur':'')+'"><span class="ff-dot"></span><div><b>'+esc(h.l)+'</b>'+(c?'<small>Siguiente paso</small>':'')+(h.nota?'<small>'+esc(h.nota)+'</small>':'')+'</div><div class="when">'+(h.real?fmtDia(h.real)+(ffDep(h.l)&&s.etd?'<small>ETD '+fmtDia(s.etd)+'</small>':'')+(h.l==='Arribo'&&s.etaPlan?'<small>ETA '+fmtDia(s.etaPlan)+'</small>':''):ffDep(h.l)&&s.etd?'ETD '+fmtDia(s.etd):eta&&s.eta?(ffLate(s)?'<span class="ff-late">ETA '+fmtDia(s.eta)+'</span><small>antes '+fmtDia(s.etaPlan)+'</small>':'ETA '+fmtDia(s.eta)):'—')+'</div></div>';}).join('')+'</div></div>'+
-   (lm?'<div class="ff-link"><span>Último tramo en Last Mile: booking de importación <b class="mono">'+esc(lm.ref)+'</b>.</span>'+stagePill(lm,ui.role)+'</div>':s.transporte&&s.bodega&&s.modo==='fcl'&&!ffDone(s)?'<div class="ff-link"><span>Al marcar el arribo se crea el booking de importación en Last Mile para el retiro en puerto y la descarga en CLP.</span></div>':'')+
-   ((ui.role==='opsff'||ui.role==='admin')&&!ffDone(s)?'<div class="row">'+(s.pend?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">Confirmar reserva</button>':'<button class="btn-p btn-green inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[ffCur(s)].l)+'</button><button class="btn-p btn-navy inl" data-act="sEta" data-id="'+s.id+'">Cambiar ETA</button>')+'</div>':'')+'</div></div>';
+   (lm?'<div class="ff-link"><span>Último tramo en Last Mile: booking de '+(isImpo(lm)?'importación':'exportación')+' <b class="mono">'+esc(lm.ref)+'</b>. Sus avances marcan aquí los hitos automáticos.</span>'+stagePill(lm,ui.role)+'</div>':s.transporte&&s.bodega&&s.modo==='fcl'&&!ffDone(s)?'<div class="ff-link"><span>'+(s.tipo==='expo'?'Al confirmar la reserva se crea el booking de exportación en Last Mile: retiro de vacío, carga en CLP y entrega lleno en el puerto.':'Al marcar el arribo se crea el booking de importación en Last Mile para el retiro en puerto y la descarga en CLP.')+'</span></div>':'')+
+   ((ui.role==='opsff'||ui.role==='admin')&&!ffDone(s)?'<div class="row">'+(ffAutoHito(s,ffCur(s))?'<span class="muted" style="font-size:13px">'+esc(s.hitos[ffCur(s)].l)+' '+ffAutoTxt(s)+'.</span>':s.pend?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">Confirmar reserva</button>':'<button class="btn-p btn-green inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[ffCur(s)].l)+'</button><button class="btn-p btn-navy inl" data-act="sEta" data-id="'+s.id+'">Cambiar ETA</button>')+'</div>':'')+'</div></div>';
 }
 function sRows(list,right){
   if(!list.length)return '';
@@ -1692,10 +1692,11 @@ function sNuevoDo(id){const s=state.ships.find(x=>x.id===id),g=k=>document.getEl
   const etd=fromPa(g('sn-etd')+'T12:00'),eta=fromPa(g('sn-eta')+'T12:00');if(!(eta>etd))return err('El arribo debe ser después de la salida.');
   Object.assign(s,{docRef:M.ref+' '+g('sn-ref').toUpperCase(),carrier:g('sn-car'),veh:g('sn-veh'),etd:etd,eta:eta,etaPlan:eta,pend:false});s.hitos[0].real=Date.now();
   log('Operaciones FF confirmó la reserva del embarque '+s.ref+' · '+s.docRef);
+  let extra='';if(s.tipo==='expo'&&s.modo==='fcl'&&s.transporte&&s.bodega&&!s.lm){const b=ffLastMileExpo(s);extra=' Se creó la exportación '+b.ref+' en Last Mile.';}
   notify([s.clientId],'Tu embarque está reservado',s.docRef+' · '+s.origen+' → '+s.destino+' · ETA '+fmtDia(eta));
-  closeModal();ui.open['emb:'+s.id]=1;commit();toast('Reserva confirmada · '+s.docRef+'.');
+  closeModal();ui.open['emb:'+s.id]=1;commit();toast('Reserva confirmada · '+s.docRef+'.'+extra);
 }
-function sHito(id){const s=state.ships.find(x=>x.id===id),h=s.hitos[ffCur(s)];if(s.pend)return sNuevo(id);
+function sHito(id){const s=state.ships.find(x=>x.id===id),h=s.hitos[ffCur(s)];if(s.pend)return sNuevo(id);if(ffAutoHito(s,ffCur(s)))return toast(h.l+' '+ffAutoTxt(s)+'.');
   openModal('<div class="sh-h"><div><span class="flbl">'+esc(s.docRef)+' · '+esc(CL(s.clientId).short)+'</span><h3 class="mtitle">Registrar: '+esc(h.l)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
    '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">Fecha y hora real (Panamá)</span><input class="fin" type="datetime-local" id="sh-t" value="'+toPa(Date.now())+'"></label>'+(h.l!=='Arribo'&&s.hitos.some((x,i)=>x.l==='Arribo'&&i>ffCur(s))?'<label class="f"><span class="flbl">Nueva ETA (opcional)</span><input class="fin" type="date" id="sh-eta"></label>':'')+
    '<label class="f" style="grid-column:1/-1"><span class="flbl">Nota para el cliente (opcional)</span><input class="fin" id="sh-n" placeholder="Ej. transbordo en Busan, zarpa el 17 oct"></label></div>'+
@@ -1710,10 +1711,34 @@ function ffLastMile(s){
   notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),'Nueva importación '+b.ref,n+' × '+size+' · retiro lleno en '+b.pickLoc,b.id);
   return b;
 }
+function ffLastMileExpo(s){
+  // FCL de exportación con transporte y bodega: retiro de vacío, carga en CLP y entrega lleno antes del cierre del buque
+  const c0=(s.conts[0]||{}).t||"40' HC",size=SIZES.find(z=>z.replace(/\s/g,'')===c0.replace(/\s/g,''))||"40' HC",n=s.conts.reduce((a,c)=>a+c.n,0)||1,now=Date.now(),R=t=>Math.floor(t/HOUR)*HOUR;
+  const delTo=R(s.etd-24*HOUR),delFrom=Math.max(R(now+30*HOUR),R(s.etd-72*HOUR)),pickFrom=Math.max(R(now+4*HOUR),R(s.etd-120*HOUR)),pickTo=Math.max(pickFrom+12*HOUR,R(delFrom-6*HOUR));
+  const nv=(s.carrier||'').split(' ')[0].toLowerCase(),pl=PICK.find(p=>p.toLowerCase().indexOf(nv)>=0)||PICK[0];
+  const b={id:uid('b'),tipo:'expo',clientId:s.clientId,ref:s.docRef.replace(/^HBL\s*/,''),naviera:s.carrier,size:size,qty:n,pickFrom:pickFrom,pickTo:pickTo,pickLoc:pl,delFrom:delFrom,delTo:Math.max(delTo,delFrom+12*HOUR),delLoc:/Balboa/i.test(s.origen)?'PPC · Balboa':DELIV[0],
+    docs:[],cargo:{desc:s.desc,notes:'Viene del embarque '+s.docRef+'. Entregar lleno antes del cierre del buque.',skus:[]},createdAt:now,publishedAt:now,mode:state.settings.mode,directTo:state.settings.mode==='directo'?state.settings.preferred:null,hidden:[],declines:[],ffShip:s.id,containers:mkContainers(n,'publicado',null,s.carrier)};
+  b.containers.forEach(c=>stamp(c,'publicado',now));state.bookings.push(b);s.lm=b.id;
+  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),'Nueva exportación '+b.ref,n+' × '+size+' · retiro de vacío en '+b.pickLoc,b.id);
+  return b;
+}
+/* hitos que registra Last Mile: el mismo hecho no se marca dos veces */
+function ffAutoHito(s,i){if(!s.lm||i<0||!s.hitos[i])return false;const l=s.hitos[i].l;return s.tipo==='expo'?l==='Carga en origen':(l==='Liberado'||i===s.hitos.length-1);}
+const ffAutoTxt=s=>s.tipo==='expo'?'se registra solo cuando los contenedores se entregan llenos en el puerto':'se registra solo desde Last Mile: liberación de BL y levante, y descarga en bodega';
+function ffSync(){
+  (state.ships||[]).forEach(s=>{const b=s.lm&&B(s.lm);if(!b||ffDone(s))return;
+    for(let k=0;k<3;k++){const i=ffCur(s),h=s.hitos[i];if(!ffAutoHito(s,i))return;let t=0;
+      if(s.tipo==='expo'){if(b.containers.every(c=>IDX[c.status]>=IDX.entregado))t=Math.max(...b.containers.map(c=>(c.t||{}).entregado||0));}
+      else if(h.l==='Liberado'){if(liberado(b))t=Math.max(b.aduana.bl.at,b.aduana.lev.at);}
+      else if(b.containers.every(c=>IDX[c.status]>=IDX.bodega))t=Math.max(...b.containers.map(c=>(c.t||{}).bodega||0));
+      if(!t)return;h.real=t||Date.now();h.auto=true;log('Embarque '+s.docRef+' · '+h.l+' (desde Last Mile '+b.ref+')');
+      notify([s.clientId],h.l+' · '+s.docRef,s.origen+' → '+s.destino);}
+  });
+}
 function sDo(a,id){const s=state.ships.find(x=>x.id===id),g=k=>{const el=document.getElementById(k);return el?el.value.trim():'';};
   if(a==='sHitoDo'){const i=ffCur(s),h=s.hitos[i],t=fromPa(g('sh-t'));if(!(t>0)){document.getElementById('shErr').textContent='Indica la fecha y hora.';return;}
     h.real=t;if(g('sh-n'))h.nota=g('sh-n');if(g('sh-eta'))s.eta=fromPa(g('sh-eta')+'T12:00');if(h.l==='Arribo')s.eta=t;
-    let extra='';if(h.l==='Arribo'&&s.modo==='fcl'&&s.transporte&&s.bodega&&!s.lm){const b=ffLastMile(s);extra=' Se creó la importación '+b.ref+' en Last Mile.';}
+    let extra='';if(h.l==='Arribo'&&s.tipo!=='expo'&&s.modo==='fcl'&&s.transporte&&s.bodega&&!s.lm){const b=ffLastMile(s);extra=' Se creó la importación '+b.ref+' en Last Mile.';}
     log('Operaciones FF: '+s.docRef+' · '+h.l);notify([s.clientId],h.l+' · '+s.docRef,(h.nota?h.nota+' · ':'')+s.origen+' → '+s.destino+(s.eta&&!ffDone(s)?' · ETA '+fmtDia(s.eta):''));
     closeModal();commit();toast(h.l+' registrado.'+extra);return;}
   if(a==='sEtaDo'){const e=fromPa(g('se-eta')+'T12:00');if(!(e>0)){document.getElementById('shErr').textContent='Indica la nueva ETA.';return;}const lt=e>s.eta;s.eta=e;
@@ -1906,9 +1931,9 @@ function kbShips(list){
   const items=list.map(s=>{const sem=semShip(s),i=ffCur(s),dn=ffDone(s);
     return {col:shipCol(s),sem:sem,html:kbCard({act:'embOpen',id:s.id,sem:sem,ref:s.docRef||s.ref,tags:ffTag(s.modo),
       lines:['<span class="muted">'+esc(s.origen.split(',')[0])+' → '+esc(s.destino.split(',')[0])+'</span>','<span>'+ffEtdEta(s)+'</span>',
-        dn?'<span class="muted">'+esc(ffFinal(s)[1])+'</span>':'<span class="muted">Siguiente</span><b>'+(s.pend?'Confirmar reserva':esc(s.hitos[i].l))+'</b>',cli?'':'<span class="muted">'+esc(CL(s.clientId).short)+' · '+ffTipo(s.tipo)+'</span>'],
+        dn?'<span class="muted">'+esc(ffFinal(s)[1])+'</span>':'<span class="muted">Siguiente'+(ffAutoHito(s,i)?' · automático':'')+'</span><b>'+(s.pend?'Confirmar reserva':esc(s.hitos[i].l))+'</b>',cli?'':'<span class="muted">'+esc(CL(s.clientId).short)+' · '+ffTipo(s.tipo)+'</span>'],
       prog:(dn?s.hitos.length:i)+'/'+s.hitos.length,
-      btn:ops&&!dn?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">'+(s.pend?'Confirmar reserva':'Registrar: '+esc(s.hitos[i].l))+'</button>':''})};});
+      btn:ops&&!dn&&!ffAutoHito(s,i)?'<button class="btn-p btn-indigo inl" data-act="sHito" data-id="'+s.id+'">'+(s.pend?'Confirmar reserva':'Registrar: '+esc(s.hitos[i].l))+'</button>':''})};});
   return kbBoard([['orig','En origen'],['tran','En tránsito'],['arr','Arribado · último tramo'],['done','Completados']],items);
 }
 function embModal(id){const s=state.ships.find(x=>x.id===id);if(!s){closeModal();return;}const sem=semShip(s);
@@ -1940,7 +1965,7 @@ function render(){
   window.scrollTo(0,sy);
   tickClocks();
 }
-function commit(){save();render();const ov=document.getElementById('ov'),d=ov.dataset.detail;if(!ov.hidden&&d){if(d.indexOf('kb:')===0)kbModal(d.slice(3));else if(d.indexOf('em:')===0)embModal(d.slice(3));else detail(d);}}
+function commit(){ffSync();save();render();const ov=document.getElementById('ov'),d=ov.dataset.detail;if(!ov.hidden&&d){if(d.indexOf('kb:')===0)kbModal(d.slice(3));else if(d.indexOf('em:')===0)embModal(d.slice(3));else detail(d);}}
 function checkExpiry(){
   let changed=false;
   state.bookings.forEach(b=>{if(expired(b)&&!expSeen.has(b.id)){expSeen.add(b.id);if(!b.expLogged){b.expLogged=true;log('Alerta: '+b.ref+' venció sin confirmación ('+openCount(b)+' sin cubrir)');notify(['admin'],'Booking sin confirmar',b.ref+' venció con '+openCount(b)+' cont. sin cubrir.',b.id);changed=true;}if(ui.role==='admin')toast('Alerta: '+b.ref+' venció sin confirmación de transportista.',true);}
@@ -1967,7 +1992,10 @@ document.addEventListener('click',e=>{
    case 'qcont':qAddCont("40' HC",1);qVis();break;
    case 'qcontx':t.closest('.q-cont').remove();qVis();break;
    case 'qEnviarSol':qEnviarSol();break;
-   case 'qVer':ov.dataset.detail='';qVer(t.dataset.id);break;
+   case 'qVer':{ov.dataset.detail='';const q=state.quotes.find(x=>x.id===t.dataset.id);
+     // abrir la solicitud ya la toma: queda en cotización a nombre de quien la abrió
+     if((ui.role==='ventas'||ui.role==='admin')&&q.status==='solicitada'){q.status='cotizando';q.owner=ui.user;log('Ventas tomó '+q.num);save();render();}
+     qVer(q.id);break;}
    case 'qTomar':qDo('qTomar',t.dataset.id);break;
    case 'qPedir':qMini(t.dataset.id,'Pedir datos al cliente','<label class="f"><span class="flbl">Qué falta o qué necesitas aclarar</span><textarea class="fin" id="qm-t"></textarea></label>','qPedirDo','Enviar al cliente');break;
    case 'qResp':qMini(t.dataset.id,'Responder a ventas','<div class="abox inf"><div>'+esc((state.quotes.find(x=>x.id===t.dataset.id).msgs.slice(-1)[0]||{}).t||'')+'</div></div><label class="f"><span class="flbl">Tu respuesta</span><textarea class="fin" id="qm-t"></textarea></label>','qRespDo','Enviar');break;
@@ -2121,6 +2149,7 @@ document.addEventListener('keydown',e=>{
   if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[role=button][data-act]')){e.preventDefault();e.target.click();return;}if(e.key==='Escape'&&!document.getElementById('ov').hidden){document.getElementById('ov').dataset.detail='';closeModal();}});
 
 load();
+ffSync();save();
 if(/[?&]lista\b/.test(location.search))ui.vista='lista';
 state.bookings.forEach(b=>{if(expired(b))expSeen.add(b.id);});
 render();
