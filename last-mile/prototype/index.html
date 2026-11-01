@@ -1168,12 +1168,42 @@ function doAdv(bid,cid,to){
    Supabase y una Edge Function lo envía con web-push a cada dispositivo suscrito (ver sw.js). */
 const PUSH_KEY='dpw-lastmile-push';
 const uName=u=>{const x=USERS[u];return !x?u:x.role==='transportista'?CN[x.carrier]:x.role==='cliente'?CL(x.client).name:x.n;};
-const AVISOS={cliente:['Cotización lista, datos que faltan y cada hito de tus embarques','Transporte asignado a tu booking','Vacío retirado y en camino a bodega','Contenedor cargado y sellado','Entregado en puerto y devuelto','Importación: liberada, retirada del puerto, descargada y vacío devuelto'],
-  transportista:['Booking nuevo para ti','Importación liberada: ya puedes retirar en puerto','Vacío de importación listo para devolver','Aprobación o rechazo de DP World','Turno de rampa asignado','Contenedor sellado, listo para retirar','Reasignación o cancelación'],
-  bodega:['Cita de retiro agendada','Vacío retirado: entra a la cola de rampa','Llegada de importación: lleno en camino a la rampa'],
-  admin:['Confirmación por revisar','Aprobación automática (con plazo para revertir)','Booking vencido sin confirmación','Cancelación del cliente','Nueva solicitud de cotización'],
-  ventas:['Nueva solicitud de cotización','El cliente respondió los datos que faltaban','Cotización aceptada o no aceptada'],
-  opsff:['Cotización aceptada: crear el embarque']};
+/* catálogo de avisos: cada usuario enciende o apaga los que necesita (Configuración o Notificaciones).
+   El aviso se clasifica por rol y título; si no está en el catálogo, siempre se envía. */
+const NT=[
+ ['c_tr','Transporte asignado a tu booking','Cuando un booking ya tiene transporte DP World.',['cliente'],/^Transporte asignado/],
+ ['c_mov','Movimientos de exportación','Vacío retirado, cargado y sellado, en tránsito, entregado y devuelto.',['cliente'],/^(Vacío retirado|Cargado y sellado|En tránsito al puerto|Entregado en puerto|Contenedor devuelto)/],
+ ['c_impo','Movimientos de importación','Liberado, retirado del puerto, descargado en bodega y vacío devuelto.',['cliente'],/^(Contenedores liberados|Retirado del puerto|Descargado en bodega|Vacío devuelto)/],
+ ['c_cot','Cotizaciones','Cotización lista o datos que faltan para cotizar.',['cliente'],/^(Tu cotización está lista|Faltan datos para cotizar)/],
+ ['c_eta','Retrasos y cambios de ETA','Cuando cambia la fecha de arribo de un embarque.',['cliente'],/^(Retraso|Cambio de ETA)/],
+ ['c_emb','Hitos de tus embarques','Reserva, zarpe o despegue, arribo, liberado y entrega.',['cliente'],/^Tu embarque está reservado| · (HBL|HAWB|Carta de porte) /],
+ ['c_tramo','Cambios en el último tramo','Transporte interno o bodega DP World cambiados por operaciones.',['cliente','opsff'],/^Cambio en el último tramo/],
+ ['t_nuevo','Bookings nuevos para ti','Nuevos, reabiertos o republicados, de exportación e importación.',['transportista'],/^(Nuevo booking|Nueva importación|Booking reabierto|Booking republicado)/],
+ ['t_lib','Importaciones liberadas','Ya puedes retirar el lleno en el puerto.',['transportista'],/^Contenedores liberados/],
+ ['t_aprob','Respuesta a tus confirmaciones','Aprobada, rechazada o revertida por DP World.',['transportista'],/^(Confirmación aprobada|Confirmación rechazada|Aprobación revertida)/],
+ ['t_asig','Asignaciones y reasignaciones','Contenedores que DP World te asigna o te quita.',['transportista'],/^Contenedores (asignados|reasignados)/],
+ ['t_turno','Turnos de rampa','Hora y rampa para tu contenedor en bodega.',['transportista'],/^Turno de rampa/],
+ ['t_listo','Listo para retirar en bodega','Contenedor sellado o vacío de importación por devolver.',['transportista'],/^(Cargado y sellado|Vacío listo para devolver)/],
+ ['t_cancel','Cancelaciones del cliente','Contenedores que el cliente canceló.',['transportista','admin'],/^Cancelación del cliente/],
+ ['b_cita','Citas de retiro','Agendadas o reprogramadas por el transportista.',['bodega'],/^Cita/],
+ ['b_cola','Llegadas a la cola de rampa','Vacíos de exportación y llenos de importación.',['bodega'],/^(Contenedor en cola de rampa|Llegada de importación)/],
+ ['a_nuevo','Bookings nuevos','Cada booking que crea un cliente.',['admin'],/^(Nuevo booking|Nueva importación)/],
+ ['a_rev','Confirmaciones por revisar','Las que no pasan la aprobación automática.',['admin'],/^Confirmación por revisar/],
+ ['a_auto','Aprobaciones automáticas','Con el plazo para revertir.',['admin'],/^Aprobación automática/],
+ ['a_venc','Bookings vencidos sin confirmar','Cuando pasa la hora sin cubrir.',['admin'],/^Booking sin confirmar/],
+ ['f_sol','Solicitudes de cotización nuevas','Cada solicitud que envía un cliente.',['ventas','admin'],/^Nueva solicitud de cotización/],
+ ['f_resp','Respuestas del cliente','Cuando completa los datos que pediste.',['ventas'],/^El cliente respondió/],
+ ['f_dec','Decisión del cliente','Cotización aceptada o no aceptada.',['ventas'],/^Cotización (aceptada|no aceptada)/],
+ ['f_acc','Cotizaciones aceptadas','Listas para crear el embarque.',['opsff'],/^Cotización aceptada/]];
+const ntDe=r=>NT.filter(x=>x[3].indexOf(r)>=0);
+const ntKey=(r,t)=>(ntDe(r).find(x=>x[4].test(t))||[])[0];
+const ntOn=(u,k)=>!k||!((USERS[u]||{}).notif||{})[k];   // se guardan solo los apagados
+function ntLista(){
+  const L=ntDe(ui.role),u=USERS[ui.user]||{},off=u.notif||{},n=L.filter(x=>!off[x[0]]).length;
+  if(!L.length)return '';
+  return '<div class="nt"><div class="nt-h"><span class="flbl">Qué avisos recibir · '+n+' de '+L.length+' encendidos</span><span><button type="button" class="link" data-act="ntAll" data-v="1">Encender todos</button> · <button type="button" class="link" data-act="ntAll" data-v="0">Apagar todos</button></span></div>'+
+    L.map(x=>{const on=!off[x[0]];return '<div class="nt-i"><div><b>'+x[1]+'</b><span>'+x[2]+'</span></div><button type="button" class="sw'+(on?' on':'')+'" role="switch" aria-checked="'+on+'" aria-label="'+esc(x[1])+'" data-act="ntSw" data-k="'+x[0]+'"><i></i></button></div>';}).join('')+'</div>';
+}
 let swReg=null,installEv=null;
 const pushSubs=()=>{try{return JSON.parse(localStorage.getItem(PUSH_KEY))||{};}catch(e){return {};}};
 const pushSet=o=>{try{localStorage.setItem(PUSH_KEY,JSON.stringify(o));}catch(e){}};
@@ -1194,7 +1224,7 @@ function abrirBk(id){if(!id||!ui.auth||!B(id))return;menu(false);document.getEle
 function notify(to,titulo,texto,bk){
   if(!pushOK()||Notification.permission!=='granted')return;
   const subs=pushSubs(),act=Object.keys(USERS).filter(u=>USERS[u].active!==false);
-  const dest=[...new Set(to.flatMap(x=>USERS[x]?[x]:act.filter(u=>USERS[u].carrier===x||USERS[u].client===x||USERS[u].role===x)))].filter(u=>subs[u]&&u!==ui.user);
+  const dest=[...new Set(to.flatMap(x=>USERS[x]?[x]:act.filter(u=>USERS[u].carrier===x||USERS[u].client===x||USERS[u].role===x)))].filter(u=>subs[u]&&u!==ui.user&&ntOn(u,ntKey(USERS[u].role,titulo)));
   dest.forEach(u=>swReg.showNotification(titulo,{body:texto+'\nPara: '+uName(u),icon:'icon-192.png',badge:'badge-96.png',tag:uid('n'),data:{bk:bk||null}}).catch(()=>{}));
 }
 const iosSteps=fin=>'<ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (cuadro con flecha hacia arriba).</li><li>Elige <b>Agregar a pantalla de inicio</b> y luego <b>Agregar</b>.</li><li>Abre <b>Last Mile</b> desde el ícono nuevo'+(fin?' y '+fin:'')+'.</li></ol>';
@@ -1215,7 +1245,7 @@ function notifSheet(){
   else if(!pushOK())body='<div class="abox warn"><div>Este navegador no permite notificaciones. Usa Chrome, Edge o Firefox, o Safari con la app agregada a la pantalla de inicio.</div></div>';
   else if(perm==='denied')body='<div class="abox warn"><div>Las notificaciones están <b>bloqueadas</b> para esta página. Para activarlas, entra a los ajustes del sitio (el candado junto a la dirección) o a los ajustes de notificaciones del teléfono, permítelas y vuelve aquí.</div></div>';
   else body='<div class="ntf-state'+(on?' on':'')+'"><span class="ntf-dot"></span><div><b>'+(on?'Activadas en este dispositivo':'Desactivadas en este dispositivo')+'</b><span>'+esc(uName(ui.user))+'</span></div></div>';
-  const lista='<div><span class="flbl">Te avisaremos cuando</span><ul class="ntf-list">'+(AVISOS[ui.role]||[]).map(x=>'<li>'+x+'</li>').join('')+'</ul></div>';
+  const lista=ntLista();
   const demo='<div class="abox inf"><div><b>Cómo probarlo en el prototipo:</b> activa los avisos con un usuario (por ejemplo <b>costa</b>), sal y entra con otro (<b>cernac</b>) y crea un booking. El aviso llega a este mismo teléfono aunque cierres la app.'+(otros.length?' Activos aquí también para: '+otros.map(u=>esc(uName(u))).join(', ')+'.':'')+'</div></div>';
   const instBtn=installEv&&!inst?'<button class="btn-p btn-navy inl" data-act="install">Instalar app</button>':'';
   const btns=ios&&!inst||!pushOK()||perm==='denied'?'':on?'<button class="btn-p btn-navy inl" data-act="pushTest">Enviar prueba</button><button class="btn-p btn-red inl" data-act="pushOff">Desactivar</button>':'<button class="btn-p btn-green inl" data-act="pushOn">Activar notificaciones</button>';
@@ -1268,7 +1298,8 @@ function vConfig(){
   const adm=ui.role==='admin',tab=KINDS[ui.cfgTab]?ui.cfgTab:'clientes';
   let h='<section class="view"><div class="vhead"><div><h1 class="sc-title">Configuración</h1><p class="sc-sub">'+(adm?'Apariencia de la app y administración de clientes, transportistas y usuarios.':'Apariencia de la app.')+'</p></div></div>'+
    '<div class="panel"><h2 class="psect-title">Apariencia</h2><div class="htabs" role="group" aria-label="Tema">'+[['dark','Oscuro'],['light','Claro']].map(x=>'<button class="htab'+(theme()===x[0]?' active':'')+'" data-act="theme" data-v="'+x[0]+'" aria-pressed="'+(theme()===x[0])+'">'+x[1]+'</button>').join('')+'</div>'+
-   '<p class="muted" style="margin:0;font-size:13px">Se guarda en este dispositivo y aplica a todas las pantallas.</p></div>';
+   '<p class="muted" style="margin:0;font-size:13px">Se guarda en este dispositivo y aplica a todas las pantallas.</p></div>'+
+   (ntDe(ui.role).length?'<div class="panel"><h2 class="psect-title">Notificaciones</h2><p class="muted" style="margin:0;font-size:13px">Elige qué avisos te llegan. Para recibirlos en este dispositivo, actívalos también en el menú, en Notificaciones'+(pushOn()?' (ya están activas aquí).':'.')+'</p>'+ntLista()+'</div>':'');
   if(adm)h+='<div class="panel"><h2 class="psect-title">Contactos de WhatsApp</h2><p class="muted" style="margin:0;font-size:13px">Aparecen en el botón verde flotante de todas las pantallas. Pon un número con código de país o el enlace de invitación de un grupo (WhatsApp → grupo → Invitar mediante enlace). Coordinación también se usa en la caja de contacto del transportista.</p>'+
    '<div class="fgrid">'+WA.map(x=>'<label class="f"><span class="flbl">'+x[1]+'</span><input class="fin" type="text" inputmode="url" autocapitalize="none" data-act="waSet" data-k="'+x[0]+'" value="'+esc(waNum(x[0]))+'" placeholder="+507 6000-0000 o https://chat.whatsapp.com/…"></label>').join('')+'</div></div>';
   if(adm)h+='<div class="panel"><div class="cfg-head"><div class="htabs" role="tablist" aria-label="Administración">'+Object.keys(KINDS).map(k=>'<button class="htab'+(tab===k?' active':'')+'" role="tab" aria-selected="'+(tab===k)+'" data-act="cfgTab" data-v="'+k+'">'+KINDS[k].t+' <span class="psect-cnt">'+cfgList(k).length+'</span></button>').join('')+'</div>'+
@@ -1734,6 +1765,9 @@ document.addEventListener('click',e=>{
   switch(a){
    case 'menu':menu(!document.getElementById('drawer').classList.contains('open'));break;
    case 'menuClose':menu(false);break;
+   case 'ntSw':case 'ntAll':{const u=USERS[ui.user];if(!u)break;u.notif=u.notif||{};
+     if(a==='ntSw'){const k=t.dataset.k;if(u.notif[k])delete u.notif[k];else u.notif[k]=true;}else ntDe(ui.role).forEach(x=>{if(t.dataset.v==='1')delete u.notif[x[0]];else u.notif[x[0]]=true;});
+     save();if(!document.getElementById('ov').hidden&&document.querySelector('#sheet .nt'))notifSheet();render();break;}
    case 'qNueva':ov.dataset.detail='';qForm();break;
    case 'qyn':qSet(t.dataset.k,t.dataset.v);qVis();break;
    case 'qcont':qAddCont("40' HC",1);qVis();break;
