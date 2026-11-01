@@ -392,12 +392,20 @@ function prio(b){
 }
 function byPrio(list){return list.slice().sort((a,b)=>{const x=prio(a),y=prio(b);return x.done!==y.done?(x.done?1:-1):x.done?y.t-x.t:x.t-y.t;});}
 function rel(t){const m=Math.round((t-Date.now())/MIN),a=Math.abs(m),h=Math.floor(a/60),d=Math.floor(h/24);const v=a<60?a+' min':h<48?h+' h':d+' d';return m<0?'hace '+v:'en '+v;}
+const fCorto=t=>new Date(t).toLocaleDateString('es-PA',{timeZone:'America/Panama',day:'numeric',month:'short'}).replace(/\./g,'');
+function trkFecha(b,k,done){
+  // etapa cumplida: fecha en que la cumplió el último contenedor; pendiente: la fecha comprometida de la ventana
+  const ts=b.containers.map(c=>(c.t||{})[k]).filter(Boolean);
+  if(done&&ts.length)return '<small class="trk-d">'+fCorto(Math.max(...ts))+'</small>';
+  const imp=isImpo(b),plan=k==='retiro'?(imp?['libre',b.pickTo]:['desde',b.pickFrom]):(k==='entregado'&&!imp)||(k==='devuelto'&&imp)?['hasta',b.delTo]:null;
+  return plan?'<small class="trk-d plan'+(Date.now()>plan[1]&&plan[0]!=='desde'?' late':'')+'">'+plan[0]+' '+fCorto(plan[1])+'</small>':'<small class="trk-d"></small>';
+}
 function trk(b){
   const ct=counts(b),n=b.containers.length,mx=Math.max.apply(null,b.containers.map(c=>IDX[c.status]));
   const imp=isImpo(b);
   return '<div class="trk" role="img" aria-label="'+esc(stagesOf(b).filter(x=>ct[x.k]).map(x=>lbl(b,x.k)+': '+ct[x.k]).join(' · '))+'">'+stagesOf(b).map(x=>{const i=IDX[x.k];
     const done=b.containers.every(c=>IDX[c.status]>i)&&!ct[x.k], cur=ct[x.k]>0;
-    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(lbl(b,x.k))+': '+ct[x.k]+'">'+(cur?ct[x.k]:'')+'</span><small class="trk-l'+(cur?' cur':'')+'">'+((imp&&SHORT_I[x.k])||SHORT[x.k])+'</small></span>';}).join('')+'</div>';
+    return '<span class="trk-c'+(i<=mx?' on':'')+'"><span class="pip-d '+(done?'done':cur?'cur '+TONE(x.k):'fut')+'" title="'+esc(lbl(b,x.k))+': '+ct[x.k]+'">'+(cur?ct[x.k]:'')+'</span><small class="trk-l'+(cur?' cur':'')+'">'+((imp&&SHORT_I[x.k])||SHORT[x.k])+'</small>'+trkFecha(b,x.k,done)+'</span>';}).join('')+'</div>';
 }
 function bkRows(sec,list,body,right,alert){
   if(!list.length)return '';
@@ -1604,8 +1612,21 @@ function ffMap(s){
    '<circle cx="'+px+'" cy="'+py+'" r="'+((x1-x0)/180)+'" fill="#8a88e0"/><circle cx="'+hx+'" cy="'+hy+'" r="'+((x1-x0)/160)+'" fill="#00C389"/>'+lbl(px,py+(x1-x0)/40,s.origen,'#fff','middle')+lbl(hx,hy+(x1-x0)/40,s.destino,'#fff','middle')+
    (ffDone(s)?'':'<circle cx="'+mx+'" cy="'+my+'" r="'+((x1-x0)/120)+'" fill="#0099e6" stroke="#fff" stroke-width="'+((x1-x0)/600)+'"/>')+'</svg></div>';
 }
+const ffDep=l=>/Zarpe|Despegue|En ruta/.test(l);
+function ffEtdEta(s){
+  // salida y arribo: real si ya ocurrieron, si no lo estimado
+  const dep=s.hitos.find(h=>ffDep(h.l)),arr=s.hitos.find(h=>h.l==='Arribo');
+  return (dep&&dep.real?'Salió '+fCorto(dep.real):s.etd?'ETD '+fCorto(s.etd):'ETD por confirmar')+' · '+(arr&&arr.real?'Llegó '+fCorto(arr.real):s.eta?'<span'+(ffLate(s)?' class="ff-late"':'')+'>ETA '+fCorto(s.eta)+'</span>':'ETA por confirmar');
+}
+function ffFecha(s,h){
+  // hito cumplido: su fecha real; salida y arribo pendientes: ETD y ETA
+  if(h.real)return '<small class="trk-d">'+fCorto(h.real)+'</small>';
+  if(ffDep(h.l)&&s.etd)return '<small class="trk-d plan">ETD '+fCorto(s.etd)+'</small>';
+  if(h.l==='Arribo'&&s.eta)return '<small class="trk-d plan'+(ffLate(s)?' late':'')+'">ETA '+fCorto(s.eta)+'</small>';
+  return '<small class="trk-d"></small>';
+}
 function ffTrk(s){const L=ffShort(s),c=ffDone(s)?L.length:ffCur(s);
-  return '<div class="trk" style="grid-template-columns:repeat('+L.length+',1fr)" role="img" aria-label="'+esc(ffHitos(s).map((h,i)=>h+(i<c?' hecho':'')).join(' · '))+'">'+L.map((l,i)=>'<span class="trk-c'+(i<=c?' on':'')+'"><span class="pip-d '+(i<c?'done':i===c?'cur tr':'fut')+'"></span><small class="trk-l'+(i===c?' cur':'')+'">'+esc(l)+'</small></span>').join('')+'</div>';}
+  return '<div class="trk" style="grid-template-columns:repeat('+L.length+',1fr)" role="img" aria-label="'+esc(ffHitos(s).map((h,i)=>h+(i<c?' hecho':'')).join(' · '))+'">'+L.map((l,i)=>'<span class="trk-c'+(i<=c?' on':'')+'"><span class="pip-d '+(i<c?'done':i===c?'cur tr':'fut')+'"></span><small class="trk-l'+(i===c?' cur':'')+'">'+esc(l)+'</small>'+ffFecha(s,s.hitos[i])+'</span>').join('')+'</div>';}
 function ffDet(s){
   const M=FF_MODOS[s.modo],ed=(ui.role==='cliente'||ui.role==='opsff'||ui.role==='admin')&&!s.hitos[FF_MODOS[s.modo].hit.indexOf('Arribo')].real;
   const tog=(k,l,d)=>'<div class="ff-tog"><div><b>'+l+'</b><span>'+d+'</span></div>'+(ed?'<div class="htabs">'+[['si','Sí'],['no','No']].map(x=>'<button class="htab'+((s[k]?'si':'no')===x[0]?' active':'')+'" data-act="sTog" data-id="'+s.id+'" data-k="'+k+'" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>':'<span class="cli-badge '+(s[k]?'on':'mute')+'">'+(s[k]?'Sí':'No')+'</span>')+'</div>';
@@ -1614,7 +1635,7 @@ function ffDet(s){
   return '<div class="ff-det"><div style="display:grid;gap:12px;align-content:start">'+(ffMap(s)||'<div class="empty">'+esc(s.origen)+' → '+esc(s.destino)+'</div>')+'<div class="ff-kv">'+kv.map(x=>'<div><span class="flbl">'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join('')+'</div>'+
    '<div class="ff-togs"><span class="flbl">Último tramo</span>'+tog('transporte','Transporte interno con DP World','Encendido: Last Mile coordina el tramo del puerto a destino.')+tog('bodega','Va a bodega DP World (CLP)','Encendido: la carga entra a nuestra bodega.')+'</div></div>'+
    '<div style="display:grid;gap:12px;align-content:start"><div><span class="flbl">Hitos</span><div class="ff-tl">'+s.hitos.map((h,i)=>{const c=!ffDone(s)&&i===ffCur(s),eta=h.l==='Arribo'&&!h.real;
-     return '<div class="ff-h'+(h.real?' ok':c?' cur':'')+'"><span class="ff-dot"></span><div><b>'+esc(h.l)+'</b>'+(c?'<small>Siguiente paso</small>':'')+(h.nota?'<small>'+esc(h.nota)+'</small>':'')+'</div><div class="when">'+(h.real?fmtDia(h.real):eta&&s.eta?(ffLate(s)?'<span class="ff-late">ETA '+fmtDia(s.eta)+'</span><small>antes '+fmtDia(s.etaPlan)+'</small>':'ETA '+fmtDia(s.eta)):'—')+'</div></div>';}).join('')+'</div></div>'+
+     return '<div class="ff-h'+(h.real?' ok':c?' cur':'')+'"><span class="ff-dot"></span><div><b>'+esc(h.l)+'</b>'+(c?'<small>Siguiente paso</small>':'')+(h.nota?'<small>'+esc(h.nota)+'</small>':'')+'</div><div class="when">'+(h.real?fmtDia(h.real)+(ffDep(h.l)&&s.etd?'<small>ETD '+fmtDia(s.etd)+'</small>':'')+(h.l==='Arribo'&&s.etaPlan?'<small>ETA '+fmtDia(s.etaPlan)+'</small>':''):ffDep(h.l)&&s.etd?'ETD '+fmtDia(s.etd):eta&&s.eta?(ffLate(s)?'<span class="ff-late">ETA '+fmtDia(s.eta)+'</span><small>antes '+fmtDia(s.etaPlan)+'</small>':'ETA '+fmtDia(s.eta)):'—')+'</div></div>';}).join('')+'</div></div>'+
    (lm?'<div class="ff-link"><span>Último tramo en Last Mile: booking de importación <b class="mono">'+esc(lm.ref)+'</b>.</span>'+stagePill(lm,ui.role)+'</div>':s.transporte&&s.bodega&&s.modo==='fcl'&&!ffDone(s)?'<div class="ff-link"><span>Al marcar el arribo se crea el booking de importación en Last Mile para el retiro en puerto y la descarga en CLP.</span></div>':'')+
    ((ui.role==='opsff'||ui.role==='admin')&&!ffDone(s)?'<div class="row"><button class="btn-p btn-green inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[ffCur(s)].l)+'</button><button class="btn-p btn-navy inl" data-act="sEta" data-id="'+s.id+'">Cambiar ETA</button></div>':'')+'</div></div>';
 }
@@ -1623,7 +1644,7 @@ function sRows(list,right){
   return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Arribo estimado</span><span>Embarque</span><span class="trk-key">Avance · <b>azul</b> es el siguiente paso</span><span>Estado</span></div>'+list.map(s=>{const k='emb:'+s.id,dn=ffDone(s),lt=ffLate(s),i=ffCur(s);
    return '<details class="bkr'+(lt||ffStale(s)?' alert':'')+'" data-key="'+k+'"'+(ui.open[k]?' open':'')+'><summary class="bkr-s"><span class="bkr-chev" aria-hidden="true">›</span>'+
     '<span class="bkr-p '+(dn?'done':lt?'over':'soon')+'"><span class="bkr-pl">'+(dn?'Completado':'ETA '+esc(s.destino.split(',')[0]))+'</span><b>'+(dn?fmtDia(s.hitos[s.hitos.length-1].real):s.eta?fmtDia(s.eta):'Por confirmar')+'</b><span class="bkr-st">'+(dn?ffFinal(s)[0]:lt?'Retraso +'+lt+' d · antes '+fmtDia(s.etaPlan):'A tiempo')+'</span></span>'+
-    '<span class="bkr-id"><span class="bk-ref">'+esc(s.docRef||s.ref)+'</span><span class="bkr-tags">'+ffTag(s.modo)+'<span class="tag">'+ffTipo(s.tipo)+'</span></span><span class="ff-route">'+esc(s.origen)+' → '+esc(s.destino)+'</span></span>'+ffTrk(s)+
+    '<span class="bkr-id"><span class="bk-ref">'+esc(s.docRef||s.ref)+'</span><span class="bkr-tags">'+ffTag(s.modo)+'<span class="tag">'+ffTipo(s.tipo)+'</span></span><span class="ff-route">'+esc(s.origen)+' → '+esc(s.destino)+'</span><span class="ff-route">'+ffEtdEta(s)+'</span></span>'+ffTrk(s)+
     '<span class="bkr-r">'+right(s)+'</span></summary><div class="bkr-b">'+ffDet(s)+'</div></details>';}).join('')+'</div>';
 }
 const sPill=s=>ffDone(s)?'<span class="cli-badge on">'+ffFinal(s)[1]+'</span>':'<span class="cli-badge '+(ffLate(s)?'off':ffStale(s)?'wait':'tr')+'">'+esc(s.hitos[Math.max(0,ffCur(s)-1)].l)+'</span>';
