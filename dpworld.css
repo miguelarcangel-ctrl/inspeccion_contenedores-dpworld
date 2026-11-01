@@ -967,3 +967,9 @@ main.lm-main{padding-block:18px 56px}
   .lm .bit-t td{display:block;padding:0;border:0}.lm .bit-t td::before{content:attr(data-l);display:block;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
   .lm .bit-t td:last-child{grid-column:1/-1}
 }
+
+/* rampas en DP Bridge: consulta; la simulación de demo va plegada */
+.lm .rp-sim{border:1px dashed var(--b2);border-radius:var(--r2);padding:8px 12px}
+.lm .rp-sim>summary{cursor:pointer;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
+.lm .rp-sim[open]>summary{margin-bottom:10px}
+.lm .rp-sim-b{display:grid;gap:10px}
