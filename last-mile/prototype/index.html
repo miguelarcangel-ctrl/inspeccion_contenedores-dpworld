@@ -147,7 +147,7 @@ function migrate(){
   if(ui.auth&&ui.role==='cliente'&&!ui.client)ui.client=(USERS[ui.user]||{}).client||'k1';
 }
 function syncRef(){CARRIERS=state.carriers;CN=Object.fromEntries(CARRIERS.map(c=>[c.id,c.name]));USERS=Object.fromEntries(state.users.map(x=>[x.u,x]));}
-const SECTIONS={cliente:[['main','Mis bookings'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['config','Configuración']],ventas:[['cotiz','Cotizaciones'],['emb','Embarques'],['config','Configuración']],opsff:[['emb','Embarques'],['cotiz','Cotizaciones'],['config','Configuración']],transportista:[['main','Bookings'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings'],['cal','Calendario'],['rampas','Rampas'],['emb','Llegadas internacionales'],['config','Configuración']],admin:[['main','Panel'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['config','Configuración']]};
+const SECTIONS={cliente:[['main','Bookings Last Mile'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['config','Configuración']],ventas:[['cotiz','Cotizaciones'],['emb','Embarques'],['config','Configuración']],opsff:[['emb','Embarques'],['cotiz','Cotizaciones'],['config','Configuración']],transportista:[['main','Bookings Last Mile'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings Last Mile'],['cal','Calendario'],['rampas','Rampas'],['emb','Llegadas internacionales'],['config','Configuración']],admin:[['main','Panel'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['config','Configuración']]};
 
 /* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
 const RAMPS=6, BUFFER=16;
@@ -459,7 +459,7 @@ function cliSecs(body){
 function vCliente(){
   let pr=0,asg=0,ruta=0,ent=0;
   misBk().forEach(b=>b.containers.forEach(c=>{const i=IDX[c.status];if(i<=1)pr++;else if(i===2)asg++;else if(i<=5)ruta++;else ent++;}));
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Mis bookings</h1><p class="sc-sub">'+esc(CL(ui.client).name)+' · Transporte de contenedores operado por DP World. Crea el booking y sigue cada contenedor en vivo.</p></div><button class="btn-p btn-green inl" data-act="new">+ Nuevo booking</button></div>'+
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Mis bookings Last Mile</h1><p class="sc-sub">'+esc(CL(ui.client).name)+' · Transporte de contenedores operado por DP World. Crea el booking y sigue cada contenedor en vivo.</p></div><button class="btn-p btn-green inl" data-act="new">Nuevo booking Last Mile</button></div>'+
   '<div class="stats"><div class="sbox"><div class="sn sa">'+pr+'</div><div class="sl2">Programando</div></div><div class="sbox"><div class="sn en">'+asg+'</div><div class="sl2">Transporte asignado</div></div><div class="sbox"><div class="sn en">'+ruta+'</div><div class="sl2">En operación</div></div><div class="sbox"><div class="sn ok">'+ent+'</div><div class="sl2">Entregados</div></div></div>'+
   cliSecs(b=>
    '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Transportista <strong>DP World</strong></span></div>'+bar(b)+'</div>'+
@@ -484,7 +484,7 @@ function vBodega(){
   const n=(arr,f)=>arr.reduce((s,b)=>s+b.containers.filter(f).length,0);
   const head=(b,mode)=>{const ct=counts(b),cs=b.containers.filter(c=>c.status==='retiro');return mode==='cola'?'<span class="cli-badge wait">'+cs.filter(c=>!c.rampa).length+' en cola</span>':mode==='rampa'?'<span class="cli-badge tr">'+cs.filter(c=>c.rampa).length+' en rampa</span>':mode==='coming'?'<span class="cli-badge mute">'+(ct.publicado+ct.confirmado+ct.asignado)+' sin retirar</span>':'<span class="cli-badge on">'+ct.bodega+(isImpo(b)?' vacíos listos':' sellados')+'</span>';};
   const sec=(title,cnt,arr,mode,empty)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+title+'</h2><span class="psect-cnt">'+cnt+'</span></div>'+(arr.length?bkRows('bo'+mode,arr,b=>card(b,mode),b=>head(b,mode)):'<div class="empty">'+empty+'</div>')+'</div>';
-  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bookings de bodega</h1><p class="sc-sub">Lo que viene a la bodega: vacíos de exportación para cargar y llenos de importación para descargar. Entran solos a la cola de rampas al marcar el retiro; se cierran al sellar o al terminar la descarga en Rampas.</p></div><button class="btn-p btn-green inl" data-act="sec" data-k="rampas">Ir a rampas</button></div>'+
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Bookings Last Mile · bodega</h1><p class="sc-sub">Lo que viene a la bodega: vacíos de exportación para cargar y llenos de importación para descargar. Entran solos a la cola de rampas al marcar el retiro; se cierran al sellar o al terminar la descarga en Rampas.</p></div><button class="btn-p btn-green inl" data-act="sec" data-k="rampas">Ir a rampas</button></div>'+
    sec('En cola de rampa · llegadas',n(q,c=>c.status==='retiro'&&!c.rampa),q,'cola','No hay vacíos esperando rampa.')+
    sec('En rampa · inspección, carga y descarga',n(inR,c=>c.status==='retiro'&&c.rampa),inR,'rampa','No hay contenedores en rampa.')+
    sec('Próximas llegadas',coming.length,coming,'coming','Sin bookings por llegar.')+
@@ -615,7 +615,7 @@ function vAdmin(){
    '<label class="f"><span class="flbl">Proveedor preferido</span><select class="fin" data-act="pref" id="prefSel">'+ACT().map(c=>'<option value="'+c.id+'"'+(c.id===s.preferred?' selected':'')+'>'+esc(c.name)+'</option>').join('')+'</select></label>'+
    '<p class="muted" style="margin:0;font-size:13.5px">Si el preferido rechaza, el booking pasa solo a modo abierto y el reloj de 1 h reinicia.</p></div>'+
    '<div class="panel"><h2 class="psect-title">Transportistas subcontratados</h2><div class="tw" style="border:0"><table class="t" style="min-width:0"><thead><tr><th>Empresa</th><th>Flota</th><th>Activos</th><th>Documentos</th></tr></thead><tbody>'+ACT().map(c=>'<tr><td>'+esc(c.name)+(c.id===s.preferred?' <span class="tag">Preferido</span>':'')+'</td><td class="num">'+c.units+'</td><td class="num">'+active(c.id)+'</td><td>'+(c.docVence>Date.now()?'<span class="cli-badge on">Hasta '+fmtDia(c.docVence)+'</span>':'<span class="cli-badge off">Vencidos</span>')+'</td></tr>').join('')+'</tbody></table></div><p class="lock" style="margin:0">El cliente nunca ve estos nombres: todo aparece como DP World.</p></div></div>'+
-  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
+  '<div class="sec"><div class="psect-hdr"><h2 class="psect-title">Todos los bookings Last Mile · por prioridad</h2><span class="psect-cnt">'+state.bookings.length+'</span></div>'+bkRows('aall',state.bookings,b=>{const by={};b.containers.forEach(c=>{if(c.carrierId)by[c.carrierId]=(by[c.carrierId]||0)+1;});
     return '<article class="bk">'+windows(b)+'<div class="bk-main">'+idRow(b)+'<div class="bk-meta"><span>Mercancía <strong>'+esc((b.cargo||{}).desc||'—')+'</strong></span><span>Modo <strong>'+(b.mode==='directo'?'Directo · '+esc(CN[b.directTo]||''):'Abierto')+'</strong></span></div>'+
      '<div><span class="flbl">Documentos</span>'+docsHtml(b)+'</div>'+
      '<div><span class="flbl">Transportistas</span><div class="chips">'+(Object.keys(by).map(k=>'<span class="chip">'+esc(CN[k])+' · '+by[k]+'</span>').join('')||'<span class="muted">Sin asignar</span>')+'</div></div>'+bar(b)+'</div>'+
@@ -935,7 +935,7 @@ function detail(id){
 function toLocalInput(t){const d=new Date(t-new Date(t).getTimezoneOffset()*MIN);return d.toISOString().slice(0,16);}
 function newBooking(tipo){
   const base=D('2026-10-16T07:00:00-05:00')+SHIFT,imp=tipo==='impo';
-  const head='<div class="sh-h"><div><span class="flbl">'+esc(CL(ui.client).name)+'</span><h3 class="mtitle">Nuevo booking</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>';
+  const head='<div class="sh-h"><div><span class="flbl">'+esc(CL(ui.client).name)+'</span><h3 class="mtitle">Nuevo booking Last Mile</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>';
   const tabs='<div class="htabs nb-tipo" role="group" aria-label="Tipo de operación">'+[['expo','Exportación'],['impo','Importación']].map(x=>'<button type="button" class="htab'+((imp?'impo':'expo')===x[0]?' active':'')+'" data-act="nbTipo" data-v="'+x[0]+'" aria-pressed="'+((imp?'impo':'expo')===x[0])+'">'+x[1]+'</button>').join('')+'</div>';
   const foot='<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="submitNew">Enviar booking</button></div>';
   if(imp){openModal(head+'<form class="sh-b form" id="nbForm" data-tipo="impo" novalidate>'+tabs+
@@ -971,11 +971,11 @@ function newBooking(tipo){
    '<label class="f"><span class="flbl">Patio de retiro</span><select class="fin" id="pl">'+PICK.map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></label>'+
    '<label class="f"><span class="flbl">Terminal de entrega</span><select class="fin" id="dl">'+DELIV.map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></label></div></fieldset>'+
   '<fieldset><legend>Booking</legend><div class="fgrid">'+
-   '<label class="f"><span class="flbl">Número de booking</span><input class="fin mono" id="rf" required placeholder="Ej. MAEU 261004587"></label>'+
+   '<label class="f"><span class="flbl">Booking de la naviera</span><input class="fin mono" id="rf" required placeholder="Ej. MAEU 261004587"></label>'+
    '<label class="f"><span class="flbl">Tamaño de contenedor</span><select class="fin" id="sz">'+SIZES.map(z=>'<option'+(z==='40\' HC'?' selected':'')+'>'+esc(z)+'</option>').join('')+'</select></label>'+
    '<label class="f"><span class="flbl">Cantidad</span><input class="fin" type="number" id="qt" min="1" max="60" value="12" required></label>'+
    '<label class="f"><span class="flbl">Naviera</span><select class="fin" id="nv">'+NAVIERAS.map(n=>'<option>'+esc(n)+'</option>').join('')+'</select></label></div>'+
-   '<label class="f"><span class="flbl">Booking (PDF)</span><input class="fin" type="file" id="dcb" accept=".pdf,application/pdf"></label>'+
+   '<label class="f"><span class="flbl">Booking de la naviera (PDF)</span><input class="fin" type="file" id="dcb" accept=".pdf,application/pdf"></label>'+
    '<label class="f"><span class="flbl">Otros documentos · release, instrucciones (PDF o foto)</span><input class="fin" type="file" id="dc" multiple accept=".pdf,application/pdf,image/*"></label></fieldset>'+
   '<fieldset class="wh"><legend>Detalle de carga · solo para bodega</legend><p class="lock" style="margin:0">El transportista no ve esta sección.</p>'+
    '<label class="f"><span class="flbl">Descripción de la mercancía</span><input class="fin" id="cd" value="Cerveza Atlas lata 355 ml"></label>'+
@@ -991,7 +991,7 @@ async function submitNew(){
   const err=document.getElementById('nbErr'),imp=document.getElementById('nbForm').dataset.tipo==='impo';
   const ref=v('rf').toUpperCase(), qty=parseInt(v('qt'),10);
   const pf=new Date(v('pf')).getTime(),pt=new Date(v('pt')).getTime(),df=new Date(v('df')).getTime(),dt=new Date(v('dt')).getTime();
-  if(!ref){err.textContent=imp?'Escribe el número de BL.':'Escribe el número de booking.';return;}
+  if(!ref){err.textContent=imp?'Escribe el número de BL.':'Escribe el número de booking de la naviera.';return;}
   if(!(qty>0)){err.textContent='La cantidad debe ser al menos 1.';return;}
   if(!(pt>pf)){err.textContent=imp?'El último día libre debe ser posterior a la disponibilidad en puerto.':'El fin del retiro de vacío debe ser posterior al inicio.';return;}
   if(!(dt>df)){err.textContent=imp?'El límite de devolución debe ser posterior al inicio.':'El fin de la entrega lleno debe ser posterior al inicio.';return;}
@@ -1012,7 +1012,7 @@ async function submitNew(){
   try{await Promise.all(files.map(f=>FILES.put(b.id+'/'+f.name,f)));}catch(e){saved=false;}
   state.bookings.push(b);
   log(CL(b.clientId).short+' creó '+(imp?'importación ':'')+ref+' · '+qty+' × '+b.size+' · '+(b.mode==='directo'?'directo a '+CN[b.directTo]:'publicado abierto'));
-  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),(imp?'Nueva importación ':'Nuevo booking ')+ref,qty+' × '+b.size+' · '+(imp?'retiro lleno en '+b.pickLoc+' desde ':'retiro desde ')+fmt(pf),b.id);
+  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),(imp?'Nueva importación ':'Nuevo booking Last Mile ')+ref,qty+' × '+b.size+' · '+(imp?'retiro lleno en '+b.pickLoc+' desde ':'retiro desde ')+fmt(pf),b.id);
   closeModal();commit();toast('Booking '+ref+' recibido. DP World está programando el transporte.');
   if(!saved)toast('Este navegador no permitió guardar los adjuntos.',true);
 }
