@@ -190,7 +190,7 @@ Es una plataforma para que el cliente cotice y siga su carga internacional. No e
 **Usuarios:**
 - **Cliente:** Cotizaciones y Embarques.
 - **Ventas FF (`ventas`):** cotiza y da seguimiento.
-- **Operaciones FF (`opsff`):** crea los embarques y registra los hitos.
+- **Operaciones FF (`opsff`):** confirma la reserva de los embarques y registra los hitos.
 - **Admin:** todo.
 - **Bodega:** «Llegadas internacionales», solo lectura y solo lo que va a CLP.
 
@@ -217,7 +217,9 @@ Es una plataforma para que el cliente cotice y siga su carga internacional. No e
 En la bandeja se ven la tasa de cierre y el tiempo de respuesta.
 
 **Embarque:**
-- Operaciones FF lo crea desde una cotización aceptada, con el HBL, HAWB o carta de porte, el transportista y las fechas estimadas de salida y arribo (ETD y ETA).
+- Se crea solo al aceptar la cotización, en estado **Por reservar**, con ruta, carga, incoterm y último tramo de la solicitud. El cliente lo ve desde ese momento.
+- Operaciones FF **confirma la reserva** con el HBL, HAWB o carta de porte, el transportista y las fechas estimadas de salida y arribo (ETD y ETA). Eso registra el hito de reserva y avisa al cliente.
+- Si pasan 48 h sin confirmar la reserva, el embarque se marca en riesgo.
 - **Hitos por modalidad:**
   - FCL: reserva, carga en origen, zarpe, arribo, liberado.
   - LCL: reserva, recibido en CFS, consolidado, zarpe, arribo, desconsolidado.
