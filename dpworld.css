@@ -929,3 +929,15 @@ main.lm-main{padding-block:18px 56px}
   .lm .q-t td{display:block;padding:0;border:0}.lm .q-t td::before{content:attr(data-l);display:block;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
   .lm .q-t td:last-child{grid-column:1/-1}.lm .q-t td:last-child::before{display:none}
 }
+
+/* lista de avisos con interruptores */
+.lm .nt{display:grid;gap:6px}
+.lm .nt-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.lm .nt-i{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 12px;border:1px solid var(--b1);border-radius:var(--r2);background:var(--b0)}
+.lm .nt-i div{display:grid;gap:2px;min-width:0}.lm .nt-i b{font-size:14px}.lm .nt-i span{font-size:12px;color:var(--t3)}
+.lm .sw{position:relative;flex:none;width:46px;height:26px;border-radius:13px;border:1px solid var(--b2);background:var(--b1);cursor:pointer;transition:background .2s,border-color .2s;padding:0}
+.lm .sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s}
+.lm .sw.on{background:var(--green);border-color:var(--green)}
+.lm .sw.on i{transform:translateX(20px)}
+.lm .sw:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.lm .sw,.lm .sw i{transition:none}}
