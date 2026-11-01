@@ -184,6 +184,61 @@ Datos: `contenedor.cita = {at, by}` y `contenedor.turno = {at, rampa, dur}`. En 
   - En importación, «Pruebas completas» exige las tres pruebas de importación.
 - **Fuera de alcance por ahora:** cruce de vacío, es decir, usar el vacío de una importación para cargar una exportación.
 
+## Freight forwarding: cotizaciones y embarques
+Es una plataforma para que el cliente cotice y siga su carga internacional. No es un sistema de tarifas ni contable: ventas cotiza con su propio formato y lo adjunta en PDF.
+
+**Usuarios:**
+- **Cliente:** Cotizaciones y Embarques.
+- **Ventas FF (`ventas`):** cotiza y da seguimiento.
+- **Operaciones FF (`opsff`):** crea los embarques y registra los hitos.
+- **Admin:** todo.
+- **Bodega:** «Llegadas internacionales», solo lectura y solo lo que va a CLP.
+
+**Solicitud de cotización:**
+- **Operación:** importación o exportación.
+- **Modalidad:** marítimo FCL, marítimo LCL, aéreo o terrestre FTL.
+- **El formulario se adapta a la modalidad** y marca cada campo como obligatorio u opcional:
+  - **Siempre:** ruta, incoterm, mercancía, peso, fecha de carga lista, carga peligrosa, servicios y frecuencia.
+  - **Recogida en origen:** solo con EXW o FCA.
+  - **Carga peligrosa:** clase y número UN, y la hoja de seguridad (MSDS).
+  - **FCL:** tipo y cantidad de contenedores y peso por contenedor. Si hay contenedor refrigerado, temperatura y ventilación; si hay open top o flat rack, las medidas de la carga sobredimensionada.
+  - **LCL:** bultos, embalaje, medidas y si se puede apilar. Calcula los m³.
+  - **Aéreo:** bultos, medidas, si se puede apilar y tipo de carga. Calcula el peso cobrable con el factor 1:6000.
+  - **Terrestre FTL:** direcciones de carga y entrega, y tipo de unidad.
+  - **Servicios:** aduana en origen y en destino, seguro (pide el valor de la mercancía), transporte interno y bodega DP World (pide el servicio, el tiempo de almacenaje y el régimen).
+  - **Opcionales:** partida arancelaria, naviera o aerolínea preferida, fecha requerida de llegada, adjuntos y comentarios.
+
+**Estados de la cotización:**
+1. Solicitada
+2. En cotización, o «Faltan datos» si ventas le pregunta algo al cliente y este responde en la misma solicitud.
+3. Cotizada, con PDF, vigencia y total opcional.
+4. Aceptada, o No cerrada: rechazada con motivo, o vencida si pasa la vigencia.
+
+En la bandeja se ven la tasa de cierre y el tiempo de respuesta.
+
+**Embarque:**
+- Operaciones FF lo crea desde una cotización aceptada, con el HBL, HAWB o carta de porte, el transportista y las fechas estimadas de salida y arribo (ETD y ETA).
+- **Hitos por modalidad:**
+  - FCL: reserva, carga en origen, zarpe, arribo, liberado.
+  - LCL: reserva, recibido en CFS, consolidado, zarpe, arribo, desconsolidado.
+  - Aéreo: reserva, recibido en aerolínea, despegue, arribo, liberado.
+  - Terrestre: reserva, cargado, en ruta, frontera, arribo.
+  - A esos se suma un **último hito que depende de los interruptores**.
+- Cada hito y cada cambio de ETA se avisa al cliente. Un ETA más tarde que el planeado se marca como retraso.
+- Se marca para revisar el embarque que lleva más de 48 h sin un hito nuevo.
+- Mapa con la ruta y la posición aproximada de la carga.
+
+**Interruptores del último tramo:** se editan hasta el arribo.
+
+| Transporte interno | Bodega DP World | Último hito |
+|---|---|---|
+| Sí | Sí | En bodega CLP. Si es FCL, **al registrar el arribo se crea la importación en Last Mile** con sus contenedores |
+| Sí | No | Entregado al cliente |
+| No | Sí | Recibido en CLP |
+| No | No | Retirado por el cliente |
+
+**Pendiente:** para que Last Mile entregue en la dirección del cliente, hoy el booking siempre va a CLP; falta también el último tramo de LCL y aéreo en Last Mile.
+
 ## Configuración
 - **Ubicación:** menú ☰ → Configuración, para todos los roles.
 - **Apariencia:** tema oscuro o claro. Se guarda por dispositivo. El tablero de rampas sigue oscuro en los dos temas.

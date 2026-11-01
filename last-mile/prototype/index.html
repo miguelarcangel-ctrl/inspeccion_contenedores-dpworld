@@ -127,7 +127,7 @@ const plate=()=>'AK'+(1000+rnd(8999));
 let state, ui={auth:false,user:'',role:'cliente',carrier:'c1',sec:'main',open:{},rp:'90',calW:0,secOpen:{}};
 
 /* sesión: cada usuario activa solo las vistas de su rol */
-const USERS0=[{u:'cernac',role:'cliente',client:'k1',n:'Logística CERNAC'},{u:'bodega',role:'bodega',n:'Bodega CLP'},{u:'costa',role:'transportista',carrier:'c1',n:'Despacho Costa'},{u:'istmo',role:'transportista',carrier:'c2',n:'Despacho Istmo'},{u:'caribe',role:'transportista',carrier:'c3',n:'Despacho Caribe'},{u:'admin',role:'admin',n:'DP World · Admin'}];
+const USERS0=[{u:'cernac',role:'cliente',client:'k1',n:'Logística CERNAC'},{u:'bodega',role:'bodega',n:'Bodega CLP'},{u:'costa',role:'transportista',carrier:'c1',n:'Despacho Costa'},{u:'istmo',role:'transportista',carrier:'c2',n:'Despacho Istmo'},{u:'caribe',role:'transportista',carrier:'c3',n:'Despacho Caribe'},{u:'admin',role:'admin',n:'DP World · Admin'},{u:'ventas',role:'ventas',n:'Ventas FF'},{u:'opsff',role:'opsff',n:'Operaciones FF'}];
 const WA=[['coord','Coordinación','Retiros, citas, rampas y problemas con un viaje'],['ger','Gerencia','Escalamientos y temas de servicio importantes'],['ventas','Ventas y servicios','Cotizaciones, nuevos servicios y tarifas']];
 // WhatsApp necesita el número completo con código de país: un número local de Panamá (8 dígitos) se completa con 507
 const waIntl=v=>{let d=(v||'').replace(/\D/g,'');if(/^00/.test(d))d=d.slice(2);else if(!/^\s*\+/.test(v||'')&&d.length<=8)d='507'+d;return d;};
@@ -135,6 +135,8 @@ const waFmt=d=>/^507\d{8}$/.test(d)?'+507 '+d.slice(3,7)+'-'+d.slice(7):'+'+d;
 const waGrupo=v=>/^https:\/\/chat\.whatsapp\.com\/\w+/.test(v||'');  // enlace de invitación a un grupo
 const waNum=k=>k==='coord'?state.settings.auto.tel:(state.settings.wa||{})[k]||'';
 function migrate(){
+  // freight forwarding: datos de ejemplo y usuarios de ventas y operaciones FF para demos ya guardadas
+  if(!state.ffSeeded){const f=seedFF();state.quotes=state.quotes||f.quotes;state.ships=state.ships||f.ships;if(state.users)USERS0.filter(x=>x.role==='ventas'||x.role==='opsff').forEach(x=>{if(!state.users.some(u=>u.u===x.u))state.users.push(Object.assign({pass:'demo',active:true},x));});state.ffSeeded=true;}
   // demos guardadas antes del módulo de importación reciben los ejemplos sin perder lo demás
   if(!state.impoSeeded){if(!state.bookings.some(isImpo))state.bookings.push(...seedImpo(Date.now()));state.impoSeeded=true;}
   state.settings.wa=state.settings.wa||{ger:'+507 6000-0001',ventas:'+507 6000-0002'};
@@ -145,7 +147,7 @@ function migrate(){
   if(ui.auth&&ui.role==='cliente'&&!ui.client)ui.client=(USERS[ui.user]||{}).client||'k1';
 }
 function syncRef(){CARRIERS=state.carriers;CN=Object.fromEntries(CARRIERS.map(c=>[c.id,c.name]));USERS=Object.fromEntries(state.users.map(x=>[x.u,x]));}
-const SECTIONS={cliente:[['main','Mis bookings'],['cal','Calendario'],['config','Configuración']],transportista:[['main','Bookings'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings'],['cal','Calendario'],['rampas','Rampas'],['config','Configuración']],admin:[['main','Panel'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['config','Configuración']]};
+const SECTIONS={cliente:[['main','Mis bookings'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['config','Configuración']],ventas:[['cotiz','Cotizaciones'],['emb','Embarques'],['config','Configuración']],opsff:[['emb','Embarques'],['cotiz','Cotizaciones'],['config','Configuración']],transportista:[['main','Bookings'],['cal','Calendario'],['config','Configuración']],bodega:[['main','Bookings'],['cal','Calendario'],['rampas','Rampas'],['emb','Llegadas internacionales'],['config','Configuración']],admin:[['main','Panel'],['cotiz','Cotizaciones'],['emb','Embarques'],['cal','Calendario'],['rampas','Rampas'],['reportes','Reportes'],['config','Configuración']]};
 
 /* Control de Rampas (bodega CLP): estados de la operación SALIDA mientras el contenedor está en bodega */
 const RAMPS=6, BUFFER=16;
@@ -423,7 +425,8 @@ function attention(){
 }
 function renderRoles(){
   const secs=SECTIONS[ui.role]||[], nav=document.getElementById('roles');
-  const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin}}[ui.role]||{};
+  const qn=st=>misQ().filter(q=>st.indexOf(qSt(q))>=0).length,sAtt=()=>state.ships.filter(s=>!ffDone(s)&&(ffLate(s)||ffStale(s))).length;
+  const badge={bodega:{rampas:cola().length,cal:sinTurno().length},transportista:{cal:sinCita().length},admin:{main:attention().admin,cotiz:qn(['solicitada'])},cliente:{cotiz:qn(['cotizada','info'])},ventas:{cotiz:qn(['solicitada','cotizando'])},opsff:{emb:sAtt(),cotiz:state.quotes.filter(q=>qSt(q)==='aceptada'&&!q.shipId).length}}[ui.role]||{};
   nav.hidden=true;
   document.getElementById('drawerItems').innerHTML=secs.map(x=>'<button type="button" class="drawer-item'+(ui.sec===x[0]?' active':'')+'" data-act="sec" data-k="'+x[0]+'"'+(ui.sec===x[0]?' aria-current="page"':'')+'><span>'+x[1]+'</span>'+(badge[x[0]]?'<span class="badge">'+badge[x[0]]+'</span>':'')+'</button>').join('');
   const cur=(secs.find(x=>x[0]===ui.sec)||secs[0]||[])[1];
@@ -1165,10 +1168,12 @@ function doAdv(bid,cid,to){
    Supabase y una Edge Function lo envía con web-push a cada dispositivo suscrito (ver sw.js). */
 const PUSH_KEY='dpw-lastmile-push';
 const uName=u=>{const x=USERS[u];return !x?u:x.role==='transportista'?CN[x.carrier]:x.role==='cliente'?CL(x.client).name:x.n;};
-const AVISOS={cliente:['Transporte asignado a tu booking','Vacío retirado y en camino a bodega','Contenedor cargado y sellado','Entregado en puerto y devuelto','Importación: liberada, retirada del puerto, descargada y vacío devuelto'],
+const AVISOS={cliente:['Cotización lista, datos que faltan y cada hito de tus embarques','Transporte asignado a tu booking','Vacío retirado y en camino a bodega','Contenedor cargado y sellado','Entregado en puerto y devuelto','Importación: liberada, retirada del puerto, descargada y vacío devuelto'],
   transportista:['Booking nuevo para ti','Importación liberada: ya puedes retirar en puerto','Vacío de importación listo para devolver','Aprobación o rechazo de DP World','Turno de rampa asignado','Contenedor sellado, listo para retirar','Reasignación o cancelación'],
   bodega:['Cita de retiro agendada','Vacío retirado: entra a la cola de rampa','Llegada de importación: lleno en camino a la rampa'],
-  admin:['Confirmación por revisar','Aprobación automática (con plazo para revertir)','Booking vencido sin confirmación','Cancelación del cliente']};
+  admin:['Confirmación por revisar','Aprobación automática (con plazo para revertir)','Booking vencido sin confirmación','Cancelación del cliente','Nueva solicitud de cotización'],
+  ventas:['Nueva solicitud de cotización','El cliente respondió los datos que faltaban','Cotización aceptada o no aceptada'],
+  opsff:['Cotización aceptada: crear el embarque']};
 let swReg=null,installEv=null;
 const pushSubs=()=>{try{return JSON.parse(localStorage.getItem(PUSH_KEY))||{};}catch(e){return {};}};
 const pushSet=o=>{try{localStorage.setItem(PUSH_KEY,JSON.stringify(o));}catch(e){}};
@@ -1228,7 +1233,7 @@ function pushActivate(){
 }
 
 /* ===== configuración: tema y administración de clientes, transportistas y usuarios ===== */
-const ROLES={cliente:'Cliente',transportista:'Transportista',bodega:'Bodega',admin:'Admin DP World'};
+const ROLES={cliente:'Cliente',transportista:'Transportista',bodega:'Bodega',ventas:'Ventas FF',opsff:'Operaciones FF',admin:'Admin DP World'};
 const KINDS={clientes:{t:'Clientes',one:'cliente'},transportistas:{t:'Transportistas',one:'transportista'},usuarios:{t:'Usuarios',one:'usuario'}};
 const theme=()=>ui.theme==='light'?'light':'dark';
 function applyTheme(){document.body.classList.toggle('theme-light',theme()==='light');}
@@ -1359,6 +1364,311 @@ function waMenu(open){
   if(open){const f=m.querySelector('a');if(f)f.focus();}
 }
 
+/* ===== FREIGHT FORWARDING: cotizaciones y embarques =====
+   Plataforma para el cliente: pide cotización con los datos que un forwarder necesita, ventas cotiza (PDF propio),
+   el cliente acepta o rechaza y operaciones FF lo convierte en embarque con hitos. No es un sistema de tarifas ni contable. */
+const FF_MODOS={
+  fcl:{t:'Marítimo FCL',tag:'FCL',ref:'HBL',carrier:'Naviera',veh:'Buque · viaje',hit:['Reserva','Carga en origen','Zarpe','Arribo','Liberado'],sh:['Reserva','Carga orig.','Zarpe','Arribo','Liberado']},
+  lcl:{t:'Marítimo LCL',tag:'LCL',ref:'HBL',carrier:'Naviera o consolidador',veh:'Buque · viaje',hit:['Reserva','Recibido en CFS','Consolidado','Zarpe','Arribo','Desconsolidado'],sh:['Reserva','CFS','Consolid.','Zarpe','Arribo','Desconsol.']},
+  aer:{t:'Aéreo',tag:'Aéreo',ref:'HAWB',carrier:'Aerolínea',veh:'Vuelo',hit:['Reserva','Recibido en aerolínea','Despegue','Arribo','Liberado'],sh:['Reserva','Recibido','Despegue','Arribo','Liberado']},
+  ftl:{t:'Terrestre FTL',tag:'Terrestre',ref:'Carta de porte',carrier:'Transportista',veh:'Unidad · placa',hit:['Reserva','Cargado','En ruta','Frontera','Arribo'],sh:['Reserva','Cargado','En ruta','Frontera','Arribo']}};
+// último hito según los dos interruptores
+const ffFinal=s=>s.transporte&&s.bodega?['En bodega CLP','En CLP']:s.transporte?['Entregado al cliente','Entregado']:s.bodega?['Recibido en CLP','En CLP']:['Retirado por el cliente','Retirado'];
+const ffHitos=s=>FF_MODOS[s.modo].hit.concat(ffFinal(s)[0]);
+const ffShort=s=>FF_MODOS[s.modo].sh.concat(ffFinal(s)[1]);
+// lugares conocidos: se usan en las sugerencias y para dibujar la ruta
+const FF_LUG=[['Shanghái, CN','p',121.5,31.2],['Ningbo, CN','p',121.6,29.9],['Shenzhen, CN','p',114.1,22.5],['Busan, KR','p',129,35.1],['Singapur, SG','p',103.8,1.3],['Rotterdam, NL','p',4.4,51.9],['Hamburgo, DE','p',9.9,53.5],['Valencia, ES','p',-0.3,39.4],['Algeciras, ES','p',-5.45,36.1],['Houston, US','p',-95.3,29.7],['Miami, US','p',-80.2,25.8],['Los Ángeles, US','p',-118.2,33.7],['Nueva York, US','p',-74,40.7],['Cartagena, CO','p',-75.5,10.4],['Callao, PE','p',-77.1,-12.05],['Santos, BR','p',-46.3,-23.95],['Manzanillo, MX','p',-104.3,19.05],['Colón, PA','p',-79.9,9.35],['Balboa, PA','p',-79.57,8.95],
+  ['Miami (MIA), US','a',-80.29,25.79],['Shanghái (PVG), CN','a',121.8,31.15],['Madrid (MAD), ES','a',-3.57,40.47],['Bogotá (BOG), CO','a',-74.15,4.7],['Ciudad de México (MEX), MX','a',-99.07,19.44],['Tocumen (PTY), PA','a',-79.38,9.07],
+  ['San José, CR','c',-84.1,9.93],['Managua, NI','c',-86.25,12.13],['Ciudad de Guatemala, GT','c',-90.5,14.6],['San Salvador, SV','c',-89.2,13.7],['Tegucigalpa, HN','c',-87.2,14.07],['David, PA','c',-82.43,8.43],['Colón (CLP), PA','c',-79.9,9.35],['Ciudad de Panamá, PA','c',-79.52,8.98]];
+const ffLug=n=>FF_LUG.find(x=>x[0].toLowerCase()===String(n||'').trim().toLowerCase());
+const CONT_T=["20' DV","40' DV","40' HC","20' RF","40' RF","40' OT","40' FR"];
+const yes=v=>v==='si';
+const isM=(...m)=>q=>m.indexOf(q.modo)>=0;
+const rf=q=>q.modo==='fcl'&&(q.conts||[]).some(c=>/RF/.test(c.t)),ot=q=>q.modo==='fcl'&&(q.conts||[]).some(c=>/OT|FR/.test(c.t));
+/* campos de la solicitud: [sección, clave, etiqueta, tipo, obligatorio(q), visible(q), opciones, ejemplo] */
+const QF=[
+ ['ruta','origen','Origen · puerto, aeropuerto o ciudad','lugar',1,1],
+ ['ruta','destino','Destino','lugar',1,1],
+ ['ruta','incoterm','Incoterm','select',1,1,['EXW','FCA','FOB','CFR','CIF','CPT','CIP','DAP','DPU','DDP']],
+ ['ruta','recogida','Dirección de recogida en origen','text',q=>/EXW|FCA/.test(q.incoterm),q=>/EXW|FCA/.test(q.incoterm),null,'Calle, ciudad, país'],
+ ['ruta','dirCarga','Dirección de carga','text',isM('ftl'),isM('ftl')],
+ ['ruta','dirEntrega','Dirección de entrega','text',isM('ftl'),isM('ftl')],
+ ['carga','desc','Descripción general de la mercancía','text',1,1,null,'Ej. latas de aluminio vacías'],
+ ['carga','peso','Peso bruto total (kg)','number',1,1],
+ ['carga','ready','Fecha en que la carga está lista','date',1,1],
+ ['carga','conts','Contenedores · tipo y cantidad','conts',isM('fcl'),isM('fcl')],
+ ['carga','pesoCont','Peso por contenedor (kg)','number',isM('fcl'),isM('fcl')],
+ ['carga','temp','Temperatura (°C)','number',rf,rf],
+ ['carga','vent','Ventilación (%)','number',0,rf],
+ ['carga','sobredim','Medidas de la carga sobredimensionada','text',ot,ot,null,'Largo × ancho × alto en cm'],
+ ['carga','bultos','Cantidad de bultos','number',isM('lcl','aer'),isM('lcl','aer')],
+ ['carga','embalaje','Tipo de embalaje','select',isM('lcl'),isM('lcl'),['Pallet','Caja','Saco','Tambor','Otro']],
+ ['carga','dims','Medidas por bulto (cm)','text',isM('lcl','aer'),isM('lcl','aer'),null,'120 × 100 × 150'],
+ ['carga','apilable','¿Se puede apilar?','yn',isM('lcl','aer'),isM('lcl','aer')],
+ ['carga','tipoAer','Tipo de carga','select',isM('aer'),isM('aer'),['General','Perecedera','Valiosa','Peligrosa','Temperatura controlada']],
+ ['carga','unidad','Tipo de unidad','select',isM('ftl'),isM('ftl'),["Rastra 40'","Rastra 53'",'Furgón','Plataforma','Refrigerada']],
+ ['carga','dg','¿Carga peligrosa (IMO / UN)?','yn',1,1],
+ ['carga','dgClase','Clase UN','select',q=>yes(q.dg),q=>yes(q.dg),['1','2','3','4','5','6','7','8','9']],
+ ['carga','dgUn','Número UN','text',q=>yes(q.dg),q=>yes(q.dg),null,'UN 1993'],
+ ['carga','msds','Hoja de seguridad (MSDS)','file',q=>yes(q.dg),q=>yes(q.dg)],
+ ['carga','libres','Días libres que necesita en destino','number',0,isM('fcl')],
+ ['carga','paletizada','Carga paletizada o a piso','select',0,isM('fcl'),['Paletizada','A piso']],
+ ['carga','urg','Urgencia','select',0,isM('aer'),['Estándar','Exprés']],
+ ['carga','transito','¿Requiere tránsito aduanero o documentos de frontera?','yn',0,isM('ftl')],
+ ['carga','escolta','¿Escolta o custodia?','yn',0,isM('ftl')],
+ ['serv','aduOri','Despacho de aduana en origen','yn',1,1],
+ ['serv','aduDes','Despacho de aduana en destino','yn',1,1],
+ ['serv','seguro','Seguro de carga','yn',1,1],
+ ['serv','valor','Valor de la mercancía (USD)','number',q=>yes(q.seguro),q=>yes(q.seguro)],
+ ['serv','transporte','Transporte interno con DP World · última milla','yn',1,1],
+ ['serv','bodega','¿Va a bodega DP World (CLP)?','yn',1,1],
+ ['serv','bodServ','Servicio en bodega','select',q=>yes(q.bodega),q=>yes(q.bodega),['Almacenaje','Cross-dock','Servicios de valor agregado']],
+ ['serv','bodTiempo','Tiempo estimado de almacenaje','text',0,q=>yes(q.bodega),null,'30 días'],
+ ['serv','bodReg','Régimen en bodega','select',0,q=>yes(q.bodega),['No nacionalizado (zona libre)','Nacionalizado','Por definir']],
+ ['serv','frec','Frecuencia','select',1,1,['Embarque único','Recurrente']],
+ ['serv','volMes','Volumen mensual estimado','text',q=>q.frec==='Recurrente',q=>q.frec==='Recurrente',null,'4 contenedores al mes'],
+ ['opc','hs','Partida arancelaria (código HS)','text',0,1],
+ ['opc','pref','Naviera, aerolínea o transportista preferido','text',0,1],
+ ['opc','llegada','Fecha requerida de llegada','date',0,1],
+ ['opc','adj','Adjuntos · packing list, fotos, proforma','file',0,1],
+ ['opc','coment','Comentarios','textarea',0,1]];
+const QSEC={ruta:'Ruta',carga:'Carga',serv:'Servicios',opc:'Opcional'};
+const ev=(f,q)=>typeof f==='function'?!!f(q):!!f;
+const Q_ST={solicitada:['Solicitada','wait'],cotizando:['En cotización','tr'],info:['Faltan datos','off'],cotizada:['Cotizada · esperando respuesta','wait'],aceptada:['Aceptada','on'],rechazada:['Rechazada','mute'],vencida:['Vencida','mute']};
+const qSt=q=>q.status==='cotizada'&&q.quote&&q.quote.vig<Date.now()?'vencida':q.status;
+const qPill=q=>{const s=Q_ST[qSt(q)];return '<span class="cli-badge '+s[1]+'">'+s[0]+'</span>';};
+const ffTag=m=>'<span class="tag ff-mode '+m+'">'+FF_MODOS[m].tag+'</span>';
+const ffTipo=t=>t==='expo'?'Exportación':'Importación';
+const nums=t=>(String(t||'').match(/\d+([.,]\d+)?/g)||[]).map(x=>parseFloat(x.replace(',','.')));
+function qCalc(q){
+  // datos calculados para ventas: m³ (LCL) y peso cobrable (aéreo, factor 1:6000)
+  const d=nums(q.dims),b=+q.bultos||0;if(d.length<3||!b)return '';
+  const cm3=d[0]*d[1]*d[2]*b,cbm=Math.round(cm3/1e4)/100;
+  if(q.modo==='lcl')return cbm.toLocaleString('es-PA')+' m³ en total';
+  if(q.modo==='aer'){const vol=Math.round(cm3/6000),cob=Math.max(vol,+q.peso||0);return 'Peso volumétrico '+vol.toLocaleString('es-PA')+' kg · cobrable '+cob.toLocaleString('es-PA')+' kg';}
+  return '';
+}
+const qVal=(q,f)=>{const v=q[f[1]];if(f[3]==='conts')return (v||[]).map(c=>c.n+' × '+c.t).join(' · ');if(f[3]==='yn')return v==='si'?'Sí':v==='no'?'No':'';if(f[3]==='date')return v?fmtDia(fromPa(v+'T12:00')):'';if(f[3]==='number'&&v!=='')return (+v).toLocaleString('es-PA');if(f[3]==='file')return (v||[]).join(', ');return v||'';};
+function qResumen(q){
+  return Object.keys(QSEC).map(sec=>{const fs=QF.filter(f=>f[0]===sec&&ev(f[5],q)&&qVal(q,f));if(!fs.length)return '';
+    return '<div class="q-sec"><span class="flbl">'+QSEC[sec]+'</span><div class="q-kv">'+fs.map(f=>'<div><span>'+esc(f[2])+'</span><b>'+(f[3]==='file'?q[f[1]].map(n=>docBtn('q/'+q.id+'/'+n,n,q.num)).join(' '):esc(qVal(q,f)))+'</b></div>').join('')+
+    (sec==='carga'&&qCalc(q)?'<div><span>Calculado</span><b>'+esc(qCalc(q))+'</b></div>':'')+'</div></div>';}).join('');
+}
+/* ----- formulario de solicitud ----- */
+function qForm(){
+  const c=CL(ui.role==='cliente'?ui.client:'k1');
+  const fld=f=>{const id='qf-'+f[1],req=f[4]?'<i class="q-req">obligatorio</i>':'<i class="q-opt">opcional</i>';let inp;
+    if(f[3]==='select')inp='<select class="fin" id="'+id+'"><option value="">Elige</option>'+f[6].map(o=>'<option>'+esc(o)+'</option>').join('')+'</select>';
+    else if(f[3]==='yn')inp='<div class="htabs q-yn" data-k="'+f[1]+'"><button type="button" class="htab" data-act="qyn" data-k="'+f[1]+'" data-v="si">Sí</button><button type="button" class="htab" data-act="qyn" data-k="'+f[1]+'" data-v="no">No</button></div><input type="hidden" id="'+id+'">';
+    else if(f[3]==='conts')inp='<div id="qf-conts" class="q-conts"></div><button type="button" class="link" data-act="qcont" style="justify-self:start">+ Agregar tipo de contenedor</button>';
+    else if(f[3]==='file')inp='<input class="fin" type="file" id="'+id+'" multiple accept=".pdf,application/pdf,image/*,.xlsx,.xls,.csv">';
+    else if(f[3]==='textarea')inp='<textarea class="fin" id="'+id+'"></textarea>';
+    else inp='<input class="fin" id="'+id+'" type="'+(f[3]==='lugar'?'text':f[3])+'"'+(f[3]==='lugar'?' list="qf-lugares" autocomplete="off"':'')+(f[7]?' placeholder="'+esc(f[7])+'"':'')+(f[3]==='number'?' min="0" step="any"':'')+'>';
+    return '<label class="f q-f" data-f="'+f[1]+'"><span class="flbl">'+esc(f[2])+' '+req+'</span>'+inp+'</label>';};
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(c.name)+'</span><h3 class="mtitle">Solicitar cotización</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<form class="sh-b form" id="qfForm" novalidate>'+
+   '<div class="fgrid"><div class="f"><span class="flbl">Operación <i class="q-req">obligatorio</i></span><div class="htabs q-yn" data-k="tipo">'+[['impo','Importación'],['expo','Exportación']].map(x=>'<button type="button" class="htab" data-act="qyn" data-k="tipo" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><input type="hidden" id="qf-tipo"></div>'+
+   '<div class="f"><span class="flbl">Modalidad <i class="q-req">obligatorio</i></span><div class="htabs q-yn" data-k="modo">'+Object.keys(FF_MODOS).map(k=>'<button type="button" class="htab" data-act="qyn" data-k="modo" data-v="'+k+'">'+FF_MODOS[k].t+'</button>').join('')+'</div><input type="hidden" id="qf-modo"></div></div>'+
+   Object.keys(QSEC).map(sec=>'<fieldset data-sec="'+sec+'"><legend>'+QSEC[sec]+'</legend><div class="fgrid">'+QF.filter(f=>f[0]===sec).map(fld).join('')+'</div>'+(sec==='carga'?'<p class="muted q-calc" id="qf-calc"></p>':'')+(sec==='serv'?'<p class="muted" style="margin:0;font-size:12.5px">Si no contrata el transporte interno, su transportista retira la carga. Si no va a nuestra bodega, el embarque termina en la entrega o el retiro.</p>':'')+'</div></fieldset>').join('')+
+   '<datalist id="qf-lugares"></datalist><div class="err" id="qfErr"></div></form>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="qEnviarSol">Enviar solicitud</button></div>',false);
+  qSet('tipo','impo');qSet('modo','fcl');qSet('dg','no');qSet('frec','');qAddCont("40' HC",2);qVis();
+}
+function qSet(k,v){const h=document.getElementById('qf-'+k);if(!h)return;h.value=v;document.querySelectorAll('.q-yn[data-k="'+k+'"] .htab').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  // Panamá como destino (importación) u origen (exportación), según la modalidad
+  if(k==='tipo'||k==='modo'){const tipo=document.getElementById('qf-tipo').value,m=document.getElementById('qf-modo').value,pa=m==='aer'?'Tocumen (PTY), PA':m==='ftl'?'Colón (CLP), PA':'Colón, PA',def=['','Colón, PA','Tocumen (PTY), PA','Colón (CLP), PA'];
+    const o=document.getElementById('qf-origen'),d=document.getElementById('qf-destino');if(!o||!d)return;
+    if(tipo==='impo'){if(def.indexOf(d.value)>=0)d.value=pa;if(def.indexOf(o.value)>=0)o.value='';}else{if(def.indexOf(o.value)>=0)o.value=pa;if(def.indexOf(d.value)>=0)d.value='';}}}
+function qAddCont(t,n){const w=document.getElementById('qf-conts');if(!w)return;const r=document.createElement('div');r.className='q-cont';r.innerHTML='<select class="fin" aria-label="Tipo de contenedor">'+CONT_T.map(x=>'<option'+(x===t?' selected':'')+'>'+x+'</option>').join('')+'</select><input class="fin" type="number" min="1" value="'+(n||1)+'" aria-label="Cantidad"><button type="button" class="mclose" data-act="qcontx" aria-label="Quitar">×</button>';w.appendChild(r);}
+function qRead(){
+  const q={};QF.concat([[0,'tipo'],[0,'modo']]).forEach(f=>{const el=document.getElementById('qf-'+f[1]);if(f[3]==='conts'){q.conts=[...document.querySelectorAll('#qf-conts .q-cont')].map(r=>({t:r.querySelector('select').value,n:parseInt(r.querySelector('input').value,10)||0})).filter(c=>c.n>0);return;}
+    if(f[3]==='file'){q[f[1]]=el?[...el.files].map(x=>x.name):[];q['_'+f[1]]=el?[...el.files]:[];return;}q[f[1]]=el?el.value.trim():'';});return q;}
+function qVis(){
+  const q=qRead();QF.forEach(f=>{const el=document.querySelector('.q-f[data-f="'+f[1]+'"]');if(!el)return;el.hidden=!ev(f[5],q);const t=el.querySelector('.flbl i');if(t){const r=ev(f[4],q);t.className=r?'q-req':'q-opt';t.textContent=r?'obligatorio':'opcional';}});
+  document.querySelectorAll('#qfForm fieldset').forEach(fs=>{fs.hidden=![...fs.querySelectorAll('.q-f')].some(x=>!x.hidden);});
+  const k=q.modo==='aer'?'a':q.modo==='ftl'?'c':'p';document.getElementById('qf-lugares').innerHTML=FF_LUG.filter(x=>x[1]===k).map(x=>'<option value="'+esc(x[0])+'">').join('');
+  const c=document.getElementById('qf-calc');if(c)c.textContent=qCalc(q);
+}
+async function qEnviarSol(){
+  const q=qRead(),err=document.getElementById('qfErr');
+  const falta=QF.filter(f=>ev(f[5],q)&&ev(f[4],q)&&(f[3]==='conts'?!q.conts.length:f[3]==='file'?!q[f[1]].length:!q[f[1]])).map(f=>f[2]);
+  if(!q.tipo||!q.modo)falta.unshift('Operación y modalidad');
+  if(falta.length){err.innerHTML='Faltan datos obligatorios: '+falta.map(esc).join(' · ');return;}
+  if(+q.peso<=0){err.textContent='El peso debe ser mayor que cero.';return;}
+  const n=state.quotes.length+1,d=new Date(),id=uid('q');
+  const o=Object.assign({},q);delete o._msds;delete o._adj;
+  Object.assign(o,{id:id,num:'COT-'+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,'0')+'-'+String(n).padStart(3,'0'),clientId:ui.role==='cliente'?ui.client:'k1',at:Date.now(),by:ui.user,status:'solicitada',msgs:[]});
+  [...(q._msds||[]),...(q._adj||[])].forEach(f=>FILES.put('q/'+id+'/'+f.name,f).catch(()=>{}));
+  state.quotes.unshift(o);log(CL(o.clientId).short+' pidió cotización '+o.num+' · '+FF_MODOS[o.modo].t+' · '+o.origen+' → '+o.destino);
+  notify(['ventas','admin'],'Nueva solicitud de cotización',o.num+' · '+CL(o.clientId).short+' · '+FF_MODOS[o.modo].t+' '+o.origen+' → '+o.destino);
+  closeModal();ui.sec='cotiz';commit();toast('Solicitud '+o.num+' enviada. Ventas te responde con la cotización.');
+}
+/* ----- bandeja de cotizaciones ----- */
+const misQ=()=>state.quotes.filter(q=>ui.role!=='cliente'||q.clientId===ui.client);
+function qActs(q){
+  const r=ui.role,st=qSt(q),A=(a,l,c)=>'<button class="btn-p '+(c||'btn-navy')+' inl" data-act="'+a+'" data-id="'+q.id+'">'+l+'</button>';
+  let h=A('qVer','Ver solicitud');
+  if(r==='ventas'||r==='admin'){if(st==='solicitada')h+=A('qTomar','Tomar','btn-green');if(st==='solicitada'||st==='cotizando')h+=A('qPedir','Pedir datos')+A('qCotizar','Enviar cotización','btn-green');
+    if(st==='cotizada')h+=A('qAcepta','Aceptó','btn-green')+A('qRechaza','No aceptó','btn-red');}
+  if(r==='cliente'){if(st==='info')h+=A('qResp','Responder','btn-green');if(st==='cotizada')h+=A('qAcepta','Aceptar','btn-green')+A('qRechaza','Rechazar','btn-red');}
+  if((r==='opsff'||r==='admin')&&st==='aceptada'&&!q.shipId)h+=A('sNuevo','Crear embarque','btn-green');
+  if(q.quote&&q.quote.pdf)h+=docBtn('q/'+q.id+'/'+q.quote.pdf,'Cotización '+q.num+'.pdf',q.num);
+  return h;
+}
+function qRows(list){
+  if(!list.length)return '';
+  return '<div class="tw"><table class="t q-t"><thead><tr><th>Cotización</th><th>Modalidad</th><th>Ruta</th>'+(ui.role!=='cliente'?'<th>Cliente</th>':'')+'<th>Pedida</th><th>Estado</th><th></th></tr></thead><tbody>'+list.map(q=>
+   '<tr><td data-l="Cotización" class="mono"><b>'+esc(q.num)+'</b>'+(q.shipId?'<div class="muted" style="font-size:12px">Embarque '+esc((state.ships.find(s=>s.id===q.shipId)||{}).ref||'')+'</div>':'')+'</td><td data-l="Modalidad">'+ffTag(q.modo)+' <span class="muted">'+ffTipo(q.tipo)+'</span></td><td data-l="Ruta">'+esc(q.origen)+' → '+esc(q.destino)+'</td>'+
+   (ui.role!=='cliente'?'<td data-l="Cliente">'+esc(CL(q.clientId).short)+'</td>':'')+'<td data-l="Pedida">'+ago(q.at)+'</td><td data-l="Estado">'+qPill(q)+(qSt(q)==='cotizada'?'<div class="muted" style="font-size:12px">Vigente hasta '+fmtDia(q.quote.vig)+(q.quote.monto?' · USD '+q.quote.monto.toLocaleString('es-PA'):'')+'</div>':'')+(qSt(q)==='rechazada'&&q.rechazo?'<div class="muted" style="font-size:12px">'+esc(q.rechazo.m)+'</div>':'')+'</td><td class="r"><div class="cfg-acts">'+qActs(q)+'</div></td></tr>').join('')+'</tbody></table></div>';
+}
+function vCotiz(){
+  const L=misQ(),st=q=>qSt(q),cli=ui.role==='cliente';
+  const abiertas=L.filter(q=>['solicitada','cotizando','info','cotizada'].indexOf(st(q))>=0),ganadas=L.filter(q=>st(q)==='aceptada'),cerradas=L.filter(q=>st(q)==='rechazada'||st(q)==='vencida');
+  const dec=L.filter(q=>['aceptada','rechazada','vencida'].indexOf(st(q))>=0),tasa=dec.length?Math.round(ganadas.length/dec.length*100):null;
+  const resp=L.filter(q=>q.quote).map(q=>(q.quote.at-q.at)/HOUR),prom=resp.length?Math.round(resp.reduce((a,b)=>a+b,0)/resp.length):null;
+  const sb=(n,c,l)=>'<div class="sbox"><div class="sn '+c+'">'+n+'</div><div class="sl2">'+l+'</div></div>';
+  const sec=(t,l,e)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+t+'</h2><span class="psect-cnt">'+l.length+'</span></div>'+(l.length?qRows(l):'<div class="empty">'+e+'</div>')+'</div>';
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">Cotizaciones</h1><p class="sc-sub">'+(cli?'Pide la cotización de tu carga internacional: marítima, aérea o terrestre. Te respondemos con la propuesta y, si la aceptas, la convertimos en tu embarque.':'Solicitudes de los clientes. Ventas cotiza con su propio formato (PDF); si el cliente acepta, operaciones FF la convierte en embarque.')+'</p></div>'+(cli||ui.role==='ventas'||ui.role==='admin'?'<button class="btn-p btn-green inl" data-act="qNueva">Solicitar cotización</button>':'')+'</div>'+
+   '<div class="stats">'+sb(L.filter(q=>st(q)==='solicitada').length,'sa',cli?'Enviadas':'Nuevas')+sb(L.filter(q=>st(q)==='cotizada').length,'en','Esperando respuesta')+sb(tasa===null?'—':tasa+' %','ok','Tasa de cierre')+(cli?'':sb(prom===null?'—':prom+' h','sl','Tiempo de respuesta'))+'</div>'+
+   (ui.role==='opsff'?sec('Aceptadas · crear embarque',ganadas.filter(q=>!q.shipId),'Nada pendiente de convertir en embarque.'):'')+
+   sec('En proceso',abiertas,'No hay solicitudes en proceso.')+sec('Aceptadas',ui.role==='opsff'?ganadas.filter(q=>q.shipId):ganadas,'Aún no hay cotizaciones aceptadas.')+sec('No cerradas',cerradas,'Ninguna.')+'</section>';
+}
+function qVer(id){const q=state.quotes.find(x=>x.id===id);
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(CL(q.clientId).name)+' · '+ffTipo(q.tipo)+' · '+FF_MODOS[q.modo].t+'</span><h3 class="mtitle">'+esc(q.num)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="row">'+qPill(q)+'</div>'+qResumen(q)+
+   (q.msgs.length?'<div class="q-sec"><span class="flbl">Mensajes</span>'+q.msgs.map(m=>'<div class="q-msg"><b>'+(m.by==='cliente'?esc(CL(q.clientId).short):'Ventas DP World')+'</b> · '+ago(m.at)+'<div>'+esc(m.t)+'</div></div>').join('')+'</div>':'')+
+   (q.quote?'<div class="q-sec"><span class="flbl">Cotización enviada</span><div class="q-kv"><div><span>Vigencia</span><b>'+fmtDia(q.quote.vig)+'</b></div>'+(q.quote.monto?'<div><span>Total</span><b>USD '+q.quote.monto.toLocaleString('es-PA')+'</b></div>':'')+(q.quote.nota?'<div><span>Nota</span><b>'+esc(q.quote.nota)+'</b></div>':'')+'</div></div>':'')+
+   '</div><div class="sh-f"><div class="cfg-acts" style="flex-wrap:wrap;justify-content:flex-end">'+qActs(q).replace(/data-act="qVer"[^>]*>Ver solicitud<\/button>/,'data-act="close">Cerrar</button>')+'</div></div>',false);}
+function qMini(id,t,body,act,lbl){const q=state.quotes.find(x=>x.id===id);
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(q.num)+' · '+esc(CL(q.clientId).short)+'</span><h3 class="mtitle">'+t+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div><div class="sh-b form">'+body+'<div class="err" id="qmErr"></div></div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="'+act+'" data-id="'+id+'">'+lbl+'</button></div>',true);}
+function qDo(a,id){
+  const q=state.quotes.find(x=>x.id===id),g=k=>{const el=document.getElementById(k);return el?el.value.trim():'';},err=t=>{document.getElementById('qmErr').textContent=t;};
+  if(a==='qTomar'){q.status='cotizando';q.owner=ui.user;log('Ventas tomó '+q.num);commit();toast(q.num+' en cotización.');return;}
+  if(a==='qPedirDo'){if(!g('qm-t'))return err('Escribe qué datos faltan.');q.msgs.push({by:'ventas',at:Date.now(),t:g('qm-t')});q.status='info';notify([q.clientId],'Faltan datos para cotizar',q.num+': '+g('qm-t'));}
+  if(a==='qRespDo'){if(!g('qm-t'))return err('Escribe la respuesta.');q.msgs.push({by:'cliente',at:Date.now(),t:g('qm-t')});q.status='cotizando';notify(['ventas'],'El cliente respondió',q.num+': '+g('qm-t'));}
+  if(a==='qCotizarDo'){const vig=fromPa(g('qm-vig')+'T23:59'),f=(document.getElementById('qm-pdf').files||[])[0];if(!(vig>Date.now()))return err('La vigencia debe ser una fecha futura.');
+    if(f&&!isPdf(f))return err('La cotización debe ser un PDF.');const pdf=f?f.name:'Cotizacion_'+q.num+'.pdf';if(f)FILES.put('q/'+q.id+'/'+pdf,f).catch(()=>{});
+    q.quote={at:Date.now(),vig:vig,monto:parseFloat(g('qm-monto'))||null,nota:g('qm-nota'),pdf:pdf};q.status='cotizada';notify([q.clientId],'Tu cotización está lista',q.num+' · vigente hasta '+fmtDia(vig));}
+  if(a==='qAceptaDo'){q.status='aceptada';q.decision={at:Date.now(),by:ui.role};notify(['ventas','opsff'],'Cotización aceptada',q.num+' · '+CL(q.clientId).short+' · listo para crear el embarque');}
+  if(a==='qRechazaDo'){q.status='rechazada';q.rechazo={m:g('qm-m'),nota:g('qm-nota'),at:Date.now(),by:ui.role};notify(['ventas'],'Cotización no aceptada',q.num+' · '+g('qm-m'));}
+  log((ui.role==='cliente'?CL(q.clientId).short:'Ventas')+': '+q.num+' → '+Q_ST[q.status][0].toLowerCase());closeModal();commit();toast(q.num+': '+Q_ST[q.status][0]+'.');
+}
+/* ----- embarques ----- */
+const ffDone=s=>s.hitos.every(h=>h.real);
+const ffCur=s=>s.hitos.findIndex(h=>!h.real);
+const ffLate=s=>s.eta&&s.etaPlan&&s.eta>s.etaPlan+12*HOUR?Math.round((s.eta-s.etaPlan)/DAY):0;
+const ffStale=s=>!ffDone(s)&&Date.now()-Math.max(...s.hitos.filter(h=>h.real).map(h=>h.real))>48*HOUR;
+const misS=()=>state.ships.filter(s=>ui.role==='cliente'?s.clientId===ui.client:ui.role==='bodega'?s.bodega:true);
+function ffMap(s){
+  const o=ffLug(s.origen),d=ffLug(s.destino);if(!o||!d||!window.LM_DOTS)return '';
+  const X=l=>((l+260)/360*1000),Y=a=>((80-a)/136*380),lo=l=>l>100?l-360:l,px=X(lo(o[2])),py=Y(o[3]),hx=X(lo(d[2])),hy=Y(d[3]);
+  const dist=Math.hypot(hx-px,hy-py),cx=(px+hx)/2,cy=Math.min(py,hy)-Math.max(25,dist*.25);
+  // encuadre de la ruta con un mínimo, para que un tramo corto (Miami → Tocumen) no se vea gigante
+  let x0=Math.min(px,hx)-70,x1=Math.max(px,hx)+90,y0=Math.min(py,hy,cy)-50,y1=Math.max(py,hy)+60;
+  const ww=Math.max(320,x1-x0),hh=Math.max(ww*.42,y1-y0),mx0=(x0+x1)/2,my0=(y0+y1)/2;x0=Math.max(0,Math.min(1000-ww,mx0-ww/2));x1=x0+ww;y0=Math.max(0,Math.min(380-hh,my0-hh/2));y1=Math.min(380,y0+hh);
+  const L=s.hitos.map(h=>h.l),last=ffDone(s)?L.length-1:ffCur(s)-1,dep=L.findIndex(l=>/Zarpe|Despegue|En ruta/.test(l)),arr=L.indexOf('Arribo'),t=last<dep?0:last>=arr?1:L[last]==='Frontera'?.78:.5,mx=(1-t)*(1-t)*px+2*(1-t)*t*cx+t*t*hx,my=(1-t)*(1-t)*py+2*(1-t)*t*cy+t*t*hy;
+  const lbl=(x,y,tx,c,a)=>'<text x="'+x+'" y="'+y+'" text-anchor="'+(a||'start')+'" fill="'+c+'" font-size="'+Math.max(9,(x1-x0)/60)+'" font-family="Barlow Condensed" font-weight="700" letter-spacing=".6">'+esc(tx.split(',')[0].toUpperCase())+'</text>';
+  return '<div class="ff-map"><svg viewBox="'+x0+' '+y0+' '+(x1-x0)+' '+(y1-y0)+'" role="img" aria-label="Ruta '+esc(s.origen+' a '+s.destino)+'"><path d="'+window.LM_DOTS+'" stroke="rgba(255,255,255,.15)" stroke-width="3.1" stroke-linecap="round" fill="none"/>'+
+   '<path d="M'+px+' '+py+' Q'+cx+' '+cy+' '+hx+' '+hy+'" fill="none" stroke="rgba(0,195,137,.6)" stroke-width="'+((x1-x0)/500)+'" stroke-dasharray="4 4"/>'+
+   '<circle cx="'+px+'" cy="'+py+'" r="'+((x1-x0)/180)+'" fill="#8a88e0"/><circle cx="'+hx+'" cy="'+hy+'" r="'+((x1-x0)/160)+'" fill="#00C389"/>'+lbl(px,py+(x1-x0)/40,s.origen,'#fff','middle')+lbl(hx,hy+(x1-x0)/40,s.destino,'#fff','middle')+
+   (ffDone(s)?'':'<circle cx="'+mx+'" cy="'+my+'" r="'+((x1-x0)/120)+'" fill="#0099e6" stroke="#fff" stroke-width="'+((x1-x0)/600)+'"/>')+'</svg></div>';
+}
+function ffTrk(s){const L=ffShort(s),c=ffDone(s)?L.length:ffCur(s);
+  return '<div class="trk" style="grid-template-columns:repeat('+L.length+',1fr)" role="img" aria-label="'+esc(ffHitos(s).map((h,i)=>h+(i<c?' hecho':'')).join(' · '))+'">'+L.map((l,i)=>'<span class="trk-c'+(i<=c?' on':'')+'"><span class="pip-d '+(i<c?'done':i===c?'cur tr':'fut')+'"></span><small class="trk-l'+(i===c?' cur':'')+'">'+esc(l)+'</small></span>').join('')+'</div>';}
+function ffDet(s){
+  const M=FF_MODOS[s.modo],ed=(ui.role==='cliente'||ui.role==='opsff'||ui.role==='admin')&&!s.hitos[FF_MODOS[s.modo].hit.indexOf('Arribo')].real;
+  const tog=(k,l,d)=>'<div class="ff-tog"><div><b>'+l+'</b><span>'+d+'</span></div>'+(ed?'<div class="htabs">'+[['si','Sí'],['no','No']].map(x=>'<button class="htab'+((s[k]?'si':'no')===x[0]?' active':'')+'" data-act="sTog" data-id="'+s.id+'" data-k="'+k+'" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div>':'<span class="cli-badge '+(s[k]?'on':'mute')+'">'+(s[k]?'Sí':'No')+'</span>')+'</div>';
+  const kv=[[M.carrier,s.carrier],[M.veh,s.veh],[M.ref,String(s.docRef||'').replace(M.ref+' ','')],['Carga',s.carga],['Peso',s.peso?(+s.peso).toLocaleString('es-PA')+' kg':''],['Incoterm',s.incoterm],['Mercancía',s.desc],['Cotización',(state.quotes.find(q=>q.id===s.quoteId)||{}).num]].filter(x=>x[1]);
+  const lm=s.lm&&B(s.lm);
+  return '<div class="ff-det"><div style="display:grid;gap:12px;align-content:start">'+(ffMap(s)||'<div class="empty">'+esc(s.origen)+' → '+esc(s.destino)+'</div>')+'<div class="ff-kv">'+kv.map(x=>'<div><span class="flbl">'+x[0]+'</span><b>'+esc(x[1])+'</b></div>').join('')+'</div>'+
+   '<div class="ff-togs"><span class="flbl">Último tramo</span>'+tog('transporte','Transporte interno con DP World','Encendido: Last Mile coordina el tramo del puerto a destino.')+tog('bodega','Va a bodega DP World (CLP)','Encendido: la carga entra a nuestra bodega.')+'</div></div>'+
+   '<div style="display:grid;gap:12px;align-content:start"><div><span class="flbl">Hitos</span><div class="ff-tl">'+s.hitos.map((h,i)=>{const c=!ffDone(s)&&i===ffCur(s),eta=h.l==='Arribo'&&!h.real;
+     return '<div class="ff-h'+(h.real?' ok':c?' cur':'')+'"><span class="ff-dot"></span><div><b>'+esc(h.l)+'</b>'+(c?'<small>Siguiente paso</small>':'')+(h.nota?'<small>'+esc(h.nota)+'</small>':'')+'</div><div class="when">'+(h.real?fmtDia(h.real):eta&&s.eta?(ffLate(s)?'<span class="ff-late">ETA '+fmtDia(s.eta)+'</span><small>antes '+fmtDia(s.etaPlan)+'</small>':'ETA '+fmtDia(s.eta)):'—')+'</div></div>';}).join('')+'</div></div>'+
+   (lm?'<div class="ff-link"><span>Último tramo en Last Mile: booking de importación <b class="mono">'+esc(lm.ref)+'</b>.</span>'+stagePill(lm,ui.role)+'</div>':s.transporte&&s.bodega&&s.modo==='fcl'&&!ffDone(s)?'<div class="ff-link"><span>Al marcar el arribo se crea el booking de importación en Last Mile para el retiro en puerto y la descarga en CLP.</span></div>':'')+
+   ((ui.role==='opsff'||ui.role==='admin')&&!ffDone(s)?'<div class="row"><button class="btn-p btn-green inl" data-act="sHito" data-id="'+s.id+'">Registrar: '+esc(s.hitos[ffCur(s)].l)+'</button><button class="btn-p btn-navy inl" data-act="sEta" data-id="'+s.id+'">Cambiar ETA</button></div>':'')+'</div></div>';
+}
+function sRows(list,right){
+  if(!list.length)return '';
+  return '<div class="bkl"><div class="bkl-h" aria-hidden="true"><span></span><span>Arribo estimado</span><span>Embarque</span><span class="trk-key">Avance · <b>azul</b> es el siguiente paso</span><span>Estado</span></div>'+list.map(s=>{const k='emb:'+s.id,dn=ffDone(s),lt=ffLate(s),i=ffCur(s);
+   return '<details class="bkr'+(lt||ffStale(s)?' alert':'')+'" data-key="'+k+'"'+(ui.open[k]?' open':'')+'><summary class="bkr-s"><span class="bkr-chev" aria-hidden="true">›</span>'+
+    '<span class="bkr-p '+(dn?'done':lt?'over':'soon')+'"><span class="bkr-pl">'+(dn?'Completado':'ETA '+esc(s.destino.split(',')[0]))+'</span><b>'+(dn?fmtDia(s.hitos[s.hitos.length-1].real):s.eta?fmtDia(s.eta):'Por confirmar')+'</b><span class="bkr-st">'+(dn?ffFinal(s)[0]:lt?'Retraso +'+lt+' d · antes '+fmtDia(s.etaPlan):'A tiempo')+'</span></span>'+
+    '<span class="bkr-id"><span class="bk-ref">'+esc(s.docRef||s.ref)+'</span><span class="bkr-tags">'+ffTag(s.modo)+'<span class="tag">'+ffTipo(s.tipo)+'</span></span><span class="ff-route">'+esc(s.origen)+' → '+esc(s.destino)+'</span></span>'+ffTrk(s)+
+    '<span class="bkr-r">'+right(s)+'</span></summary><div class="bkr-b">'+ffDet(s)+'</div></details>';}).join('')+'</div>';
+}
+const sPill=s=>ffDone(s)?'<span class="cli-badge on">'+ffFinal(s)[1]+'</span>':'<span class="cli-badge '+(ffLate(s)?'off':ffStale(s)?'wait':'tr')+'">'+esc(s.hitos[Math.max(0,ffCur(s)-1)].l)+'</span>';
+function vEmb(){
+  const L=misS(),act=L.filter(s=>!ffDone(s)),done=L.filter(ffDone),ops=ui.role==='opsff'||ui.role==='admin',cli=ui.role==='cliente';
+  const att=act.filter(s=>ffLate(s)||ffStale(s)),sem=act.filter(s=>s.eta&&s.eta-Date.now()<7*DAY);
+  const sb=(n,c,l)=>'<div class="sbox"><div class="sn '+c+'">'+n+'</div><div class="sl2">'+l+'</div></div>';
+  const right=s=>sPill(s)+(cli?'':'<span class="cli-badge mute">'+esc(CL(s.clientId).short)+'</span>');
+  const sec=(t,l,e)=>'<div class="sec"><div class="psect-hdr"><h2 class="psect-title">'+t+'</h2><span class="psect-cnt">'+l.length+'</span></div>'+(l.length?sRows(l,right):'<div class="empty">'+e+'</div>')+'</div>';
+  const t=ui.role==='bodega'?'Llegadas internacionales':cli?'Mis embarques':'Embarques';
+  const sub=cli?'Tu carga internacional con DP World, desde el origen hasta su destino en Panamá.':ui.role==='bodega'?'Embarques internacionales que van a la bodega CLP: para planificar espacio y rampas.':'Operaciones FF registra cada hito y el cambio de ETA; el cliente lo ve al momento y recibe el aviso.';
+  return '<section class="view"><div class="vhead"><div><h1 class="sc-title">'+t+'</h1><p class="sc-sub">'+sub+'</p></div>'+(cli?'<button class="btn-p btn-green inl" data-act="qNueva">Solicitar cotización</button>':'')+'</div>'+
+   '<div class="stats">'+sb(act.length,'en','En camino')+sb(act.filter(ffLate).length,act.filter(ffLate).length?'er':'sl','Con retraso')+(ops?sb(act.filter(ffStale).length,act.filter(ffStale).length?'sa':'sl','Sin hito hace 48 h'):'')+sb(sem.length,'sa','Arriban en 7 días')+sb(done.length,'ok','Completados')+'</div>'+
+   (ops?sec('Requieren atención',att,'Todo al día.'):'')+sec(ops?'Todos los activos':'En camino',ops?act:act,'Sin embarques en camino.')+sec('Completados',done,'Aún no hay embarques completados.')+'</section>';
+}
+function sNuevo(qid){const q=state.quotes.find(x=>x.id===qid),M=FF_MODOS[q.modo],d=t=>toPa(t).slice(0,10);
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(q.num)+' · '+esc(CL(q.clientId).short)+' · '+M.t+'</span><h3 class="mtitle">Crear embarque</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">'+M.ref+'</span><input class="fin mono" id="sn-ref" placeholder="DPWPA-24140"></label><label class="f"><span class="flbl">'+M.carrier+'</span><input class="fin" id="sn-car" value="'+esc(q.pref||'')+'"></label>'+
+   '<label class="f"><span class="flbl">'+M.veh+' (opcional)</span><input class="fin" id="sn-veh"></label><label class="f"><span class="flbl">Salida estimada (ETD)</span><input class="fin" type="date" id="sn-etd" value="'+d(Date.now()+5*DAY)+'"></label><label class="f"><span class="flbl">Arribo estimado (ETA)</span><input class="fin" type="date" id="sn-eta" value="'+d(Date.now()+(q.modo==='aer'?8:q.modo==='ftl'?9:30)*DAY)+'"></label></div>'+
+   '<div class="abox inf"><div>Toma los datos de la solicitud: ruta, carga, incoterm y el último tramo (transporte interno: <b>'+(yes(q.transporte)?'sí':'no')+'</b> · bodega DP World: <b>'+(yes(q.bodega)?'sí':'no')+'</b>). La reserva queda registrada como primer hito.</div></div><div class="err" id="snErr"></div></div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="sNuevoDo" data-id="'+qid+'">Crear embarque</button></div>',true);}
+function ffCarga(q){return q.modo==='fcl'?(q.conts||[]).map(c=>c.n+' × '+c.t).join(' · '):q.modo==='lcl'?(q.bultos||'')+' bultos'+(qCalc(q)?' · '+qCalc(q):''):q.modo==='aer'?(q.bultos||'')+' bultos'+(qCalc(q)?' · '+qCalc(q).split(' · ')[1]:''):(q.unidad||'');}
+function sNuevoDo(qid){const q=state.quotes.find(x=>x.id===qid),g=k=>document.getElementById(k).value.trim(),err=t=>{document.getElementById('snErr').textContent=t;};
+  if(!g('sn-ref')||!g('sn-car'))return err('Completa '+FF_MODOS[q.modo].ref+' y '+FF_MODOS[q.modo].carrier.toLowerCase()+'.');
+  const etd=fromPa(g('sn-etd')+'T12:00'),eta=fromPa(g('sn-eta')+'T12:00');if(!(eta>etd))return err('El arribo debe ser después de la salida.');
+  const s={id:uid('s'),ref:'FF-'+(24140+state.ships.length),quoteId:q.id,clientId:q.clientId,tipo:q.tipo,modo:q.modo,origen:q.origen,destino:q.destino,docRef:FF_MODOS[q.modo].ref+' '+g('sn-ref').toUpperCase(),carrier:g('sn-car'),veh:g('sn-veh'),
+    carga:ffCarga(q),conts:q.conts||[],peso:q.peso,incoterm:q.incoterm,desc:q.desc,transporte:yes(q.transporte),bodega:yes(q.bodega),etd:etd,eta:eta,etaPlan:eta};
+  s.hitos=ffHitos(s).map(l=>({l:l,real:null}));s.hitos[0].real=Date.now();
+  state.ships.unshift(s);q.shipId=s.id;log('Operaciones FF creó el embarque '+s.docRef+' desde '+q.num);
+  notify([q.clientId],'Tu embarque está reservado',s.docRef+' · '+s.origen+' → '+s.destino+' · ETA '+fmtDia(eta));
+  closeModal();ui.sec='emb';ui.open['emb:'+s.id]=1;ui.secOpen[ui.role+'|emb|Todos los activos']=true;commit();toast('Embarque '+s.docRef+' creado.');
+}
+function sHito(id){const s=state.ships.find(x=>x.id===id),h=s.hitos[ffCur(s)];
+  openModal('<div class="sh-h"><div><span class="flbl">'+esc(s.docRef)+' · '+esc(CL(s.clientId).short)+'</span><h3 class="mtitle">Registrar: '+esc(h.l)+'</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div>'+
+   '<div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">Fecha y hora real (Panamá)</span><input class="fin" type="datetime-local" id="sh-t" value="'+toPa(Date.now())+'"></label>'+(h.l!=='Arribo'&&s.hitos.some((x,i)=>x.l==='Arribo'&&i>ffCur(s))?'<label class="f"><span class="flbl">Nueva ETA (opcional)</span><input class="fin" type="date" id="sh-eta"></label>':'')+
+   '<label class="f" style="grid-column:1/-1"><span class="flbl">Nota para el cliente (opcional)</span><input class="fin" id="sh-n" placeholder="Ej. transbordo en Busan, zarpa el 17 oct"></label></div>'+
+   (h.l==='Arribo'&&s.modo==='fcl'&&s.transporte&&s.bodega?'<div class="abox inf"><div>Al registrar el arribo se crea el booking de importación en Last Mile con '+s.conts.reduce((a,c)=>a+c.n,0)+' contenedores, listo para que los transportistas lo confirmen.</div></div>':'')+'<div class="err" id="shErr"></div></div>'+
+   '<div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="sHitoDo" data-id="'+id+'">Registrar</button></div>',true);}
+function ffLastMile(s){
+  // FCL con transporte interno y bodega: el último tramo pasa a Last Mile como importación
+  const c0=(s.conts[0]||{}).t||"40' HC",size=SIZES.find(z=>z.replace(/\s/g,'')===c0.replace(/\s/g,''))||"40' HC",n=s.conts.reduce((a,c)=>a+c.n,0)||1,now=Date.now(),H=h=>Math.floor((now+h*HOUR)/HOUR)*HOUR;
+  const b={id:uid('b'),tipo:'impo',clientId:s.clientId,ref:s.docRef.replace(/^HBL\s*/,''),naviera:s.carrier,size:size,qty:n,pickFrom:H(6),pickTo:H(78),pickLoc:/Balboa/i.test(s.destino)?'PPC · Balboa':DELIV[0],delFrom:H(24),delTo:H(170),delLoc:PICK[0],
+    docs:[],cargo:{desc:s.desc,bultos:null,notes:'Viene del embarque '+s.docRef+'.',skus:[]},createdAt:now,publishedAt:now,mode:state.settings.mode,directTo:state.settings.mode==='directo'?state.settings.preferred:null,hidden:[],declines:[],aduana:{resp:'dp',bl:null,lev:null},ffShip:s.id,containers:mkContainers(n,'publicado',null,s.carrier)};
+  b.containers.forEach(c=>{c.number=cnum(s.carrier);stamp(c,'publicado',now);});state.bookings.push(b);s.lm=b.id;
+  notify((b.mode==='directo'?[b.directTo]:ACT().map(c=>c.id)).concat('admin'),'Nueva importación '+b.ref,n+' × '+size+' · retiro lleno en '+b.pickLoc,b.id);
+  return b;
+}
+function sDo(a,id){const s=state.ships.find(x=>x.id===id),g=k=>{const el=document.getElementById(k);return el?el.value.trim():'';};
+  if(a==='sHitoDo'){const i=ffCur(s),h=s.hitos[i],t=fromPa(g('sh-t'));if(!(t>0)){document.getElementById('shErr').textContent='Indica la fecha y hora.';return;}
+    h.real=t;if(g('sh-n'))h.nota=g('sh-n');if(g('sh-eta'))s.eta=fromPa(g('sh-eta')+'T12:00');if(h.l==='Arribo')s.eta=t;
+    let extra='';if(h.l==='Arribo'&&s.modo==='fcl'&&s.transporte&&s.bodega&&!s.lm){const b=ffLastMile(s);extra=' Se creó la importación '+b.ref+' en Last Mile.';}
+    log('Operaciones FF: '+s.docRef+' · '+h.l);notify([s.clientId],h.l+' · '+s.docRef,(h.nota?h.nota+' · ':'')+s.origen+' → '+s.destino+(s.eta&&!ffDone(s)?' · ETA '+fmtDia(s.eta):''));
+    closeModal();commit();toast(h.l+' registrado.'+extra);return;}
+  if(a==='sEtaDo'){const e=fromPa(g('se-eta')+'T12:00');if(!(e>0)){document.getElementById('shErr').textContent='Indica la nueva ETA.';return;}const lt=e>s.eta;s.eta=e;
+    log('Operaciones FF: nueva ETA '+s.docRef+' '+fmtDia(e));notify([s.clientId],(lt?'Retraso':'Cambio de ETA')+' · '+s.docRef,'Nueva ETA '+fmtDia(e)+(g('se-n')?' · '+g('se-n'):''));closeModal();commit();toast('ETA actualizada. El cliente recibe el aviso.');}
+}
+function seedFF(){
+  const now=Date.now(),D=d=>Math.floor((now+d*DAY)/HOUR)*HOUR,k='k1';
+  const base={clientId:k,msgs:[],by:'cernac'};
+  const qs=[
+   Object.assign({},base,{id:'q1',num:'COT-2610-014',tipo:'impo',modo:'fcl',origen:'Shanghái, CN',destino:'Colón, PA',incoterm:'FOB',desc:'Latas de aluminio vacías 355 ml',peso:'38400',ready:toPa(D(-40)).slice(0,10),conts:[{t:"40' HC",n:2}],pesoCont:'19200',dg:'no',aduOri:'no',aduDes:'si',seguro:'si',valor:'92000',transporte:'si',bodega:'si',bodServ:'Almacenaje',bodTiempo:'45 días',bodReg:'No nacionalizado (zona libre)',frec:'Recurrente',volMes:'2 contenedores al mes',hs:'7612.90',pref:'MSC',at:D(-45),status:'aceptada',quote:{at:D(-44.6),vig:D(-30),monto:7480,nota:'Incluye flete, BL y despacho en destino.',pdf:'Cotizacion_COT-2610-014.pdf'},decision:{at:D(-43),by:'cliente'},shipId:'s1'}),
+   Object.assign({},base,{id:'q2',num:'COT-2610-021',tipo:'impo',modo:'lcl',origen:'Ningbo, CN',destino:'Colón, PA',incoterm:'FOB',desc:'Repuestos de línea de envasado',peso:'2100',ready:toPa(D(6)).slice(0,10),bultos:'6',embalaje:'Pallet',dims:'120 × 100 × 145',apilable:'no',dg:'no',aduOri:'no',aduDes:'si',seguro:'no',transporte:'si',bodega:'si',bodServ:'Cross-dock',frec:'Embarque único',at:D(-2),status:'cotizada',quote:{at:D(-1.6),vig:D(8),monto:1840,nota:'Salida semanal los jueves.',pdf:'Cotizacion_COT-2610-021.pdf'}}),
+   Object.assign({},base,{id:'q3',num:'COT-2611-002',tipo:'impo',modo:'aer',origen:'Miami (MIA), US',destino:'Tocumen (PTY), PA',incoterm:'EXW',recogida:'NW 25th St, Doral, FL, US',desc:'Sensores de llenado',peso:'180',ready:toPa(D(3)).slice(0,10),bultos:'4',dims:'80 × 60 × 50',apilable:'si',tipoAer:'Valiosa',dg:'no',aduOri:'si',aduDes:'si',seguro:'si',valor:'26500',transporte:'si',bodega:'no',frec:'Embarque único',urg:'Exprés',at:now-3*HOUR,status:'solicitada'}),
+   Object.assign({},base,{id:'q4',num:'COT-2610-018',tipo:'expo',modo:'ftl',origen:'Colón (CLP), PA',destino:'San José, CR',incoterm:'DAP',dirCarga:'DAL Colón Logistics Park',dirEntrega:'Bodega del distribuidor, La Uruca',desc:'Cerveza en lata (exportación)',peso:'21000',ready:toPa(D(-12)).slice(0,10),unidad:"Rastra 53'",dg:'no',aduOri:'si',aduDes:'no',seguro:'no',transporte:'si',bodega:'no',frec:'Recurrente',volMes:'6 rastras al mes',transito:'si',at:D(-15),status:'aceptada',quote:{at:D(-14.8),vig:D(-5),monto:2350,pdf:'Cotizacion_COT-2610-018.pdf'},decision:{at:D(-14),by:'cliente'},shipId:'s3'}),
+   Object.assign({},base,{id:'q5',num:'COT-2610-009',tipo:'impo',modo:'fcl',origen:'Rotterdam, NL',destino:'Colón, PA',incoterm:'CIF',desc:'Malta de cebada en sacos',peso:'52000',ready:toPa(D(-30)).slice(0,10),conts:[{t:"20' DV",n:4}],pesoCont:'13000',dg:'no',aduOri:'no',aduDes:'si',seguro:'no',transporte:'si',bodega:'si',bodServ:'Almacenaje',frec:'Embarque único',at:D(-33),status:'rechazada',quote:{at:D(-32),vig:D(-20),monto:9100,pdf:'Cotizacion_COT-2610-009.pdf'},rechazo:{m:'Precio',nota:'El proveedor ya tenía flete contratado.',at:D(-31),by:'cliente'}}),
+   Object.assign({},base,{id:'q6',num:'COT-2610-020',tipo:'impo',modo:'aer',origen:'Madrid (MAD), ES',destino:'Tocumen (PTY), PA',incoterm:'FCA',recogida:'Polígono Coslada, Madrid, ES',desc:'Material promocional',peso:'95',ready:toPa(D(4)).slice(0,10),bultos:'3',dims:'60 × 40 × 40',apilable:'si',tipoAer:'General',dg:'no',aduOri:'si',aduDes:'si',seguro:'no',transporte:'no',bodega:'si',bodServ:'Almacenaje',frec:'Embarque único',at:D(-1),status:'info',msgs:[{by:'ventas',at:D(-.8),t:'¿Nos confirmas si el material lleva baterías? Cambia la clasificación para el vuelo.'}]})];
+  const mk=(o,hechos)=>{o.hitos=ffHitos(o).map((l,i)=>({l:l,real:hechos[i]||null}));return o;};
+  const ships=[
+   mk({id:'s1',ref:'FF-24118',quoteId:'q1',clientId:k,tipo:'impo',modo:'fcl',origen:'Shanghái, CN',destino:'Colón, PA',docRef:'HBL DPWPA-24118',carrier:'MSC',veh:'MSC Aurora · 442E',carga:"2 × 40' HC",conts:[{t:"40' HC",n:2}],peso:'38400',incoterm:'FOB',desc:'Latas de aluminio vacías 355 ml',transporte:true,bodega:true,etd:D(-20),eta:D(4),etaPlan:D(3)},[D(-43),D(-22),D(-20)]),
+   mk({id:'s2',ref:'FF-24127',quoteId:null,clientId:k,tipo:'impo',modo:'aer',origen:'Miami (MIA), US',destino:'Tocumen (PTY), PA',docRef:'HAWB 176-55219830',carrier:'Copa Cargo',veh:'CM 431',carga:'12 bultos · cobrable 1.240 kg',peso:'1240',incoterm:'FCA',desc:'Etiquetas y tapas',transporte:false,bodega:true,etd:D(-2),eta:D(-1),etaPlan:D(-1)},[D(-6),D(-3),D(-2),D(-1)]),
+   mk({id:'s3',ref:'FF-24122',quoteId:'q4',clientId:k,tipo:'expo',modo:'ftl',origen:'Colón (CLP), PA',destino:'San José, CR',docRef:'Carta de porte CR-PA-0912',carrier:'Rutas del Istmo',veh:"Rastra 53' · AK 4512",carga:"Rastra 53'",peso:'21000',incoterm:'DAP',desc:'Cerveza en lata (exportación)',transporte:true,bodega:false,etd:D(-2),eta:D(1),etaPlan:D(.4)},[D(-14),D(-2),D(-1.6)]),
+   mk({id:'s4',ref:'FF-24096',quoteId:null,clientId:k,tipo:'impo',modo:'fcl',origen:'Valencia, ES',destino:'Colón, PA',docRef:'HBL DPWPA-24096',carrier:'Hapag-Lloyd',veh:'Cap San Lorenzo · 041W',carga:"1 × 40' DV",conts:[{t:"40' DV",n:1}],peso:'17600',incoterm:'FOB',desc:'Insumos de etiquetado',transporte:false,bodega:false,etd:D(-30),eta:D(-9),etaPlan:D(-9)},[D(-40),D(-32),D(-30),D(-9),D(-7),D(-6)])];
+  ships[0].hitos[2].nota='Transbordo en Busan · zarpa el '+fmtDia(D(-14));
+  return {quotes:qs,ships:ships};
+}
+
 /* ===== modal / toast ===== */
 let lastFocus=null;
 function openModal(html,narrow){const ov=document.getElementById('ov'),sh=document.getElementById('sheet');lastFocus=document.activeElement;sh.className='sheet'+(narrow?' narrow':'');sh.innerHTML=html;ov.hidden=false;const f=sh.querySelector('input,select,textarea,button.btn');if(f)f.focus();}
@@ -1392,7 +1702,7 @@ function render(){
   lg.hidden=!!ui.auth;
   document.getElementById('waFab').hidden=!ui.auth;if(!ui.auth)waMenu(false);
   if(!ui.auth){lgPlay();document.getElementById('lg-demo').innerHTML=state.users.filter(x=>x.active!==false).map(x=>x.u).map(u=>'<button type="button" class="hdr-logout" data-act="demo" data-u="'+u+'">'+u+'</button>').join('');return;}
-  if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec='main';
+  if(!(SECTIONS[ui.role]||[]).some(x=>x[0]===ui.sec))ui.sec=((SECTIONS[ui.role]||[])[0]||['main'])[0];
   applyTheme();
   const tb=document.getElementById('themeBtn'),lt=theme()==='light';
   tb.textContent=lt?'Oscuro':'Claro';
@@ -1400,7 +1710,7 @@ function render(){
   renderRoles();
   const v=document.getElementById('view');
   const sy=window.scrollY;
-  v.innerHTML=ui.sec==='config'?vConfig():ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
+  v.innerHTML=ui.sec==='cotiz'?vCotiz():ui.sec==='emb'?vEmb():ui.sec==='config'?vConfig():ui.sec==='cal'?vCal():ui.sec==='reportes'?vReportes():ui.sec==='rampas'?vRampas():ui.role==='cliente'?vCliente():ui.role==='bodega'?vBodega():ui.role==='transportista'?vTrans():vAdmin();
   accordion(v);
   window.scrollTo(0,sy);
   tickClocks();
@@ -1424,6 +1734,27 @@ document.addEventListener('click',e=>{
   switch(a){
    case 'menu':menu(!document.getElementById('drawer').classList.contains('open'));break;
    case 'menuClose':menu(false);break;
+   case 'qNueva':ov.dataset.detail='';qForm();break;
+   case 'qyn':qSet(t.dataset.k,t.dataset.v);qVis();break;
+   case 'qcont':qAddCont("40' HC",1);qVis();break;
+   case 'qcontx':t.closest('.q-cont').remove();qVis();break;
+   case 'qEnviarSol':qEnviarSol();break;
+   case 'qVer':ov.dataset.detail='';qVer(t.dataset.id);break;
+   case 'qTomar':qDo('qTomar',t.dataset.id);break;
+   case 'qPedir':qMini(t.dataset.id,'Pedir datos al cliente','<label class="f"><span class="flbl">Qué falta o qué necesitas aclarar</span><textarea class="fin" id="qm-t"></textarea></label>','qPedirDo','Enviar al cliente');break;
+   case 'qResp':qMini(t.dataset.id,'Responder a ventas','<div class="abox inf"><div>'+esc((state.quotes.find(x=>x.id===t.dataset.id).msgs.slice(-1)[0]||{}).t||'')+'</div></div><label class="f"><span class="flbl">Tu respuesta</span><textarea class="fin" id="qm-t"></textarea></label>','qRespDo','Enviar');break;
+   case 'qCotizar':qMini(t.dataset.id,'Enviar cotización','<div class="fgrid"><label class="f"><span class="flbl">Cotización (PDF)</span><input class="fin" type="file" id="qm-pdf" accept=".pdf,application/pdf"></label><label class="f"><span class="flbl">Vigente hasta</span><input class="fin" type="date" id="qm-vig" value="'+toPa(Date.now()+10*DAY).slice(0,10)+'"></label><label class="f"><span class="flbl">Total USD (opcional)</span><input class="fin" type="number" id="qm-monto" min="0" step="any"></label><label class="f"><span class="flbl">Nota para el cliente (opcional)</span><input class="fin" id="qm-nota"></label></div><p class="muted" style="margin:0;font-size:12.5px">La tarifa se arma con el formato de ventas; aquí se adjunta y se lleva el seguimiento.</p>','qCotizarDo','Enviar cotización');break;
+   case 'qAcepta':qMini(t.dataset.id,ui.role==='cliente'?'Aceptar cotización':'Registrar que el cliente aceptó','<p style="margin:0">'+(ui.role==='cliente'?'Al aceptar, operaciones FF reserva el espacio y crea tu embarque. Te avisamos en cada hito.':'Úsalo cuando el cliente aceptó por correo o llamada.')+'</p>','qAceptaDo','Aceptar');break;
+   case 'qRechaza':qMini(t.dataset.id,ui.role==='cliente'?'Rechazar cotización':'Registrar que no aceptó','<div class="fgrid"><label class="f"><span class="flbl">Motivo</span><select class="fin" id="qm-m"><option>Precio</option><option>Tiempo de tránsito</option><option>Servicio o alcance</option><option>Ya no se embarca</option><option>Otro</option></select></label><label class="f"><span class="flbl">Comentario (opcional)</span><input class="fin" id="qm-nota"></label></div>','qRechazaDo','Registrar');break;
+   case 'qPedirDo':case 'qRespDo':case 'qCotizarDo':case 'qAceptaDo':case 'qRechazaDo':qDo(a,t.dataset.id);break;
+   case 'sNuevo':ov.dataset.detail='';sNuevo(t.dataset.id);break;
+   case 'sNuevoDo':sNuevoDo(t.dataset.id);break;
+   case 'sHito':sHito(t.dataset.id);break;
+   case 'sEta':{const s=state.ships.find(x=>x.id===t.dataset.id);openModal('<div class="sh-h"><div><span class="flbl">'+esc(s.docRef)+'</span><h3 class="mtitle">Cambiar ETA</h3></div><button class="mclose" data-act="close" aria-label="Cerrar">×</button></div><div class="sh-b form"><div class="fgrid"><label class="f"><span class="flbl">Nueva ETA</span><input class="fin" type="date" id="se-eta" value="'+toPa(s.eta||Date.now()).slice(0,10)+'"></label><label class="f"><span class="flbl">Motivo para el cliente (opcional)</span><input class="fin" id="se-n" placeholder="Ej. omisión de puerto, congestión en Busan"></label></div><div class="err" id="shErr"></div></div><div class="sh-f"><button class="btn-p btn-navy inl" data-act="close">Cancelar</button><button class="btn-p btn-green inl" data-act="sEtaDo" data-id="'+s.id+'">Guardar y avisar</button></div>',true);break;}
+   case 'sHitoDo':case 'sEtaDo':sDo(a,t.dataset.id);break;
+   case 'sTog':{const s=state.ships.find(x=>x.id===t.dataset.id),v=t.dataset.v==='si';if(s[t.dataset.k]===v)break;s[t.dataset.k]=v;const fin=s.hitos[s.hitos.length-1];if(!fin.real)fin.l=ffFinal(s)[0];
+     log((ui.role==='cliente'?CL(s.clientId).short:'Operaciones FF')+': '+s.docRef+' · '+(t.dataset.k==='transporte'?'transporte interno':'bodega DP World')+' '+(v?'sí':'no'));
+     notify(ui.role==='cliente'?['opsff']:[s.clientId],'Cambio en el último tramo',s.docRef+' · '+(t.dataset.k==='transporte'?'Transporte interno con DP World':'Va a bodega DP World')+': '+(v?'sí':'no'));commit();toast('Guardado. '+(t.dataset.k==='transporte'?(v?'DP World coordina el último tramo.':'El cliente usa su propio transporte.'):(v?'La carga va a bodega CLP.':'La carga no entra a bodega.')));break;}
    case 'adu':{const b=B(t.dataset.id),k=t.dataset.k;b.aduana=b.aduana||{};b.aduana[k]={at:Date.now(),by:ui.role};
      log((ui.role==='admin'?'DP World':CL(cli(b)).short)+' marcó lista: '+ADU.find(x=>x[0]===k)[1].toLowerCase()+' · '+b.ref);
      if(liberado(b)){const cs=[...new Set(b.containers.filter(c=>c.carrierId&&IDX[c.status]<=IDX.asignado).map(c=>c.carrierId))];
@@ -1518,7 +1849,7 @@ document.addEventListener('click',e=>{
    case 'reset':state=seed();migrate();FILES.clear().catch(()=>{});expSeen=new Set();save();closeModal();render();toast('Demo reiniciada con datos de ejemplo.');break;
   }
 });
-document.addEventListener('change',e=>{const t=e.target;if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='waSet'){const k=t.dataset.k,v=t.value.trim(),c=WA.find(x=>x[0]===k)[1];const ok=!v||waGrupo(v)||(!/[a-z]/i.test(v)&&waIntl(v).length>=10&&waIntl(v).length<=15);if(!ok){toast('Revisa '+c+': pon un celular de WhatsApp (6123-4567 o +507 6123-4567) o el enlace de un grupo (https://chat.whatsapp.com/…).',true);return;}if(v&&!waGrupo(v)){t.value=waFmt(waIntl(v));}const val=t.value.trim();if(k==='coord'){if(!val){toast('Coordinación necesita un número.',true);t.value=waNum(k);return;}state.settings.auto.tel=val;}else state.settings.wa[k]=val;log('WhatsApp de '+c+': '+(v||'sin número'));save();toast('Número de '+c+' guardado.');}});
+document.addEventListener('change',e=>{const t=e.target;if(t.closest&&t.closest('#qfForm')){qVis();}if(t.id==='cf-role'){document.getElementById('cf-emp').innerHTML=empOpts(t.value);document.getElementById('cf-emp-w').hidden=!/cliente|transportista/.test(t.value);}if(t.dataset&&t.dataset.act==='cfgShow'){document.getElementById('cf-pass').type=t.checked?'text':'password';}if(t.id==='rx-o'){document.getElementById('rx-m').innerHTML=MOTIVOS[t.value].map(x=>'<option>'+x+'</option>').join('');}if(t.dataset&&t.dataset.act==='waSet'){const k=t.dataset.k,v=t.value.trim(),c=WA.find(x=>x[0]===k)[1];const ok=!v||waGrupo(v)||(!/[a-z]/i.test(v)&&waIntl(v).length>=10&&waIntl(v).length<=15);if(!ok){toast('Revisa '+c+': pon un celular de WhatsApp (6123-4567 o +507 6123-4567) o el enlace de un grupo (https://chat.whatsapp.com/…).',true);return;}if(v&&!waGrupo(v)){t.value=waFmt(waIntl(v));}const val=t.value.trim();if(k==='coord'){if(!val){toast('Coordinación necesita un número.',true);t.value=waNum(k);return;}state.settings.auto.tel=val;}else state.settings.wa[k]=val;log('WhatsApp de '+c+': '+(v||'sin número'));save();toast('Número de '+c+' guardado.');}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='cq'){const box=document.getElementById('rgBox');if(box){const q=parseInt(t.value,10)||0;box.innerHTML=reglasHtml(reglas(B(box.dataset.b),ui.carrier,q));}}});
 document.addEventListener('change',e=>{
   const t=e.target, a=t.dataset&&t.dataset.act;
