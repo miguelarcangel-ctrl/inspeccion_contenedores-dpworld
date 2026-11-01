@@ -1,4 +1,4 @@
-# Last Mile — Especificación para integrar con Control de Rampas
+# DP Bridge · Last Mile — Especificación para integrar con Control de Rampas
 
 Módulo de coordinación de transporte de contenedores (retiro de vacío → carga en Bodega DP World → entrega de lleno en terminal) para clientes 3PL, empezando por CERNAC. Su objetivo es reemplazar la coordinación manual que hoy se hace por correo y WhatsApp. El prototipo navegable está en `prototype/index.html`: es un solo archivo HTML/JS que guarda los datos en localStorage.
 
@@ -238,6 +238,15 @@ En la bandeja se ven la tasa de cierre y el tiempo de respuesta.
 | No | No | Retirado por el cliente |
 
 **Pendiente:** para que Last Mile entregue en la dirección del cliente, hoy el booking siempre va a CLP; falta también el último tramo de LCL y aéreo en Last Mile.
+
+## Bitácora
+- **Acceso:** menú ☰ → Bitácora, para admin, bodega y operaciones FF.
+- **Qué registra cada acción:** día y hora, usuario y rol, y los contenedores que tocó.
+- **Buscador:** contenedor, booking Last Mile, BL o HAWB del embarque, o número de cotización. No importan espacios, guiones ni mayúsculas.
+- **Filtros:** por usuario y por rango de fechas.
+- **Ficha del contenedor:** cada estado con su fecha, más chofer y placa, rampa, sello y número de recepción del WMS.
+- **Ficha de booking o embarque:** su tracking.
+- **Límites:** guarda las últimas 3.000 acciones y muestra las 300 más recientes que coincidan.
 
 ## Configuración
 - **Ubicación:** menú ☰ → Configuración, para todos los roles.
