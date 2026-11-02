@@ -254,6 +254,14 @@ Bookings Last Mile (cliente, transportista y admin) y Embarques se ven como tabl
 - La acción principal va en la tarjeta (Confirmar disponibilidad, Agendar retiro, Revisar y aprobar, Asignar o reabrir, Registrar hito); tocar la tarjeta abre el detalle completo.
 - «Lista» (admin: «Lista y ajustes») mantiene la vista anterior con todos los paneles.
 
+## Plazos que mandan y jerarquía de alertas
+- **Exportación:** mandan la ventana de retiro de vacío (desde/hasta) y la de entrega del lleno (desde/hasta). De ahí sale el plazo de bodega: carga y sello listos 8 h antes del cierre de la entrega.
+- **Importación:** mandan el **almacenaje libre en puerto** (hasta cuándo retirar el lleno sin cargos de almacenaje) y la **retención libre** (hasta cuándo devolver el vacío sin cargos de detención). De ahí sale el plazo de bodega: descarga lista 24 h antes del fin de la retención.
+- Cada plazo tiene un responsable: transportista (retiro, entrega, devolución) o bodega (carga, descarga).
+- **Jerarquía de avisos:** aviso al responsable 24 h antes; en riesgo (ámbar) 6 h antes, también a DP World; vencido (rojo), también al cliente. En importación, al vencer muestra los días de almacenaje o retención que van corriendo.
+- Se ven en el semáforo de las tarjetas, en la sección «Plazos que mandan» del detalle y como marcas en el calendario de cada rol, con el color de su estado.
+- El admin ajusta las horas de aviso, de riesgo y los márgenes de carga y descarga en «Plazos y alertas». Cada rol tiene su interruptor de avisos de plazos.
+
 ## Bitácora
 - **Acceso:** menú ☰ → Bitácora, para admin, bodega y operaciones FF.
 - **Qué registra cada acción:** día y hora, usuario y rol, y los contenedores que tocó.
