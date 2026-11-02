@@ -1012,3 +1012,15 @@ main.lm-main{padding-block:18px 56px}
   .lm .kb-box{min-width:0;flex:1 1 30%;padding:8px 10px}.lm .kb-box b{font-size:20px}
 }
 .lm .kb-card .tag{color:var(--t2);border-color:var(--b2);background:transparent}
+
+/* plazos que mandan: lista en el detalle y marcas en el calendario (color = estado) */
+.lm .plz{display:grid;gap:4px;padding:10px 14px;border-top:1px solid var(--b1)}
+.lm .plz-i{--k:var(--green);display:grid;grid-template-columns:10px minmax(150px,1.2fr) minmax(140px,1.2fr) minmax(150px,1fr) minmax(110px,.8fr);gap:10px;align-items:center;font-size:13px}
+.lm .plz-i i{width:9px;height:9px;border-radius:50%;background:var(--k)}
+.lm .plz-i.warn{--k:var(--amber)}.lm .plz-i.bad{--k:var(--red)}.lm .plz-i.done{--k:var(--t4)}
+.lm .plz-i.bad>span:last-child,.lm .plz-i.warn>span:last-child{color:var(--k);font-weight:700}
+.lm .plz-i.done b{color:var(--t3);font-weight:600}
+@media (max-width:640px){.lm .plz-i{grid-template-columns:10px 1fr 1fr}.lm .plz-i>span.muted{display:none}}
+.lm .cal-ev.lim{--k:var(--green);background:color-mix(in srgb,var(--k) 16%,transparent);border-left-color:var(--k)}
+.lm .cal-ev.lim.warn{--k:var(--amber)}.lm .cal-ev.lim.bad{--k:var(--red)}
+.lm .lg-lim{background:rgba(232,0,61,.16);border-left:3px solid var(--red)}
