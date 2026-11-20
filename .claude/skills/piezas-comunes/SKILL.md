@@ -17,6 +17,7 @@ Cada pieza ya funciona en una app de la plataforma. Se copia de su **implementac
 | Reclamos / solicitudes externas | Proveedores (`vReclamos`, `verReclamo`) | |
 | Mapa por mes verde / rojo / ámbar | Proveedores (`vMapa`, `pintarMapa`) | |
 | Adjuntos con visor | Proveedores (`api.subirArchivo`, `verArchivo`) | |
+| Cargos recurrentes (gastos fijos) | Proveedores (`generarFijos`, `vFijos`, `completarFijo`, `cargosProgramados`) | |
 | Portal para usuarios externos | Proveedores (rol `proveedor`, `*Visibles()`) | Last Mile (cliente, transportista) |
 
 Antes de agregarlas, pregúntale al usuario cuáles quiere en la app y para qué perfiles; no todas convienen en todas. Lo visual sigue siempre `linea-grafica` (sin íconos ni emojis; textos en Barlow Condensed en mayúsculas).
@@ -106,6 +107,16 @@ El pago: el coordinador lo solicita, otra persona (aprobador o admin) lo autoriz
 - Rol externo vinculado a su entidad (`usuario.provId`). Funciones `facturasVisibles()`, `pagosVisibles()`… filtran todo lo que ve; menú propio («Mis facturas», «Mis pagos»); se ocultan columnas que solo le sirven a DP World.
 - Resumen propio con lo que le importa y el proceso explicado en pasos. El administrador crea sus usuarios en Configuración.
 - En producción el filtro va también en el servidor (políticas RLS de Supabase por entidad), no solo en la pantalla.
+
+## 10. Cargos recurrentes (gastos fijos frente a variables)
+
+- **Gasto fijo**: pago que se repite cada mes por un monto casi igual (vigilancia, limpieza, alquileres). Se registra por entidad: concepto, monto mensual (con o sin ITBMS), **día del mes en que se refleja como facturado** (si el mes no tiene ese día, el último), tolerancia de variación en %, vigencia desde/hasta y activo o pausado. **Variable**: todo lo demás, que entra como documento normal.
+- **Ese día la app genera el cargo del mes** como un documento más (`fijoId`, `periodo` AAAA-MM, `fiscalPendiente`), con el monto pactado y la marca «Falta factura fiscal». Genera también los meses atrasados si se registra con fecha pasada (máximo 12). Avisa a los internos y al externo.
+- El externo (o el coordinador) **completa el cargo** con su documento real (número, fecha, archivo). Puede ajustar el monto; si la variación pasa la tolerancia, el **motivo es obligatorio** y queda visible en el documento. No se valida mientras falte el documento real. Después sigue el camino normal hasta pagado.
+- Cambiar el monto o el día aplica a los meses que aún no se generan; pausar detiene la generación. Todo queda en la bitácora (tipo «Gasto fijo»).
+- **En el mapa por mes**, los meses que aún no llegan a su día salen en **gris** («Programado», borde punteado) para ver todo lo que hay que pagar; pasan a ámbar, rojo o verde según avanza el documento. El mapa muestra 2 meses próximos y filtra fijos, variables o todos.
+- Vista **Gastos fijos** (internos): lista con el estado del mes en curso y el compromiso mensual; detalle con el **mes a mes** (generado, programado, pagado, vencido). En el resumen, tarjeta «Gastos fijos del mes» con cuántos están pagados y fijos frente a variables.
+- Prueba obligatoria: registrar uno con fecha pasada y ver los cargos generados; completar un cargo con variación mayor a la tolerancia; ver gris, ámbar, rojo y verde en el mapa; pausar.
 
 ## Verificación
 
