@@ -331,9 +331,9 @@ function demo(){
   /* gastos fijos: el día indicado de cada mes se genera el cargo y el proveedor sube su factura fiscal sobre él */
   const mesRel=n=>{const [y,m]=H.split('-').map(Number),x=new Date(y,m-1+n,1);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');};
   const n4=()=>Math.floor(Math.random()*90+10);
-  const GX=(id,cod,provId,concepto,monto,dia,tol,desde)=>({id,codigo:cod,provId,concepto,monto,conItbms:true,dia,tolerancia:tol,desde,hasta:'',activo:true,creadoPor:'coordinador',creado:d(-100)+' 09:00',
+  const GX=(id,cod,provId,concepto,monto,dia,tol,desde,pago)=>({id,codigo:cod,provId,concepto,monto,conItbms:true,dia,tolerancia:tol,desde,hasta:'',activo:true,pago,creadoPor:'coordinador',creado:d(-100)+' 09:00',
     log:[{t:d(-100)+' 09:00',u:'Coordinador Administrativo',a:'Registró el gasto fijo · '+money(monto)+' + ITBMS el día '+dia+' de cada mes'}]});
-  const fijos=[GX('x1','GF-001','p4','Vigilancia 24/7',5400,1,5,mesRel(-3)),GX('x2','GF-002','p3','Limpieza de bodega',950,5,10,mesRel(-3)),GX('x3','GF-003','p2','Alquiler montacargas 5 t',2600,25,5,mesRel(0))];
+  const fijos=[GX('x1','GF-001','p4','Vigilancia 24/7',5400,1,5,mesRel(-3),'solicitud'),GX('x2','GF-002','p3','Limpieza de bodega',950,5,10,mesRel(-3),'debito'),GX('x3','GF-003','p2','Alquiler montacargas 5 t',2600,25,5,mesRel(0),'debito')];
   const FX=(id,g,rel,estado,num)=>{const pv=proveedores.find(x=>x.id===g.provId),per=mesRel(rel),fe=diaDelMes(per,g.dia),it=r2(g.monto*.07),gen=!num;
     return {id,provId:g.provId,numero:num||'Por facturar · '+g.codigo+' '+per,fecha:fe,recibida:fe,vence:sumar(fe,pv.plazo),subtotal:g.monto,itbms:it,total:r2(g.monto+it),oc:'',file:'',concepto:g.concepto+' · '+per,estado,
       check:{oc:estado!=='recibida',servicio:estado!=='recibida',fiscal:estado!=='recibida'},motivo:'',creadoPor:'sistema',fijoId:g.id,periodo:per,generada:true,fiscalPendiente:gen,
@@ -364,9 +364,10 @@ function demo(){
     {id:'g2',numero:'PG-0002',provId:'p4',fecha:d(-3),metodo:'Transferencia',referencia:'',items:[{facId:'f8',monto:facturas[7].total}],total:facturas[7].total,estado:'solicitado',creadoPor:'coordinador',autorizadoPor:'',ejecutado:'',
       log:[{t:d(-3)+' 10:00',u:'Coordinador',a:'Solicitó el pago'}]},
     ...[['g4',-3,4],['g5',-2,6]].flatMap(([id,rel,base])=>[['x1','p4'],['x2','p3']].map(([gx,pv],k)=>{const f=facturas.find(x=>x.fijoId===gx&&x.periodo===mesRel(rel)),fp=sumar(f.vence,-2),ref='ACH-'+(600000+rel*-1000+k),num='PG-'+String(base+k).padStart(4,'0');
-      f.log.push({t:fp+' 11:00',u:'Coordinador Administrativo',a:'Pagada con '+num+' · '+ref+' · '+money(f.total)});
-      return {id:id+k,numero:num,provId:pv,fecha:fp,metodo:'ACH',referencia:ref,items:[{facId:f.id,monto:f.total}],total:f.total,estado:'pagado',creadoPor:'coordinador',autorizadoPor:'aprobador',ejecutado:fp,
-        log:[{t:fp+' 09:00',u:'Coordinador',a:'Solicitó el pago'},{t:fp+' 10:00',u:'Aprobador',a:'Autorizó el pago'},{t:fp+' 11:00',u:'Coordinador',a:'Registró la ejecución · '+ref}]};})),
+      const deb=k===1;   // la limpieza (GF-002) se paga por débito automático
+      f.log.push({t:fp+' 11:00',u:'Coordinador Administrativo',a:(deb?'Pagada por débito automático '+num:'Pagada con '+num)+' · '+ref+' · '+money(f.total)});
+      return {id:id+k,numero:num,provId:pv,fecha:fp,metodo:deb?'Débito automático':'ACH',referencia:ref,items:[{facId:f.id,monto:f.total}],total:f.total,estado:'pagado',creadoPor:'coordinador',autorizadoPor:deb?'débito automático':'aprobador',ejecutado:fp,
+        log:deb?[{t:fp+' 11:00',u:'Coordinador',a:'Registró el débito automático · '+ref}]:[{t:fp+' 09:00',u:'Coordinador',a:'Solicitó el pago'},{t:fp+' 10:00',u:'Aprobador',a:'Autorizó el pago'},{t:fp+' 11:00',u:'Coordinador',a:'Registró la ejecución · '+ref}]};})),
     {id:'g3',numero:'PG-0003',provId:'p1',fecha:d(-2),metodo:'ACH',referencia:'',items:[{facId:'f1',monto:2000}],total:2000,estado:'autorizado',creadoPor:'coordinador',autorizadoPor:'aprobador',ejecutado:'',
       log:[{t:d(-2)+' 09:00',u:'Coordinador',a:'Solicitó el pago (abono parcial)'},{t:d(-1)+' 16:20',u:'Aprobador',a:'Autorizó el pago'}]}
   ];
@@ -394,7 +395,7 @@ function demo(){
   facturas[0].log.push({t:d(-2)+' 09:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0003 por '+money(2000)});
   pagos.forEach(g=>g.log.forEach(l=>{l.u=l.u==='Coordinador'?'Coordinador Administrativo':l.u==='Aprobador'?'Aprobador de Pagos':l.u;}));
   proveedores.forEach(pv=>pv.log.forEach(l=>{if(l.u==='Coordinador')l.u='Coordinador Administrativo';}));
-  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7},bitacora:[],reclamos,notifs:[],wa:{},fijos};
+  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7,recordatorio:3},bitacora:[],reclamos,notifs:[],wa:{},fijos};
 }
 
 /* ── estado ── */
@@ -455,6 +456,7 @@ function pendientes(){
     facAprobar:ap?S.db.facturas.filter(f=>f.estado==='validada'&&f.creadoPor!==u).length:0,
     pagAutorizar:ap?S.db.pagos.filter(g=>g.estado==='solicitado'&&g.creadoPor!==u).length:0,
     pagEjecutar:re?S.db.pagos.filter(g=>g.estado==='autorizado').length:0,
+    debitos:re?S.db.facturas.filter(esDebitoPendiente).length:0,
     reclamos:!esProv()?S.db.reclamos.filter(r=>r.estado==='abierto').length:0
   };
 }
@@ -507,6 +509,7 @@ function vResumen(){
     [p.provAprobar,'Proveedores por aprobar','proveedores','pe','solicitud'],
     [p.facValidar,'Facturas por validar contra el respaldo aprobado','facturas','fe','recibida'],
     [p.sinFiscal,'Cargos de gastos fijos esperando la factura fiscal del proveedor','facturas','ft','fijo'],
+    [p.debitos,'Débitos automáticos por registrar (ya vencidos o por vencer)','facturas','ft','fijo'],
     [p.facAprobar,'Facturas por aprobar para pago','facturas','fe','validada'],
     [p.pagAutorizar,'Pagos por autorizar','pagos','ge','solicitado'],
     [p.pagEjecutar,'Pagos autorizados por ejecutar','pagos','ge','autorizado'],
@@ -759,13 +762,15 @@ function verFac(id){
     if(abierto)acc.unshift({t:'Ver reclamo '+abierto.numero,on:()=>verReclamo(abierto.id)});
     else if(c.vencida)acc.unshift({t:'Hacer reclamo',cls:'pri',on:()=>nuevoReclamo(id)});}
   if(f.fiscalPendiente&&f.estado==='recibida'&&(PUEDE.registrar()||(esProv()&&f.provId===miProv())))acc.unshift({t:'Subir factura fiscal',cls:'pri',on:()=>completarFijo(id)});
+  if(porDebito(f)&&f.estado!=='rechazada'&&c.saldo>0.004&&PUEDE.registrar())acc.unshift({t:'Registrar débito',cls:'ok',on:()=>registrarDebito(id)});
+  if(f.estado==='aprobada'&&porDebito(f)){const i=acc.findIndex(a=>a.t==='Solicitar pago');if(i>=0)acc.splice(i,1);}
   if(f.fiscalPendiente)acc.splice(acc.findIndex(a=>a.t==='Editar'),acc.some(a=>a.t==='Editar')?1:0);
   S.ctxFac=id;
   const pagos=S.db.pagos.filter(g=>g.items.some(i=>i.facId===id)),rcs=S.db.reclamos.filter(r=>r.facId===id);
   const ap=f.aprobCorreo||{};
   modal('Factura '+f.numero,
     (c.vencida?'<div class="aviso err"><b>Vencida hace '+c.dias+' días.</b> Venció el '+fecha(f.vence)+'.</div>':'')+
-    (f.fijoId?(()=>{const g=fijo(f.fijoId);return '<div class="aviso info"><b>Gasto fijo '+esc(g?g.codigo:'')+'</b> · '+esc(g?g.concepto:'')+' · cargo de '+esc(mesNombre(f.periodo))+'.'+(f.fiscalPendiente?' La app lo generó el '+fecha(f.fecha)+' por el monto pactado; <b>falta la factura fiscal</b> del proveedor.':'')+(f.variacion?' Variación contra el monto pactado: '+f.variacion+'.':'')+'</div>';})():'')+
+    (f.fijoId?(()=>{const g=fijo(f.fijoId);return '<div class="aviso info"><b>Gasto fijo '+esc(g?g.codigo:'')+'</b> · '+esc(g?g.concepto:'')+' · cargo de '+esc(mesNombre(f.periodo))+'.'+(f.fiscalPendiente?' La app lo generó el '+fecha(f.fecha)+' por el monto pactado; <b>falta la factura fiscal</b> del proveedor.':'')+(f.variacion?' Variación contra el monto pactado: '+f.variacion+'.':'')+(g&&g.pago==='debito'?' <b>Se paga por débito automático:</b> cuando el banco lo debite, se registra con su referencia y pasa a pagada.':'')+'</div>';})():'')+
     (f.estado==='rechazada'?'<div class="aviso err"><b>Rechazada:</b> '+esc(f.motivo)+'</div>':'')+
     '<div style="margin-bottom:14px">'+chip(c.est,ESTADO_FAC)+' <span class="mut">'+esc(p.nombre)+'</span></div>'+
     '<div class="kv">'+[['Orden de compra',f.oc],['Emisión',fecha(f.fecha)],['Vence',fecha(f.vence)],['Subtotal',money(f.subtotal)],['ITBMS',money(f.itbms)],['Total',money(f.total)],['Pagado',money(c.pagado)],['En solicitud de pago',money(c.comprometido)],['Saldo',money(c.saldo)],['Concepto',f.concepto]].concat(esProv()?[]:[['Cliente o file',f.file]]).concat([['Recibida',fecha(f.recibida)],['Respaldo aprobado por',ap.por],['Fecha del correo',ap.fecha?fecha(ap.fecha):''],['Referencia del correo',ap.ref]]).map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
@@ -836,7 +841,7 @@ function verEstados(){
     '</div>'+tit('Los calcula la app')+'<div class="grid" style="gap:6px;margin-bottom:12px">'+
       tarjeta(chip('en_pago',ESTADO_FAC),'','Una solicitud de pago abierta (solicitada o autorizada) incluye la factura.')+
       tarjeta(chip('parcial',ESTADO_FAC),'','Se ejecutó un pago, pero no cubre el total.')+
-      tarjeta(chip('pagada',ESTADO_FAC),'','Lo pagado cubre el total.')+
+      tarjeta(chip('pagada',ESTADO_FAC),'','Lo pagado cubre el total, por pago ejecutado o por débito automático registrado.')+
       tarjeta('<span class="chip err">Vencida</span>','','Pasó la fecha de la factura más los días de crédito del proveedor y queda saldo.')+
     '</div><p class="mut" style="margin:0">El pago tiene sus propios pasos: el coordinador lo solicita, otra persona (aprobador o administrador) lo autoriza y el coordinador registra la ejecución con la referencia bancaria. En ese momento las facturas pasan solas a Pagada o Pago parcial. Cada cambio queda en el historial y en la bitácora con nombre, fecha y hora.</p>',
     [{t:'Entendido',cls:'pri',on:cerrarModal}]);
@@ -856,11 +861,11 @@ function listaPagos(){
     '</tbody></table></div>':'<div class="card vacio">No hay pagos con ese filtro.</div>';
 }
 function nuevoPago(provId,marcar){
-  const conLibre=S.db.proveedores.filter(p=>p.estado==='aprobado'&&S.db.facturas.some(f=>f.provId===p.id&&f.estado==='aprobada'&&calc(f).libre>0.004));
+  const conLibre=S.db.proveedores.filter(p=>p.estado==='aprobado'&&S.db.facturas.some(f=>f.provId===p.id&&f.estado==='aprobada'&&!porDebito(f)&&calc(f).libre>0.004));
   if(!conLibre.length)return toast('No hay facturas aprobadas para pago con saldo libre.',true);
   if(!provId||!conLibre.some(p=>p.id===provId))provId=conLibre[0].id;
   const pinta=()=>{
-    const pid=$('gProv').value,fs=S.db.facturas.filter(f=>f.provId===pid&&f.estado==='aprobada').map(f=>({f,c:calc(f)})).filter(x=>x.c.libre>0.004).sort((a,b)=>a.f.vence.localeCompare(b.f.vence));
+    const pid=$('gProv').value,fs=S.db.facturas.filter(f=>f.provId===pid&&f.estado==='aprobada'&&!porDebito(f)).map(f=>({f,c:calc(f)})).filter(x=>x.c.libre>0.004).sort((a,b)=>a.f.vence.localeCompare(b.f.vence));
     $('gFacs').innerHTML='<div class="tw"><table><thead><tr><th></th><th>Factura</th><th class="hide-sm">Vence</th><th class="num">Disponible</th><th class="num">A pagar</th></tr></thead><tbody>'+
       fs.map(({f,c})=>{const on=!marcar||marcar.includes(f.id);return '<tr><td><input type="checkbox" class="gChk" data-id="'+f.id+'"'+(on?' checked':'')+' style="width:16px;height:16px;accent-color:#00C389"></td><td class="b">'+esc(f.numero)+(c.vencida?' <span class="chip err">Vencida</span>':'')+'</td><td class="hide-sm">'+fecha(f.vence)+'</td><td class="num">'+money(c.libre)+'</td><td class="num"><input class="in gMonto" data-id="'+f.id+'" data-max="'+c.libre+'" type="number" step="0.01" min="0" value="'+c.libre.toFixed(2)+'" style="width:110px;text-align:right"></td></tr>';}).join('')+
       '</tbody></table></div>';
@@ -1018,7 +1023,8 @@ function vConfig(){
   '<div class="tw" style="margin-bottom:16px"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr></thead><tbody>'+
     S.db.usuarios.map(u=>'<tr class="clic" data-act="editarUsuario" data-id="'+u.id+'"><td class="b">'+esc(u.u)+'</td><td>'+esc(u.nombre)+'</td><td>'+esc(ROLES[u.rol])+(u.rol==='proveedor'&&prov(u.provId)?'<div class="mut">'+esc(prov(u.provId).nombre)+'</div>':'')+'</td><td>'+(u.activo?'<span class="chip ok">Activo</span>':'<span class="chip">De baja</span>')+'</td></tr>').join('')+
   '</tbody></table></div>'+
-  '<div class="grid two"><div class="card"><h2>Parámetros</h2><label class="f" style="max-width:220px"><span>ITBMS (%)</span><input class="in" type="number" min="0" step="0.5" id="cIt" value="'+S.db.parametros.itbms+'"></label><div style="margin-top:10px"><button class="btn" data-act="guardarParam">Guardar</button></div></div>'+
+  '<div class="grid two"><div class="card"><h2>Parámetros</h2><label class="f" style="max-width:220px"><span>ITBMS (%)</span><input class="in" type="number" min="0" step="0.5" id="cIt" value="'+S.db.parametros.itbms+'"></label>'+
+    '<label class="f" style="max-width:320px;margin-top:10px"><span>Recordar la factura fiscal faltante cada (días)</span><input class="in" type="number" min="1" max="30" id="cRec" value="'+(S.db.parametros.recordatorio||3)+'"></label><div style="margin-top:10px"><button class="btn" data-act="guardarParam">Guardar</button></div></div>'+
   '<div class="card"><h2>Contactos de WhatsApp</h2><p class="mut" style="margin-top:0">Aparecen en la burbuja verde según el perfil. Número con código de país (un número de 8 dígitos se completa con 507) o enlace de un grupo de WhatsApp.</p>'+
     WA_CONTACTOS.map(([k,t,d])=>'<label class="f" style="margin-bottom:8px"><span>'+t+' · '+d+'</span><input class="in" id="wa_'+k+'" inputmode="tel" value="'+esc(S.db.wa[k]||'')+'" placeholder="6000-0000"></label>').join('')+
     '<button class="btn" data-act="guardarWa">Guardar contactos</button></div>'+
@@ -1253,7 +1259,7 @@ function listaFijos(){
   const mensual=l.filter(g=>vigente(g,per)).reduce((s,g)=>s+totalFijo(g),0);
   $('lista').innerHTML=(l.length?'<div class="tw"><table><thead><tr><th>Gasto fijo</th><th class="hide-sm">Proveedor</th><th class="num">Monto mensual</th><th class="hide-sm">Día</th><th>'+esc(mesNombre(per))+'</th></tr></thead><tbody>'+
     l.map(g=>{const e=estadoMes(g,per);return '<tr class="clic" data-act="verFijo" data-id="'+g.id+'"><td><div class="b">'+esc(g.concepto)+'</div><div class="mut">'+esc(g.codigo)+(g.activo?'':' · pausado')+'</div><div class="mut show-sm">'+esc((prov(g.provId)||{}).nombre||'')+'</div></td><td class="hide-sm">'+esc((prov(g.provId)||{}).nombre||'')+'</td>'+
-      '<td class="num b">'+money(totalFijo(g))+'<div class="mut">tolerancia '+g.tolerancia+' %</div></td><td class="hide-sm">'+g.dia+' de cada mes</td><td><span class="chip '+e[1]+'">'+esc(e[0])+'</span></td></tr>';}).join('')+
+      '<td class="num b">'+money(totalFijo(g))+'<div class="mut">'+(g.pago==='debito'?'débito automático':'solicitud de pago')+' · tolerancia '+g.tolerancia+' %</div></td><td class="hide-sm">'+g.dia+' de cada mes</td><td><span class="chip '+e[1]+'">'+esc(e[0])+'</span></td></tr>';}).join('')+
     '</tbody></table></div><div class="tot"><span class="mut">'+l.filter(g=>g.activo).length+' activos</span><span>Compromiso mensual <b>'+money(mensual)+'</b></span></div>'
     :'<div class="card vacio">No hay gastos fijos. Regístralos para que la app genere sus cargos cada mes.</div>');
 }
@@ -1267,7 +1273,7 @@ function resumenFijos(){
     est.map(({g,e})=>'<button class="tarea" data-act="'+(e[2]?'verFac':'verFijo')+'" data-id="'+(e[2]?e[2].id:g.id)+'"><span><b>'+esc(g.concepto)+'</b> · '+esc((prov(g.provId)||{}).nombre||'')+'<br><span class="mut">'+money(totalFijo(g))+' · día '+g.dia+'</span></span><span class="chip '+e[1]+'">'+esc(e[0])+'</span></button>').join('')+'</div></div>';
 }
 function formFijo(g){
-  const nuevo=!g;g=g||{conItbms:true,dia:1,tolerancia:10,desde:hoy().slice(0,7),activo:true};
+  const nuevo=!g;g=g||{conItbms:true,dia:1,tolerancia:10,desde:hoy().slice(0,7),activo:true,pago:'debito'};
   const provs=S.db.proveedores.filter(p=>p.estado==='aprobado'||p.id===g.provId).sort((a,b)=>a.nombre.localeCompare(b.nombre));
   modal(nuevo?'Nuevo gasto fijo':'Editar · '+g.codigo,'<div class="form">'+
     '<label class="f full"><span>Proveedor</span><select class="sel" id="gxProv"><option value="">Elige el proveedor</option>'+provs.map(p=>'<option value="'+p.id+'"'+(g.provId===p.id?' selected':'')+'>'+esc(p.nombre)+' · '+p.plazo+' días de crédito</option>').join('')+'</select></label>'+
@@ -1276,6 +1282,7 @@ function formFijo(g){
     '<label class="f"><span>ITBMS</span><select class="sel" id="gxIt"><option value="1"'+(g.conItbms?' selected':'')+'>Con ITBMS '+S.db.parametros.itbms+' %</option><option value="0"'+(g.conItbms?'':' selected')+'>Exento</option></select></label>'+
     '<label class="f"><span>Día del mes en que se refleja como facturado</span><input class="in" type="number" min="1" max="31" id="gxDia" value="'+esc(g.dia)+'"></label>'+
     '<label class="f"><span>Variación permitida sin motivo (%)</span><input class="in" type="number" min="0" max="100" step="0.5" id="gxTol" value="'+esc(g.tolerancia)+'"></label>'+
+    '<label class="f full"><span>Forma de pago</span><select class="sel" id="gxPago"><option value="debito"'+(g.pago!=='solicitud'?' selected':'')+'>Débito automático: el banco lo debita y se registra con su referencia</option><option value="solicitud"'+(g.pago==='solicitud'?' selected':'')+'>Solicitud de pago: se solicita, se autoriza y se ejecuta cada mes</option></select></label>'+
     '<label class="f"><span>Desde (mes)</span><input class="in" type="month" id="gxDesde" value="'+esc(g.desde)+'"></label>'+
     '<label class="f"><span>Hasta (opcional)</span><input class="in" type="month" id="gxHasta" value="'+esc(g.hasta||'')+'"></label>'+
     '<p class="mut full" style="margin:0">Si el mes no tiene ese día (por ejemplo 31), el cargo se genera el último día del mes. Vence en la fecha del cargo más los días de crédito del proveedor. Un cambio de monto aplica a los meses que aún no se generan.</p>'+
@@ -1290,9 +1297,10 @@ function formFijo(g){
       if(!desde)return err('Indica desde qué mes aplica.');if(hasta&&hasta<desde)return err('El mes final no puede ser antes del inicial.');
       const antes=nuevo?null:{monto:g.monto,dia:g.dia,tolerancia:g.tolerancia};
       if(nuevo){const n=(S.db.fijos||[]).length+1;Object.assign(g,{id:uid('x'),codigo:'GF-'+String(n).padStart(3,'0'),creadoPor:S.user.u,creado:ahora(),log:[]});}
-      Object.assign(g,{provId,concepto:v('gxCon'),monto,conItbms:v('gxIt')==='1',dia,tolerancia:tol,desde,hasta});
+      const pagoAntes=g.pago;
+      Object.assign(g,{provId,concepto:v('gxCon'),monto,conItbms:v('gxIt')==='1',dia,tolerancia:tol,desde,hasta,pago:v('gxPago')});
       g.log.push({t:ahora(),u:quien(),a:nuevo?'Registró el gasto fijo · '+money(monto)+(g.conItbms?' + ITBMS':'')+' el día '+dia+' de cada mes desde '+mesNombre(desde):
-        'Editó el gasto fijo'+(antes.monto!==monto?' · monto de '+money(antes.monto)+' a '+money(monto):'')+(antes.dia!==dia?' · día de '+antes.dia+' a '+dia:'')+(antes.tolerancia!==tol?' · tolerancia de '+antes.tolerancia+' % a '+tol+' %':'')});
+        'Editó el gasto fijo'+(antes.monto!==monto?' · monto de '+money(antes.monto)+' a '+money(monto):'')+(antes.dia!==dia?' · día de '+antes.dia+' a '+dia:'')+(antes.tolerancia!==tol?' · tolerancia de '+antes.tolerancia+' % a '+tol+' %':'')+(pagoAntes!==g.pago?' · forma de pago: '+FORMA_PAGO[g.pago]:'')});
       await api.guardar('fijos',g);const n=generarFijos();
       toast(nuevo?'Gasto fijo registrado.'+(n?' Se generaron '+n+' cargo'+(n>1?'s':'')+' de meses cuyo día ya pasó.':''):'Gasto fijo actualizado.');pintar();verFijo(g.id);
     }}]);
@@ -1306,7 +1314,7 @@ function verFijo(id){
   for(let per=desde;per<=mesSig(hoy().slice(0,7),2);per=mesSig(per))meses.push(per);
   modal(g.codigo+' · '+g.concepto,
     '<div style="margin-bottom:14px">'+(g.activo?'<span class="chip ok">Activo</span>':'<span class="chip">Pausado</span>')+' <span class="mut">'+esc(prov(g.provId).nombre)+'</span></div>'+
-    '<div class="kv">'+[['Monto mensual',money(g.monto)+(g.conItbms?' + ITBMS':'')],['Total del cargo',money(totalFijo(g))],['Se refleja el día',g.dia+' de cada mes'],['Variación sin motivo','hasta '+g.tolerancia+' %'],['Desde',mesNombre(g.desde)],['Hasta',g.hasta?mesNombre(g.hasta):'Sin fecha final'],['Días de crédito',prov(g.provId).plazo+' días']].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'+
+    '<div class="kv">'+[['Monto mensual',money(g.monto)+(g.conItbms?' + ITBMS':'')],['Total del cargo',money(totalFijo(g))],['Se refleja el día',g.dia+' de cada mes'],['Forma de pago',FORMA_PAGO[g.pago]||FORMA_PAGO.solicitud],['Variación sin motivo','hasta '+g.tolerancia+' %'],['Desde',mesNombre(g.desde)],['Hasta',g.hasta?mesNombre(g.hasta):'Sin fecha final'],['Días de crédito',prov(g.provId).plazo+' días']].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Mes a mes</h2><div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Mes</th><th class="num">Monto</th><th>Estado</th></tr></thead><tbody>'+
       meses.reverse().map(per=>{const e=estadoMes(g,per),f=e[2];return '<tr'+(f?' class="clic" data-act="verFac" data-id="'+f.id+'"':'')+'><td class="b">'+esc(mesNombre(per))+(f&&!f.fiscalPendiente?'<div class="mut">'+esc(f.numero)+'</div>':'')+'</td><td class="num">'+money(f?f.total:totalFijo(g))+'</td><td><span class="chip '+e[1]+'">'+esc(e[0])+'</span></td></tr>';}).join('')+
     '</tbody></table></div><h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Historial</h2>'+hist(g.log),acc);
@@ -1346,6 +1354,46 @@ function completarFijo(id){
   $('cfSub').oninput=upd;upd();
 }
 
+/* forma de pago del gasto fijo: débito automático (el banco lo debita; aquí solo se registra con su referencia) o solicitud de pago */
+const FORMA_PAGO={debito:'Débito automático',solicitud:'Solicitud de pago'};
+const porDebito=f=>{const g=f&&f.fijoId&&fijo(f.fijoId);return !!g&&g.pago==='debito';};
+const esDebitoPendiente=f=>porDebito(f)&&f.estado!=='rechazada'&&calc(f).saldo>0.004&&dif(f.vence,hoy())<=3;
+function registrarDebito(id){
+  const f=fac(id),c=calc(f),g=fijo(f.fijoId);
+  modal('Registrar débito automático · '+g.concepto,
+    '<div class="aviso info">El banco debita este cargo de forma automática. Registra la fecha y la referencia del débito: el cargo pasa a pagado (verde en el mapa) sin solicitud ni autorización.'+(f.fiscalPendiente?' Si aún falta la factura fiscal, se le sigue recordando al proveedor.':'')+'</div><div class="form">'+
+    '<label class="f"><span>Fecha del débito</span><input class="in" type="date" id="dbFecha" value="'+(f.vence<hoy()?f.vence:hoy())+'" max="'+hoy()+'"></label>'+
+    '<label class="f"><span>Referencia del débito</span><input class="in" id="dbRef" placeholder="Referencia del estado de cuenta"></label>'+
+    '<label class="f"><span>Monto debitado (USD)</span><input class="in" type="number" step="0.01" min="0" id="dbMonto" value="'+c.saldo.toFixed(2)+'"></label>'+
+    '</div><div class="err-msg" id="mErr"></div>',
+    [{t:'Cancelar',on:()=>verFac(id)},{t:'Registrar débito',cls:'ok',on:async()=>{
+      const err=m=>$('mErr').textContent=m,fe=$('dbFecha').value,ref=$('dbRef').value.trim(),m=r2($('dbMonto').value);
+      if(!fe||fe>hoy())return err('Revisa la fecha del débito.');if(ref.length<3)return err('Escribe la referencia del débito.');
+      if(!(m>0))return err('El monto debe ser mayor que cero.');if(m>c.saldo+0.001)return err('El monto supera el saldo del cargo ('+money(c.saldo)+').');
+      const n=S.db.pagos.reduce((x,q)=>Math.max(x,+q.numero.slice(3)||0),0)+1;
+      const pg={id:uid('g'),numero:'PG-'+String(n).padStart(4,'0'),provId:f.provId,fecha:fe,metodo:'Débito automático',referencia:ref,items:[{facId:f.id,monto:m}],total:m,estado:'pagado',creadoPor:S.user.u,autorizadoPor:'débito automático',ejecutado:fe,
+        log:[{t:ahora(),u:quien(),a:'Registró el débito automático · '+ref+' · '+money(m)}]};
+      await api.guardar('pagos',pg);
+      f.log.push({t:ahora(),u:quien(),a:'Pagada por débito automático '+pg.numero+' · '+ref+' · '+money(m)});await api.guardar('facturas',f);
+      notificar('p_pago','Pago realizado','DP World registró el débito automático de '+money(m)+' · '+g.concepto+' · '+mesNombre(f.periodo)+' · referencia '+ref+'.',{act:'verPago',id:pg.id},{provId:f.provId});
+      toast('Débito registrado: el cargo queda '+(m>=c.saldo-0.004?'pagado.':'con pago parcial.'));pintar();verFac(id);
+    }}]);
+}
+/* recordatorio de factura fiscal faltante: al proveedor y al coordinador, cada N días mientras falte */
+function recordatoriosFiscal(){
+  const N=S.db.parametros.recordatorio||3,H=hoy();let n=0;
+  S.db.facturas.filter(f=>f.fiscalPendiente&&f.estado==='recibida').forEach(f=>{
+    const dias=dif(H,f.fecha);if(dias<N||(f.recordado&&dif(H,f.recordado)<N))return;
+    const g=fijo(f.fijoId),pv=prov(f.provId);if(!g||!pv)return;
+    f.recordado=H;n++;
+    f.log.push({t:ahora(),u:'Sistema',a:'Recordatorio de factura fiscal al proveedor y al coordinador · '+dias+' días sin factura'});
+    notificar('p_fijo','Recordatorio: falta tu factura fiscal','El cargo de '+g.concepto+' · '+mesNombre(f.periodo)+' por '+money(f.total)+' lleva '+dias+' días sin tu factura fiscal. Súbela en Mis facturas.',{act:'verFac',id:f.id},{provId:f.provId});
+    notificar('fijo_sin_fiscal','Cargo sin factura fiscal',pv.nombre+' · '+g.concepto+' · '+mesNombre(f.periodo)+': '+dias+' días sin factura fiscal. Ya se le recordó al proveedor.',{act:'verFac',id:f.id});
+  });
+  if(n)api._persistir();
+  return n;
+}
+
 /* ════════ NOTIFICACIONES ════════
    Cada usuario elige con interruptores qué avisos le llegan. Se guardan en el centro de notificaciones de la app y,
    si activó los avisos en su equipo, también llegan como notificación del sistema.
@@ -1361,7 +1409,8 @@ const NOTIF=[
   ['pago_aut','Pagos autorizados o rechazados','Listos para ejecutar o devueltos.',['coordinador','admin']],
   ['reclamo_nuevo','Reclamos de proveedores','Solicitudes de información o de programación de pago.',['coordinador','aprobador','admin']],
   ['fijo_cargo','Cargos de gastos fijos','El día de cada gasto fijo, cuando la app genera el cargo del mes.',['coordinador','admin']],
-  ['p_fijo','Cargos mensuales de tu gasto fijo','Cuando se genera el cargo del mes: sube tu factura fiscal sobre él.',['proveedor']],
+  ['fijo_sin_fiscal','Cargos sin factura fiscal','Cuando un cargo de gasto fijo lleva días sin la factura fiscal del proveedor; se repite hasta que la suba.',['coordinador','admin']],
+  ['p_fijo','Cargos mensuales de tu gasto fijo','Cuando se genera el cargo del mes y recordatorios si falta tu factura fiscal.',['proveedor']],
   ['venc','Resumen de vencimientos','Al entrar cada día: facturas vencidas y las que vencen en 3 días.',['coordinador','aprobador','admin']],
   ['p_fac','Estado de tus facturas','Validada, aprobada para pago o rechazada.',['proveedor']],
   ['p_pago','Tus pagos','Pago programado y pago realizado con su referencia.',['proveedor']],
@@ -1603,7 +1652,9 @@ const ACT={
   csv,imprimir:()=>window.print(),csvBitacora,masBitacora:()=>{S.bVer+=200;listaBitacora();},
   nuevoUsuario:()=>formUsuario(),
   editarUsuario:id=>formUsuario(S.db.usuarios.find(u=>u.id===id)),
-  guardarParam:async()=>{const v=+$('cIt').value;if(!(v>=0&&v<=100))return toast('Revisa el porcentaje de ITBMS.',true);const antes=S.db.parametros.itbms;if(antes===v)return toast('Sin cambios.');await api.parametros({itbms:v});await api.registrar('Cambió el ITBMS de '+antes+' % a '+v+' %','Parámetros');toast('Parámetros guardados.');},
+  guardarParam:async()=>{const v=+$('cIt').value,rc=+$('cRec').value;if(!(v>=0&&v<=100))return toast('Revisa el porcentaje de ITBMS.',true);if(!(rc>=1&&rc<=30&&Number.isInteger(rc)))return toast('El recordatorio va de 1 a 30 días.',true);
+    const antes=S.db.parametros.itbms,rAntes=S.db.parametros.recordatorio||3;if(antes===v&&rAntes===rc)return toast('Sin cambios.');await api.parametros({itbms:v,recordatorio:rc});
+    if(antes!==v)await api.registrar('Cambió el ITBMS de '+antes+' % a '+v+' %','Parámetros');if(rAntes!==rc)await api.registrar('Cambió el recordatorio de factura fiscal de '+rAntes+' a '+rc+' días','Parámetros');toast('Parámetros guardados.');},
   restaurar:()=>modal('Restaurar datos de ejemplo','<p style="margin:0">Se borra todo lo registrado en este navegador. ¿Continuar?</p>',[{t:'Cancelar',on:cerrarModal},{t:'Restaurar',cls:'mal',on:async()=>{await api.restaurar();S.user=S.db.usuarios.find(u=>u.u===S.user.u)||S.db.usuarios.find(u=>u.rol==='admin');sesionUI();await api.registrar('Restauró los datos de ejemplo','Parámetros');cerrarModal();toast('Datos de ejemplo restaurados.');pintar();}}])
 };
 document.addEventListener('click',e=>{
@@ -1631,7 +1682,7 @@ $('lgForm').onsubmit=e=>{
 };
 (async()=>{
   S.db=await api.cargar();
-  generarFijos();
+  generarFijos();recordatoriosFiscal();
   let ses=null;try{ses=localStorage.getItem(KEY_SES);}catch(e){}
   const u=ses&&S.db.usuarios.find(x=>x.u===ses&&x.activo);
   if(u)entrar(u);
