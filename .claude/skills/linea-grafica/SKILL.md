@@ -42,8 +42,13 @@ En cada app, el kit se copia a una carpeta `dpw/` servida junto al `index.html` 
 | Inspección de Contenedores (Control de Rampas) | `patio`: pilas de contenedores, grúa de patio que mueve uno, camión que entra | Cada contenedor, a tiempo. |
 | Cotizador 3PL | `flujo`: Contenedor → Descargue → Almacén → Despacho con la unidad de cobro de cada uno | Cotiza cada servicio en minutos. |
 | Alertas de Calidad | `radar`: plano de la bodega con pulsos; un punto pasa a ámbar | Detectamos a tiempo cada desvío. |
+| Facturas y Pagos a Proveedores | `libro`: libro de cuentas; facturas que caen en la bandeja, reciben el sello PAGADA y pasan al archivo mientras baja la barra de saldo | Alianzas estratégicas. |
 
 Para una app nueva: pregunta la animación (regla 3), dibújala como función nueva en `dpw-escenas.js` (viewBox 1000×380 para la escena, 1400×150 para la franja; la parte importante entre x≈300 y x≈760, que es lo que queda entre la frase y la tarjeta) y agrega su fila a esta tabla.
+
+## Piezas comunes dentro de la app
+
+El tutorial de arranque por perfil, las notificaciones con interruptores, la burbuja de WhatsApp, la bitácora de acciones, los reclamos, el mapa por mes en verde y rojo, los adjuntos y el portal para usuarios externos están en el skill **`piezas-comunes`** (`.claude/skills/piezas-comunes/`). Se agregan a una app cuando el usuario las pide o cuando la app las necesita.
 
 ## Marcado
 
