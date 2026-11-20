@@ -74,6 +74,7 @@ tbody tr.clic{cursor:pointer}tbody tr.clic:hover td{background:var(--neu-bg)}
 .b{font-weight:700}
 .vacio{padding:28px;text-align:center;color:var(--t2)}
 @media (max-width:640px){.hide-sm{display:none}}
+.show-sm{display:none}@media (max-width:640px){.show-sm{display:block}}
 .chip{display:inline-block;padding:3px 9px;border-radius:20px;font:700 11px var(--fd);letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;background:var(--neu-bg);color:var(--t2)}
 .chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.warn{background:var(--warn-bg);color:var(--warn)}.chip.err{background:var(--err-bg);color:var(--err)}.chip.info{background:var(--info-bg);color:var(--info)}.chip.ind{background:rgba(62,60,144,.14);color:var(--ind-t)}
 .aviso{padding:11px 14px;border-radius:10px;font-size:13.5px;margin-bottom:12px;border:1px solid}
@@ -194,6 +195,7 @@ const api={
   async cargar(){
     let d=null;try{d=JSON.parse(localStorage.getItem(KEY));}catch(e){}
     if(!d||!d.proveedores){d=demo();localStorage.setItem(KEY,JSON.stringify(d));}
+    d.bitacora=d.bitacora||[];
     return d;
   },
   async guardar(tabla,fila){
@@ -204,6 +206,8 @@ const api={
   async borrar(tabla,id){S.db[tabla]=S.db[tabla].filter(x=>x.id!==id);this._persistir();},
   async parametros(p){S.db.parametros=Object.assign(S.db.parametros||{},p);this._persistir();},
   async restaurar(){S.db=demo();this._persistir();},
+  /* acciones que no pertenecen a un proveedor, factura o pago (usuarios, parámetros) */
+  async registrar(accion,doc){S.db.bitacora.push({t:ahora(),u:quien(),us:S.user?S.user.u:'',a:accion,doc:doc||''});this._persistir();},
   _persistir(){try{localStorage.setItem(KEY,JSON.stringify(S.db));}catch(e){toast('No se pudo guardar en este navegador.',true);}},
   /* archivos adjuntos: en el prototipo van a IndexedDB (aguanta PDF y fotos); con Supabase, a Storage */
   _idb:null,
@@ -253,7 +257,9 @@ function demo(){
   ];
   const F=(id,prov,num,fe,sub,estado,extra)=>{const p=proveedores.find(x=>x.id===prov);const it=r2(sub*.07);
     return Object.assign({id,provId:prov,numero:num,fecha:d(fe),recibida:d(fe+1),vence:sumar(d(fe),p.plazo),subtotal:sub,itbms:it,total:r2(sub+it),oc:'OC-'+(2400+Math.floor(Math.random()*500)),file:'',concepto:'',estado,
-      check:{oc:estado!=='recibida',servicio:estado!=='recibida',fiscal:estado!=='recibida'},motivo:'',creadoPor:'coordinador',log:[{t:d(fe+1)+' 08:40',u:'Coordinador',a:'Registró la factura'}]},extra||{});};
+      check:{oc:estado!=='recibida',servicio:estado!=='recibida',fiscal:estado!=='recibida'},motivo:'',creadoPor:'coordinador',log:[{t:d(fe+1)+' 08:40',u:'Coordinador Administrativo',a:'Registró la factura'}]
+      .concat(estado!=='recibida'?[{t:d(fe+2)+' 10:15',u:'Coordinador Administrativo',a:'Validó la factura contra la orden de compra'}]:[])
+      .concat(estado==='aprobada'?[{t:d(fe+3)+' 15:30',u:'Aprobador de Pagos',a:'Aprobó la factura para pago'}]:[])},extra||{});};
   const facturas=[
     F('f1','p1','A-0418',-75,4200,'aprobada',{concepto:'Acarreo de contenedores BLB → DAL, semana 31',file:'CERNAC · FILE-2291'}),
     F('f2','p1','A-0433',-41,3850,'aprobada',{concepto:'Acarreo de contenedores, semana 36',file:'CERNAC · FILE-2340'}),
@@ -281,11 +287,17 @@ function demo(){
     {id:'u2',u:'aprobador',nombre:'Aprobador de Pagos',rol:'aprobador',pass:'1234',activo:true},
     {id:'u3',u:'admin',nombre:'Administrador',rol:'admin',pass:'1234',activo:true}
   ];
-  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7}};
+  /* el pago ya ejecutado también queda en el historial de su factura */
+  facturas[11].log.push({t:d(-60)+' 11:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0001'},{t:d(-58)+' 14:00',u:'Coordinador Administrativo',a:'Pagada con PG-0001 · ACH-558120 · '+money(facturas[11].total)});
+  facturas[7].log.push({t:d(-3)+' 10:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0002'});
+  facturas[0].log.push({t:d(-2)+' 09:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0003 por '+money(2000)});
+  pagos.forEach(g=>g.log.forEach(l=>{l.u=l.u==='Coordinador'?'Coordinador Administrativo':l.u==='Aprobador'?'Aprobador de Pagos':l.u;}));
+  proveedores.forEach(pv=>pv.log.forEach(l=>{if(l.u==='Coordinador')l.u='Coordinador Administrativo';}));
+  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7},bitacora:[]};
 }
 
 /* ── estado ── */
-const S={db:null,user:null,vista:'resumen',f:{pq:'',pe:'',fq:'',fe:'',fp:'',ge:'',ec:''}};
+const S={db:null,user:null,vista:'resumen',f:{pq:'',pe:'',fq:'',fe:'',fp:'',ge:'',ec:'',bq:'',bt:'',bu:'',bd:'',bh:''},bVer:100};
 const ROLES={coordinador:'Coordinador',aprobador:'Aprobador',admin:'Administrador'};
 const rol=()=>S.user&&S.user.rol;
 const quien=()=>S.user?S.user.nombre:'';
@@ -338,7 +350,7 @@ function pendientes(){
 }
 
 /* ════════ navegación ════════ */
-const VISTAS={resumen:vResumen,proveedores:vProveedores,facturas:vFacturas,pagos:vPagos,cuenta:vCuenta,config:vConfig};
+const VISTAS={resumen:vResumen,proveedores:vProveedores,facturas:vFacturas,pagos:vPagos,cuenta:vCuenta,bitacora:vBitacora,config:vConfig};
 function ir(v){S.vista=v;pintar();window.scrollTo(0,0);}
 function pintar(){
   if(!S.user)return;
@@ -349,6 +361,7 @@ function pintar(){
     {id:'facturas',label:'Facturas',badge:(p.facValidar+p.facAprobar)||0,on:()=>ir('facturas')},
     {id:'pagos',label:'Pagos',badge:(p.pagAutorizar+p.pagEjecutar)||0,on:()=>ir('pagos')},
     {id:'cuenta',label:'Estado de cuenta',on:()=>ir('cuenta')},
+    {id:'bitacora',label:'Bitácora',hint:'quién hizo qué',on:()=>{S.bVer=100;ir('bitacora');}},
     {id:'config',label:'Configuración',group:'Administración',hidden:!PUEDE.admin(),on:()=>ir('config')}
   ],S.vista);
   if(!VISTAS[S.vista]||(S.vista==='config'&&!PUEDE.admin()))S.vista='resumen';
@@ -357,6 +370,7 @@ function pintar(){
   if(S.vista==='facturas')listaFac();
   if(S.vista==='pagos')listaPagos();
   if(S.vista==='cuenta')cuentaDetalle();
+  if(S.vista==='bitacora')listaBitacora();
 }
 
 /* ════════ RESUMEN ════════ */
@@ -676,7 +690,9 @@ function nuevoPago(provId,marcar){
       if(!items.length)return $('mErr').textContent='Marca al menos una factura.';
       const n=S.db.pagos.reduce((m,g)=>Math.max(m,+g.numero.slice(3)||0),0)+1;
       const g={id:uid('g'),numero:'PG-'+String(n).padStart(4,'0'),provId:$('gProv').value,fecha:$('gFecha').value||hoy(),metodo:$('gMet').value,referencia:'',items,total:r2(items.reduce((s,i)=>s+i.monto,0)),estado:'solicitado',creadoPor:S.user.u,autorizadoPor:'',ejecutado:'',log:[{t:ahora(),u:quien(),a:'Solicitó el pago'}]};
-      await api.guardar('pagos',g);cerrarModal();toast('Pago '+g.numero+' enviado a autorización.');pintar();
+      await api.guardar('pagos',g);
+      for(const it of items){const f=fac(it.facId);f.log.push({t:ahora(),u:quien(),a:'Incluida en la solicitud de pago '+g.numero+' por '+money(it.monto)});await api.guardar('facturas',f);}
+      cerrarModal();toast('Pago '+g.numero+' enviado a autorización.');pintar();
     }}]);
   $('gProv').onchange=pinta;
   $('gFacs').addEventListener('input',suma);$('gFacs').addEventListener('change',suma);
@@ -686,10 +702,10 @@ function verPago(id){
   const g=S.db.pagos.find(x=>x.id===id),p=prov(g.provId),acc=[{t:'Cerrar',on:cerrarModal}];
   if(g.estado==='solicitado'&&PUEDE.aprobar()){
     if(mismo(g))acc.unshift({t:'Autorizar',cls:'ok',dis:true,title:'Lo solicitaste tú: lo autoriza otra persona'});
-    else{acc.unshift({t:'Autorizar',cls:'ok',on:async()=>{g.estado='autorizado';g.autorizadoPor=S.user.u;g.log.push({t:ahora(),u:quien(),a:'Autorizó el pago'});await api.guardar('pagos',g);toast('Pago autorizado.');pintar();verPago(id);}});
-      acc.unshift({t:'Rechazar',cls:'mal',on:()=>pedirMotivo('Rechazar pago '+g.numero,async m=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Rechazó el pago: '+m});await api.guardar('pagos',g);toast('Pago rechazado. Las facturas vuelven a quedar libres.');pintar();verPago(id);})});}
+    else{acc.unshift({t:'Autorizar',cls:'ok',on:async()=>{g.estado='autorizado';g.autorizadoPor=S.user.u;g.log.push({t:ahora(),u:quien(),a:'Autorizó el pago'});await api.guardar('pagos',g);await notaFacturas(g,'Pago '+g.numero+' autorizado');toast('Pago autorizado.');pintar();verPago(id);}});
+      acc.unshift({t:'Rechazar',cls:'mal',on:()=>pedirMotivo('Rechazar pago '+g.numero,async m=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Rechazó el pago: '+m});await api.guardar('pagos',g);await notaFacturas(g,'Pago '+g.numero+' rechazado: '+m);toast('Pago rechazado. Las facturas vuelven a quedar libres.');pintar();verPago(id);})});}
   }
-  if(g.estado==='solicitado'&&mismo(g))acc.unshift({t:'Anular solicitud',cls:'mal',on:async()=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Anuló la solicitud'});await api.guardar('pagos',g);toast('Solicitud anulada.');pintar();verPago(id);}});
+  if(g.estado==='solicitado'&&mismo(g))acc.unshift({t:'Anular solicitud',cls:'mal',on:async()=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Anuló la solicitud'});await api.guardar('pagos',g);await notaFacturas(g,'Solicitud de pago '+g.numero+' anulada');toast('Solicitud anulada.');pintar();verPago(id);}});
   if(g.estado==='autorizado'&&PUEDE.registrar())acc.unshift({t:'Registrar ejecución',cls:'pri',on:()=>ejecutarPago(g)});
   modal('Pago '+g.numero,
     (p.estado!=='aprobado'&&g.estado!=='pagado'?'<div class="aviso warn"><b>El proveedor no está aprobado</b> ('+ESTADO_PROV[p.estado][0].toLowerCase()+'). Revisa antes de ejecutar el pago.</div>':'')+
@@ -699,6 +715,7 @@ function verPago(id){
       g.items.map(i=>{const f=fac(i.facId);return '<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td class="b">'+esc(f.numero)+'</td><td>'+fecha(f.vence)+'</td><td class="num">'+money(f.total)+'</td><td class="num b">'+money(i.monto)+'</td></tr>';}).join('')+'</tbody></table></div>'+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Historial</h2>'+hist(g.log),acc);
 }
+async function notaFacturas(g,accion){for(const it of g.items){const f=fac(it.facId);f.log.push({t:ahora(),u:quien(),a:accion});await api.guardar('facturas',f);}}
 function ejecutarPago(g){
   modal('Registrar ejecución · '+g.numero,
     '<div class="form"><label class="f"><span>Fecha de pago</span><input class="in" type="date" id="eFecha" value="'+hoy()+'"></label>'+
@@ -707,7 +724,8 @@ function ejecutarPago(g){
     [{t:'Cancelar',on:()=>verPago(g.id)},{t:'Registrar pago',cls:'ok',on:async()=>{
       const ref=$('eRef').value.trim();if(ref.length<3)return $('mErr').textContent='Escribe la referencia bancaria o el número de cheque.';
       g.estado='pagado';g.referencia=ref;g.ejecutado=$('eFecha').value||hoy();g.log.push({t:ahora(),u:quien(),a:'Registró la ejecución · '+ref});
-      await api.guardar('pagos',g);toast('Pago registrado.');pintar();verPago(g.id);
+      await api.guardar('pagos',g);
+      for(const it of g.items){const f=fac(it.facId);f.log.push({t:ahora(),u:quien(),a:'Pagada con '+g.numero+' · '+ref+' · '+money(it.monto)});await api.guardar('facturas',f);}toast('Pago registrado.');pintar();verPago(g.id);
     }}]);
 }
 
@@ -750,6 +768,49 @@ function csv(){
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='estado-cuenta-'+p.codigo+'-'+hoy()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
+/* ════════ BITÁCORA ════════
+   Junta el historial de cada proveedor, factura y pago, más las acciones de configuración.
+   Las entradas no se editan ni se borran desde la app. */
+function bitacora(){
+  const e=[];
+  S.db.proveedores.forEach(p=>(p.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Proveedor',doc:p.codigo,prov:p.nombre,act:'verProv',id:p.id,txt:p.ruc})));
+  S.db.facturas.forEach(f=>{const p=prov(f.provId);(f.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Factura',doc:'Factura '+f.numero,prov:p?p.nombre:'',act:'verFac',id:f.id,txt:f.oc}));});
+  S.db.pagos.forEach(g=>{const p=prov(g.provId),nums=g.items.map(i=>{const f=fac(i.facId);return f?f.numero:'';}).join(' ');(g.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Pago',doc:'Pago '+g.numero,prov:p?p.nombre:'',act:'verPago',id:g.id,txt:nums+' '+g.referencia}));});
+  (S.db.bitacora||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Configuración',doc:l.doc,prov:'',act:'',id:'',txt:''}));
+  return e.sort((a,b)=>b.t.localeCompare(a.t));
+}
+function filtrarBitacora(){
+  const q=S.f.bq.toLowerCase(),F=S.f;
+  return bitacora().filter(x=>(!F.bt||x.tipo===F.bt)&&(!F.bu||x.u===F.bu)&&(!F.bd||x.t.slice(0,10)>=F.bd)&&(!F.bh||x.t.slice(0,10)<=F.bh)&&
+    (!q||(x.a+' '+x.doc+' '+x.prov+' '+x.u+' '+x.txt).toLowerCase().includes(q)));
+}
+function vBitacora(){
+  const usuarios=[...new Set(bitacora().map(x=>x.u))].sort();
+  return '<div class="vhead"><div><h1 class="vtitle">Bitácora</h1><p class="vsub">Cada acción con quién la hizo y cuándo: registros, archivos, validaciones, aprobaciones, pagos y cambios de configuración.</p></div>'+
+    '<div class="noprint" style="display:flex;gap:8px"><button class="btn" data-act="csvBitacora">Exportar CSV</button><button class="btn" data-act="imprimir">Imprimir</button></div></div>'+
+    '<div class="filtros"><input class="in" placeholder="Buscar por factura, pago, proveedor, acción o referencia" data-f="bq" value="'+esc(S.f.bq)+'">'+
+    '<select class="sel" data-f="bt"><option value="">Todo</option>'+['Proveedor','Factura','Pago','Configuración'].map(t=>'<option'+(S.f.bt===t?' selected':'')+'>'+t+'</option>').join('')+'</select>'+
+    '<select class="sel" data-f="bu"><option value="">Todos los usuarios</option>'+usuarios.map(u=>'<option'+(S.f.bu===u?' selected':'')+'>'+esc(u)+'</option>').join('')+'</select>'+
+    '<label class="f" style="flex:0 1 160px"><span>Desde</span><input class="in" type="date" data-f="bd" value="'+esc(S.f.bd)+'"></label>'+
+    '<label class="f" style="flex:0 1 160px"><span>Hasta</span><input class="in" type="date" data-f="bh" value="'+esc(S.f.bh)+'"></label></div>'+
+    '<div id="lista"></div>';
+}
+const TIPO_CHIP={Proveedor:'ind',Factura:'info',Pago:'ok','Configuración':''};
+function listaBitacora(){
+  const l=filtrarBitacora(),ver=l.slice(0,S.bVer);
+  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th class="hide-sm">Documento</th><th class="hide-sm">Proveedor</th></tr></thead><tbody>'+
+    ver.map(x=>'<tr'+(x.act?' class="clic" data-act="'+x.act+'" data-id="'+x.id+'"':'')+'><td style="white-space:nowrap">'+esc(x.t.slice(0,10).split('-').reverse().join('/'))+' <span class="mut">'+esc(x.t.slice(11))+'</span></td><td class="b">'+esc(x.u)+'</td>'+
+      '<td>'+esc(x.a)+'<div class="mut show-sm">'+esc(x.doc)+(x.prov?' · '+esc(x.prov):'')+'</div></td><td class="hide-sm"><span class="chip '+TIPO_CHIP[x.tipo]+'">'+esc(x.tipo)+'</span> <span class="b">'+esc(x.doc)+'</span></td><td class="hide-sm mut">'+esc(x.prov)+'</td></tr>').join('')+
+    '</tbody></table></div><div class="tot"><span class="mut">'+(l.length>ver.length?'Mostrando '+ver.length+' de ':'')+l.length+(l.length===1?' acción':' acciones')+'</span>'+(l.length>ver.length?'<button class="btn sm" data-act="masBitacora">Mostrar más</button>':'')+'</div>'
+    :'<div class="card vacio">No hay acciones con ese filtro.</div>';
+}
+function csvBitacora(){
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Fecha','Hora','Usuario','Tipo','Documento','Proveedor','Acción']].concat(filtrarBitacora().map(x=>[x.t.slice(0,10).split('-').reverse().join('/'),x.t.slice(11),x.u,x.tipo,x.doc,x.prov,x.a]));
+  const b=new Blob(['\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bitacora-proveedores-'+hoy()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
 /* ════════ CONFIGURACIÓN ════════ */
 function vConfig(){
   return '<div class="vhead"><div><h1 class="vtitle">Configuración</h1><p class="vsub">Usuarios, roles y parámetros.</p></div><button class="btn pri" data-act="nuevoUsuario">Nuevo usuario</button></div>'+
@@ -778,6 +839,8 @@ function formUsuario(u){
       if(!quedanAdmin)return err('Debe quedar al menos un administrador activo.');
       const x=u.id?u:{id:uid('u'),u:us};Object.assign(x,{nombre:n,rol:r,activo:act});if(pw)x.pass=pw;
       await api.guardar('usuarios',x);
+      const cambios='rol '+ROLES[r]+(u.id?' · '+(act?'activo':'de baja')+(pw?' · cambió la contraseña':''):'');
+      await api.registrar((u.id?'Editó el usuario ':'Creó el usuario ')+x.u+' · '+cambios,'Usuario '+x.u);
       if(x.u===S.user.u){S.user=x;if(!x.activo)return salir();sesionUI();}
       cerrarModal();toast('Usuario guardado.');pintar();
     }}]);
@@ -807,11 +870,11 @@ const ACT={
   verProv,verFac,verPago,verArchivo,quitarArchivo,
   verCuenta:id=>{cerrarModal();S.f.ec=id;ir('cuenta');},
   irFiltro:(id,el)=>{S.f[el.dataset.k]=el.dataset.val;ir(el.dataset.v);},
-  csv,imprimir:()=>window.print(),
+  csv,imprimir:()=>window.print(),csvBitacora,masBitacora:()=>{S.bVer+=200;listaBitacora();},
   nuevoUsuario:()=>formUsuario(),
   editarUsuario:id=>formUsuario(S.db.usuarios.find(u=>u.id===id)),
-  guardarParam:async()=>{const v=+$('cIt').value;if(!(v>=0&&v<=100))return toast('Revisa el porcentaje de ITBMS.',true);await api.parametros({itbms:v});toast('Parámetros guardados.');},
-  restaurar:()=>modal('Restaurar datos de ejemplo','<p style="margin:0">Se borra todo lo registrado en este navegador. ¿Continuar?</p>',[{t:'Cancelar',on:cerrarModal},{t:'Restaurar',cls:'mal',on:async()=>{await api.restaurar();S.user=S.db.usuarios.find(u=>u.u===S.user.u)||S.db.usuarios.find(u=>u.rol==='admin');sesionUI();cerrarModal();toast('Datos de ejemplo restaurados.');pintar();}}])
+  guardarParam:async()=>{const v=+$('cIt').value;if(!(v>=0&&v<=100))return toast('Revisa el porcentaje de ITBMS.',true);const antes=S.db.parametros.itbms;if(antes===v)return toast('Sin cambios.');await api.parametros({itbms:v});await api.registrar('Cambió el ITBMS de '+antes+' % a '+v+' %','Parámetros');toast('Parámetros guardados.');},
+  restaurar:()=>modal('Restaurar datos de ejemplo','<p style="margin:0">Se borra todo lo registrado en este navegador. ¿Continuar?</p>',[{t:'Cancelar',on:cerrarModal},{t:'Restaurar',cls:'mal',on:async()=>{await api.restaurar();S.user=S.db.usuarios.find(u=>u.u===S.user.u)||S.db.usuarios.find(u=>u.rol==='admin');sesionUI();await api.registrar('Restauró los datos de ejemplo','Parámetros');cerrarModal();toast('Datos de ejemplo restaurados.');pintar();}}])
 };
 document.addEventListener('click',e=>{
   const mb=e.target.closest('[data-mb]');if(mb){const b=_botones[+mb.dataset.mb];if(b&&b.on&&!b.dis)b.on();return;}
@@ -819,14 +882,14 @@ document.addEventListener('click',e=>{
   const fn=ACT[el.dataset.act];if(fn)fn(el.dataset.id,el,e);
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('modal').innerHTML)cerrarModal();});
-const LISTAS={pq:listaProv,pe:listaProv,fq:listaFac,fe:listaFac,fp:listaFac,ge:listaPagos,ec:cuentaDetalle};
+const LISTAS={pq:listaProv,pe:listaProv,fq:listaFac,fe:listaFac,fp:listaFac,ge:listaPagos,ec:cuentaDetalle,bq:listaBitacora,bt:listaBitacora,bu:listaBitacora,bd:listaBitacora,bh:listaBitacora};
 /* sin redibujar si el valor no cambió: el «change» al salir del buscador borraría la fila que se está tocando */
 ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const k=e.target.dataset&&e.target.dataset.f;if(!k||S.f[k]===e.target.value)return;S.f[k]=e.target.value;LISTAS[k]();}));
 
 /* ════════ sesión ════════ */
 const login=$('dpwLogin');
 function sesionUI(){$('rolChip').textContent=ROLES[rol()];DPW.quien('Sesión',S.user.nombre+' · '+ROLES[rol()]);}
-function entrar(u){S.user=u;try{localStorage.setItem(KEY_SES,u.u);}catch(e){}login.hidden=true;S.vista='resumen';sesionUI();pintar();}
+function entrar(u){S.user=u;Object.keys(S.f).forEach(k=>S.f[k]='');S.bVer=100;try{localStorage.setItem(KEY_SES,u.u);}catch(e){}login.hidden=true;S.vista='resumen';sesionUI();pintar();}
 function salir(){DPW.cerrarMenu();cerrarModal();S.user=null;try{localStorage.removeItem(KEY_SES);}catch(e){}$('vista').innerHTML='';$('lgPass').value='';login.hidden=false;}
 $('lgForm').onsubmit=e=>{
   e.preventDefault();
