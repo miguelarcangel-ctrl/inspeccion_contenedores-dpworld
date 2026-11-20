@@ -57,6 +57,10 @@ html[data-theme="dark"] .btn.pri{background:#3E3C90;border-color:#3E3C90}
 .filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .in,.sel,textarea.in{height:38px;padding:0 12px;border:1px solid var(--b2);border-radius:9px;background:var(--card);color:var(--t);min-width:0}
 textarea.in{height:auto;padding:10px 12px;resize:vertical}
+.in[type=file]{height:auto;padding:8px 10px;cursor:pointer}
+.adj{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;background:var(--card2);font-size:14px}
+.adj .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.adj .mut{white-space:nowrap}
 .in:focus,.sel:focus{outline:2px solid rgba(0,195,137,.6);outline-offset:0}
 .filtros .in{flex:1 1 220px}
 .tw{overflow-x:auto;border:1px solid var(--b);border-radius:12px;background:var(--card)}
@@ -200,8 +204,24 @@ const api={
   async borrar(tabla,id){S.db[tabla]=S.db[tabla].filter(x=>x.id!==id);this._persistir();},
   async parametros(p){S.db.parametros=Object.assign(S.db.parametros||{},p);this._persistir();},
   async restaurar(){S.db=demo();this._persistir();},
-  _persistir(){try{localStorage.setItem(KEY,JSON.stringify(S.db));}catch(e){toast('No se pudo guardar en este navegador.',true);}}
+  _persistir(){try{localStorage.setItem(KEY,JSON.stringify(S.db));}catch(e){toast('No se pudo guardar en este navegador.',true);}},
+  /* archivos adjuntos: en el prototipo van a IndexedDB (aguanta PDF y fotos); con Supabase, a Storage */
+  _idb:null,
+  _base(){return this._idb||(this._idb=new Promise((ok,mal)=>{const r=indexedDB.open('dpw_proveedores_archivos',1);r.onupgradeneeded=()=>r.result.createObjectStore('archivos');r.onsuccess=()=>ok(r.result);r.onerror=()=>mal(r.error);}));},
+  async _tx(modo,fn){const db=await this._base();return new Promise((ok,mal)=>{const t=db.transaction('archivos',modo),r=fn(t.objectStore('archivos'));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>mal(t.error);});},
+  async subirArchivo(file){const id=uid('a');await this._tx('readwrite',s=>s.put(file,id));return {id,nombre:file.name,tipo:file.type,tam:file.size,subido:ahora(),por:quien()};},
+  async leerArchivo(id){return this._tx('readonly',s=>s.get(id));},
+  async borrarArchivo(id){return this._tx('readwrite',s=>s.delete(id));}
 };
+const ADJ_TIPOS=['application/pdf','image/jpeg','image/png'],ADJ_MAX=10*1024*1024;
+const tamano=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+function revisarArchivos(files){
+  for(const f of files){
+    if(!ADJ_TIPOS.includes(f.type)&&!/\.(pdf|jpe?g|png)$/i.test(f.name))return 'Solo se aceptan PDF, JPG o PNG ('+f.name+').';
+    if(f.size>ADJ_MAX)return f.name+' pesa '+tamano(f.size)+'; el máximo es 10 MB.';
+  }
+  return '';
+}
 
 /* ── utilidades ── */
 const $=id=>document.getElementById(id);
@@ -487,7 +507,7 @@ function listaFac(){
     .sort((a,b)=>a.f.vence.localeCompare(b.f.vence));
   const tot=l.reduce((s,x)=>s+(x.f.estado==='rechazada'?0:x.c.saldo),0);
   $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Factura</th><th>Proveedor</th><th class="hide-sm">Emisión</th><th>Vence</th><th class="num hide-sm">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead><tbody>'+
-    l.map(({f,c})=>'<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td><div class="b">'+esc(f.numero)+'</div><div class="mut">'+esc(f.oc||'')+'</div></td><td>'+esc(prov(f.provId).nombre)+'</td><td class="hide-sm">'+fecha(f.fecha)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':c.saldo>0.004&&f.estado!=='rechazada'&&c.dias>=-7?'<div style="color:var(--warn);font-size:12px;font-weight:700">'+(c.dias===0?'Vence hoy':'En '+(-c.dias)+' d')+'</div>':'')+'</td><td class="num hide-sm">'+money(f.total)+'</td><td class="num b">'+(f.estado==='rechazada'?'<span class="mut">—</span>':money(c.saldo))+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>').join('')+
+    l.map(({f,c})=>'<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td><div class="b">'+esc(f.numero)+'</div><div class="mut">'+esc(f.oc||'')+'</div>'+((f.adjuntos||[]).length||f.estado!=='recibida'?'':'<div style="color:var(--warn);font-size:12px;font-weight:700">Sin archivo</div>')+'</td><td>'+esc(prov(f.provId).nombre)+'</td><td class="hide-sm">'+fecha(f.fecha)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':c.saldo>0.004&&f.estado!=='rechazada'&&c.dias>=-7?'<div style="color:var(--warn);font-size:12px;font-weight:700">'+(c.dias===0?'Vence hoy':'En '+(-c.dias)+' d')+'</div>':'')+'</td><td class="num hide-sm">'+money(f.total)+'</td><td class="num b">'+(f.estado==='rechazada'?'<span class="mut">—</span>':money(c.saldo))+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>').join('')+
     '</tbody></table></div><div class="tot"><span class="mut">'+l.length+' facturas</span><span>Saldo <b>'+money(tot)+'</b></span></div>':'<div class="card vacio">No hay facturas con ese filtro.</div>';
 }
 function formFac(f){
@@ -506,6 +526,7 @@ function formFac(f){
     '<label class="f"><span>ITBMS</span><select class="sel" id="fIt"><option value="1"'+(conIt?' selected':'')+'>Con ITBMS '+it+' %</option><option value="0"'+(conIt?'':' selected')+'>Exenta</option></select></label>'+
     '<label class="f full"><span>Concepto</span><input class="in" id="fCon" value="'+esc(f.concepto||'')+'" placeholder="Servicio o material facturado"></label>'+
     '<label class="f full"><span>Cliente o file al que se carga el costo (opcional)</span><input class="in" id="fFile" value="'+esc(f.file||'')+'" placeholder="Cliente · FILE-0000"></label>'+
+    (f.id?'':'<label class="f full"><span>Archivo de la factura · PDF, JPG o PNG, máximo 10 MB</span><input class="in" type="file" id="fArch" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>')+
   '</div><div class="tot"><span class="mut" id="fCalc"></span></div><div class="aviso err" id="fCred" hidden></div><div class="err-msg" id="mErr"></div>';
 }
 function enlazarFac(f){
@@ -533,7 +554,11 @@ function leerFac(base){
 function nuevaFac(){
   modal('Registrar factura',formFac(),[{t:'Cancelar',on:cerrarModal},{t:'Registrar',cls:'pri',on:async()=>{
     const d=leerFac();if(!d)return;
-    const f=Object.assign({id:uid('f'),recibida:hoy(),estado:'recibida',check:{oc:false,servicio:false,fiscal:false},motivo:'',creadoPor:S.user.u,log:[{t:ahora(),u:quien(),a:'Registró la factura'}]},d);
+    const files=[...$('fArch').files];
+    if(!files.length)return $('mErr').textContent='Adjunta el archivo de la factura (PDF o foto).';
+    const malo=revisarArchivos(files);if(malo)return $('mErr').textContent=malo;
+    let adjuntos;try{adjuntos=await Promise.all(files.map(x=>api.subirArchivo(x)));}catch(e){return $('mErr').textContent='No se pudo guardar el archivo en este navegador.';}
+    const f=Object.assign({id:uid('f'),recibida:hoy(),estado:'recibida',check:{oc:false,servicio:false,fiscal:false},motivo:'',creadoPor:S.user.u,adjuntos,log:[{t:ahora(),u:quien(),a:'Registró la factura · '+adjuntos.map(a=>a.nombre).join(', ')}]},d);
     await api.guardar('facturas',f);cerrarModal();toast('Factura registrada. Sigue validarla contra la orden de compra.');pintar();
   }}]);
   enlazarFac();
@@ -545,6 +570,7 @@ function verFac(id){
     acc.unshift({t:'Editar',on:()=>editarFac(id)});
     acc.unshift({t:'Marcar validada',cls:'pri',on:async()=>{
       const ch={};CHECK.forEach(([k])=>ch[k]=$('ck_'+k).checked);
+      if(!(f.adjuntos||[]).length)return toast('Para validar, adjunta primero el archivo de la factura.',true);
       if(!CHECK.every(([k])=>ch[k]))return toast('Para validar, confirma los tres puntos de revisión.',true);
       f.check=ch;f.estado='validada';f.log.push({t:ahora(),u:quien(),a:'Validó la factura contra la orden de compra'});await api.guardar('facturas',f);toast('Factura validada. Pasa a aprobación.');pintar();verFac(id);}});
   }
@@ -561,10 +587,47 @@ function verFac(id){
     (f.estado==='rechazada'?'<div class="aviso err"><b>Rechazada:</b> '+esc(f.motivo)+'</div>':'')+
     '<div style="margin-bottom:14px">'+chip(c.est,ESTADO_FAC)+' <span class="mut">'+esc(p.nombre)+'</span></div>'+
     '<div class="kv">'+[['Orden de compra',f.oc],['Emisión',fecha(f.fecha)],['Vence',fecha(f.vence)],['Subtotal',money(f.subtotal)],['ITBMS',money(f.itbms)],['Total',money(f.total)],['Pagado',money(c.pagado)],['En solicitud de pago',money(c.comprometido)],['Saldo',money(c.saldo)],['Concepto',f.concepto],['Cliente o file',f.file],['Recibida',fecha(f.recibida)]].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
+    seccionArchivos(f)+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Revisión antes de aprobar</h2>'+
     '<div class="grid" style="gap:6px;margin-bottom:14px">'+CHECK.map(([k,l])=>'<label class="chk"><input type="checkbox" id="ck_'+k+'"'+(f.check&&f.check[k]?' checked':'')+(f.estado==='recibida'&&PUEDE.registrar()?'':' disabled')+'><span>'+l+'</span></label>').join('')+'</div>'+
     (pagos.length?'<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Pagos</h2><div class="tw" style="margin-bottom:14px"><table><tbody>'+pagos.map(g=>'<tr class="clic" data-act="verPago" data-id="'+g.id+'"><td class="b">'+esc(g.numero)+'</td><td>'+fecha(g.ejecutado||g.fecha)+'</td><td class="num">'+money(g.items.find(i=>i.facId===id).monto)+'</td><td>'+chip(g.estado,ESTADO_PAGO)+'</td></tr>').join('')+'</tbody></table></div>':'')+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Historial</h2>'+hist(f.log),acc);
+  const inp=$('fAdj');if(inp)inp.onchange=async()=>{
+    const files=[...inp.files];if(!files.length)return;
+    const malo=revisarArchivos(files);if(malo)return toast(malo,true);
+    try{const nuevos=await Promise.all(files.map(x=>api.subirArchivo(x)));f.adjuntos=(f.adjuntos||[]).concat(nuevos);f.log.push({t:ahora(),u:quien(),a:'Adjuntó '+nuevos.map(a=>a.nombre).join(', ')});await api.guardar('facturas',f);toast('Archivo adjuntado.');pintar();verFac(id);}
+    catch(e){toast('No se pudo guardar el archivo en este navegador.',true);}
+  };
+}
+/* archivos de la factura: se agregan mientras no esté pagada ni rechazada; se quitan solo antes de validarla */
+function seccionArchivos(f){
+  const adj=f.adjuntos||[],c=calc(f);
+  const agregar=PUEDE.registrar()&&f.estado!=='rechazada'&&c.est!=='pagada',quitar=PUEDE.registrar()&&f.estado==='recibida';
+  return '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Archivo de la factura</h2>'+
+    (adj.length?'<div class="grid" style="gap:6px;margin-bottom:8px">'+adj.map(a=>'<div class="adj"><span class="nom" title="'+esc(a.nombre)+'">'+esc(a.nombre)+'</span><span class="mut hide-sm">'+tamano(a.tam)+' · '+esc(a.por||'')+'</span>'+
+      '<button class="btn sm" data-act="verArchivo" data-id="'+f.id+'" data-a="'+a.id+'">Ver</button>'+(quitar?'<button class="btn sm mal" data-act="quitarArchivo" data-id="'+f.id+'" data-a="'+a.id+'">Quitar</button>':'')+'</div>').join('')+'</div>'
+      :'<div class="aviso warn" style="margin-bottom:8px"><b>Sin archivo.</b> Adjunta el PDF o la foto de la factura antes de validarla.</div>')+
+    (agregar?'<label class="btn sm" style="margin-bottom:14px">Adjuntar archivo<input type="file" id="fAdj" hidden multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>':'<div style="margin-bottom:14px"></div>');
+}
+/* el archivo se muestra dentro de la app (sin ventanas nuevas, que el iPhone y la app instalada bloquean) */
+let _urlArchivo=null;
+async function verArchivo(fid,el){
+  const f=fac(fid),a=(f.adjuntos||[]).find(x=>x.id===el.dataset.a);if(!a)return;
+  let blob;try{blob=await api.leerArchivo(a.id);}catch(e){}
+  if(!blob)return toast('El archivo no está en este navegador. En el prototipo los archivos quedan solo en el equipo donde se subieron.',true);
+  if(_urlArchivo)URL.revokeObjectURL(_urlArchivo);
+  const url=_urlArchivo=URL.createObjectURL(blob),pdf=/pdf/i.test(blob.type||a.tipo)||/\.pdf$/i.test(a.nombre);
+  modal(a.nombre,
+    (pdf?'<iframe src="'+url+'" title="'+esc(a.nombre)+'" style="width:100%;height:70vh;border:1px solid var(--b);border-radius:10px;background:#fff"></iframe>'
+        :'<img src="'+url+'" alt="'+esc(a.nombre)+'" style="display:block;max-width:100%;max-height:70vh;margin:0 auto;border-radius:10px">')+
+    '<p class="mut" style="margin:10px 0 0">'+tamano(a.tam)+' · subido por '+esc(a.por||'—')+' el '+esc((a.subido||'').slice(0,10).split('-').reverse().join('/'))+'</p>',
+    [{t:'Volver a la factura',on:()=>verFac(fid)},{t:'Descargar',cls:'pri',on:()=>{const l=document.createElement('a');l.href=url;l.download=a.nombre;document.body.appendChild(l);l.click();l.remove();}}]);
+}
+async function quitarArchivo(fid,el){
+  const f=fac(fid),a=(f.adjuntos||[]).find(x=>x.id===el.dataset.a);if(!a)return;
+  f.adjuntos=f.adjuntos.filter(x=>x!==a);f.log.push({t:ahora(),u:quien(),a:'Quitó el archivo '+a.nombre});
+  await api.guardar('facturas',f);try{await api.borrarArchivo(a.id);}catch(e){}
+  toast('Archivo quitado.');pintar();verFac(fid);
 }
 function editarFac(id){
   const f=fac(id);
@@ -741,7 +804,7 @@ const ACT={
   salir,cerrarModal,
   fondoModal:(id,el,e)=>{if(e.target===el)cerrarModal();},
   nuevoProv,nuevaFac,nuevoPago:()=>nuevoPago(),
-  verProv,verFac,verPago,
+  verProv,verFac,verPago,verArchivo,quitarArchivo,
   verCuenta:id=>{cerrarModal();S.f.ec=id;ir('cuenta');},
   irFiltro:(id,el)=>{S.f[el.dataset.k]=el.dataset.val;ir(el.dataset.v);},
   csv,imprimir:()=>window.print(),
