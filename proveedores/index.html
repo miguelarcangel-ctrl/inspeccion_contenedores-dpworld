@@ -30,7 +30,7 @@ html[data-theme="dark"]{
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--t);font:15px/1.45 var(--fb);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
-main{max-width:1200px;margin:0 auto;padding:22px 16px 60px}
+main{max-width:1200px;margin:0 auto;padding:22px 16px 96px}
 .vhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .vtitle{margin:0;font:800 30px/1 var(--fd);text-transform:uppercase;letter-spacing:.5px;color:var(--ind-t)}
 .vsub{margin:6px 0 0;color:var(--t2);font-size:14px}
@@ -90,7 +90,7 @@ tbody tr.clic{cursor:pointer}tbody tr.clic:hover td{background:var(--neu-bg)}
 .barra i{display:block;height:100%;background:#00C389;border-radius:5px}
 .barra.warn i{background:#f5a20b}.barra.err i{background:var(--err)}
 /* modal */
-.mod-ov{position:fixed;inset:0;z-index:300;background:rgba(13,11,40,.55);display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px;overflow-y:auto}
+.mod-ov{position:fixed;inset:0;z-index:300;background:rgba(13,11,40,.55);display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px 96px;overflow-y:auto}
 .mod{width:100%;max-width:720px;background:var(--card);border:1px solid var(--b);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .mod-h{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--b)}
 .mod-h h3{margin:0;font:800 20px var(--fd);text-transform:uppercase;letter-spacing:.6px;color:var(--ind-t)}
@@ -121,7 +121,69 @@ tbody tr.clic{cursor:pointer}tbody tr.clic:hover td{background:var(--neu-bg)}
 .demo-note b{color:#1A1060}
 .tot{display:flex;justify-content:flex-end;gap:24px;margin-top:10px;font-size:14px}
 .tot b{font:800 20px var(--fd)}
-@media print{.dpw-hdr,.dpw-drawer,.dpw-ov,.noprint,.filtros{display:none!important}body{background:#fff;color:#000}.card,.tw{box-shadow:none;border-color:#ccc}}
+
+/* interruptores de notificaciones (como Control de Horas y Last Mile) */
+.nt{display:grid;gap:6px}
+.nt-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--t2);margin-bottom:4px}
+.nt-i{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 12px;border:1px solid var(--b);border-radius:10px;background:var(--card2)}
+.nt-i div{display:grid;gap:2px;min-width:0}.nt-i b{font-size:14px;font-weight:600}.nt-i span{font-size:12px;color:var(--t2)}
+.sw{position:relative;flex:none;width:46px;height:26px;border-radius:13px;border:1px solid var(--b2);background:var(--neu-bg);cursor:pointer;transition:background .2s,border-color .2s;padding:0}
+.sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s}
+.sw.on{background:#00C389;border-color:#00C389}.sw.on i{transform:translateX(20px)}
+.link{background:none;border:0;padding:0;color:var(--ind-t);font:700 12.5px var(--fb);text-decoration:underline;cursor:pointer}
+.ntf-state{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--neu-bg);margin-bottom:10px}
+.ntf-state .dot{width:10px;height:10px;border-radius:50%;background:var(--t3);flex:none}.ntf-state.on .dot{background:#00C389}
+.ntf-state b{display:block;font-size:14px}.ntf-state span{font-size:12.5px;color:var(--t2)}
+.ntf-steps{margin:6px 0 0;padding-left:20px;font-size:13.5px;line-height:1.6}
+.notif{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--b);border-radius:10px;background:var(--card);cursor:pointer}
+.notif:hover{border-color:var(--b2)}.notif.nueva{border-left:3px solid #00C389;background:var(--card2)}
+.notif b{display:block;font-size:14px}.notif p{margin:2px 0 0;font-size:13px;color:var(--t2)}.notif time{margin-left:auto;flex:none;font-size:12px;color:var(--t3);white-space:nowrap}
+/* WhatsApp flotante (como Last Mile) */
+.wa-fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:350;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.wa-btn{width:56px;height:56px;border-radius:50%;border:0;background:#25D366;color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .15s}
+.wa-btn:hover{transform:scale(1.06)}.wa-btn svg{width:30px;height:30px}
+.wa-menu{width:min(320px,calc(100vw - 36px));max-height:min(70vh,560px);overflow-y:auto;background:#fff;color:#1B1B2F;border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.wa-h{background:#075E54;color:#fff;padding:12px 14px;font:700 14px var(--fd);letter-spacing:.6px;text-transform:uppercase}
+.wa-h small{display:block;font:500 12px var(--fb);letter-spacing:0;text-transform:none;opacity:.8;margin-top:2px}
+.wa-i{display:grid;gap:1px;padding:11px 14px;border-top:1px solid #eef0f4;color:inherit;text-decoration:none}
+a.wa-i:hover{background:#f2fbf5}.wa-i b{font-size:14px}.wa-i span{font-size:12.5px;color:#475569}.wa-i small{font-size:11.5px;color:#64748B}
+.wa-i.off{opacity:.55}
+.wa-acts{display:flex;gap:6px;margin-top:6px}
+.wa-a{flex:1;text-align:center;padding:6px 8px;border-radius:8px;border:1px solid #cfe9d9;background:#f2fbf5;color:#075E54;font:700 12px var(--fd);letter-spacing:.5px;text-transform:uppercase;text-decoration:none}
+.wa-note{padding:10px 14px;border-top:1px solid #eef0f4;background:#fafafa;font-size:11.5px;color:#64748B;line-height:1.4}
+/* tutorial (como Control de Horas) */
+.tour{position:fixed;inset:0;z-index:2000}
+.tour-hole{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(8,6,30,.62);transition:all .25s ease;pointer-events:none;outline:2px solid #00C389;outline-offset:3px}
+.tour-hole.sin{width:0;height:0;left:50%;top:40%;outline:none}
+.tour-card{position:fixed;width:min(360px,calc(100vw - 24px));background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:14px;padding:16px 16px 12px;box-shadow:0 18px 50px rgba(0,0,0,.4);transition:top .25s ease,left .25s ease}
+.tour-paso{font:700 11px var(--fd);letter-spacing:1.4px;text-transform:uppercase;color:var(--ok)}
+.tour-card h3{font:800 1.25rem var(--fd);letter-spacing:.3px;margin:4px 0 6px;text-transform:uppercase;color:var(--ind-t)}
+.tour-card p{font-size:.88rem;line-height:1.5;color:var(--t2);margin:0}
+.tour-nav{display:flex;gap:8px;align-items:center;margin-top:14px}.tour-nav .tour-saltar{margin-right:auto}
+.tour-puntos{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap}.tour-puntos i{width:6px;height:6px;border-radius:50%;background:var(--b2)}.tour-puntos i.on{background:#00C389}
+/* mapa de pagos */
+.mapa th.mes{text-align:center}
+.mapa thead th:first-child{left:0;z-index:2}
+.mapa td.cel{text-align:center;padding:6px}
+.mapa .c{display:block;min-width:92px;padding:8px 6px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-variant-numeric:tabular-nums}
+.mapa .c b{display:block;font:800 15px var(--fd);letter-spacing:.3px}.mapa .c small{display:block;font-size:11px;margin-top:2px}
+.mapa .c.verde{background:rgba(0,195,137,.16);border-color:rgba(0,195,137,.45);color:var(--ok)}
+.mapa .c.rojo{background:rgba(232,0,61,.13);border-color:rgba(232,0,61,.45);color:var(--err)}
+.mapa .c.ambar{background:var(--warn-bg);border-color:rgba(245,162,11,.45);color:var(--warn)}
+.mapa .c.vac{color:var(--t3);cursor:default}
+.mapa td.pv{position:sticky;left:0;background:var(--card);z-index:1;min-width:170px}
+@media (max-width:640px){.mapa td.pv{min-width:124px;font-size:13px}.mapa .c{min-width:84px}}
+.ley{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--t2);margin:0 0 12px}
+.ley i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+/* hilo de reclamos */
+.hilo{display:grid;gap:8px;margin-bottom:14px}
+.msg{max-width:88%;padding:10px 12px;border-radius:12px;font-size:14px;line-height:1.45}
+.msg.prov{background:var(--card2);border:1px solid var(--b);justify-self:start}
+.msg.dpw{background:rgba(62,60,144,.1);border:1px solid rgba(62,60,144,.25);justify-self:end}
+.msg small{display:block;font-size:11.5px;color:var(--t3);margin-bottom:3px}
+.msg .prog{margin-top:6px;font-weight:700;color:var(--ok)}
+@media (prefers-reduced-motion:reduce){.sw,.sw i,.wa-btn,.tour-hole,.tour-card{transition:none}}
+@media print{.dpw-hdr,.dpw-drawer,.dpw-ov,.noprint,.filtros,.wa-fab{display:none!important}body{background:#fff;color:#000}.card,.tw{box-shadow:none;border-color:#ccc}}
 </style>
 </head>
 <body>
@@ -178,6 +240,7 @@ tbody tr.clic{cursor:pointer}tbody tr.clic:hover td{background:var(--neu-bg)}
 
 <main id="vista"></main>
 <div id="modal"></div>
+<div class="wa-fab" id="waFab" hidden><div class="wa-menu" id="waMenu" role="menu" aria-label="Soluciones rápidas por WhatsApp" hidden></div><button type="button" class="wa-btn" data-act="waOpen" aria-label="Soluciones rápidas por WhatsApp" aria-expanded="false" aria-controls="waMenu"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 6.9L3 29l6.5-2c1.9 1 4.1 1.6 6.5 1.6 7.2 0 13-5.7 13-12.8S23.2 3 16 3zm0 23.4c-2.1 0-4.1-.6-5.8-1.7l-.4-.3-3.8 1.2 1.2-3.7-.3-.4a10.5 10.5 0 0 1-1.8-5.7C5.1 9.9 10 5.3 16 5.3s10.9 4.6 10.9 10.5S22 26.4 16 26.4zm6-7.8c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2l-1 1.2c-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6.3-.5c.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.7s1.2 3.1 1.4 3.4c.2.2 2.3 3.5 5.6 4.9 2.8 1.1 3.3.9 3.9.8.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg></button></div>
 
 <script src="dpw/dpw-shell.js"></script>
 <script src="dpw/dpw-escenas.js"></script>
@@ -195,7 +258,9 @@ const api={
   async cargar(){
     let d=null;try{d=JSON.parse(localStorage.getItem(KEY));}catch(e){}
     if(!d||!d.proveedores){d=demo();localStorage.setItem(KEY,JSON.stringify(d));}
-    d.bitacora=d.bitacora||[];
+    d.bitacora=d.bitacora||[];d.reclamos=d.reclamos||[];d.notifs=d.notifs||[];d.wa=d.wa||{};
+    /* datos guardados antes del portal de proveedores: se agregan los usuarios de ejemplo de proveedor */
+    if(!d.usuarios.some(u=>u.rol==='proveedor'))demo().usuarios.filter(u=>u.rol==='proveedor').forEach(u=>{if(!d.usuarios.some(x=>x.u===u.u))d.usuarios.push(u);});
     return d;
   },
   async guardar(tabla,fila){
@@ -259,7 +324,8 @@ function demo(){
     return Object.assign({id,provId:prov,numero:num,fecha:d(fe),recibida:d(fe+1),vence:sumar(d(fe),p.plazo),subtotal:sub,itbms:it,total:r2(sub+it),oc:'OC-'+(2400+Math.floor(Math.random()*500)),file:'',concepto:'',estado,
       check:{oc:estado!=='recibida',servicio:estado!=='recibida',fiscal:estado!=='recibida'},motivo:'',creadoPor:'coordinador',log:[{t:d(fe+1)+' 08:40',u:'Coordinador Administrativo',a:'Registró la factura'}]
       .concat(estado!=='recibida'?[{t:d(fe+2)+' 10:15',u:'Coordinador Administrativo',a:'Validó la factura contra la orden de compra'}]:[])
-      .concat(estado==='aprobada'?[{t:d(fe+3)+' 15:30',u:'Aprobador de Pagos',a:'Aprobó la factura para pago'}]:[])},extra||{});};
+      .concat(estado==='aprobada'?[{t:d(fe+3)+' 15:30',u:'Aprobador de Pagos',a:'Aprobó la factura para pago'}]:[]),
+      aprobCorreo:{por:'Rolando M. · Compras DP World',fecha:d(fe-3),ref:'Respaldo '+num}},extra||{});};
   const facturas=[
     F('f1','p1','A-0418',-75,4200,'aprobada',{concepto:'Acarreo de contenedores BLB → DAL, semana 31',file:'CERNAC · FILE-2291'}),
     F('f2','p1','A-0433',-41,3850,'aprobada',{concepto:'Acarreo de contenedores, semana 36',file:'CERNAC · FILE-2340'}),
@@ -285,28 +351,48 @@ function demo(){
   const usuarios=[
     {id:'u1',u:'coordinador',nombre:'Coordinador Administrativo',rol:'coordinador',pass:'1234',activo:true},
     {id:'u2',u:'aprobador',nombre:'Aprobador de Pagos',rol:'aprobador',pass:'1234',activo:true},
-    {id:'u3',u:'admin',nombre:'Administrador',rol:'admin',pass:'1234',activo:true}
+    {id:'u3',u:'admin',nombre:'Administrador',rol:'admin',pass:'1234',activo:true},
+    {id:'u4',u:'istmo',nombre:'Luis Batista',rol:'proveedor',provId:'p1',pass:'1234',activo:true},
+    {id:'u5',u:'montacargas',nombre:'Gina Pérez',rol:'proveedor',provId:'p2',pass:'1234',activo:true}
   ];
+  /* la factura MA-0990 la subió el proveedor desde su portal */
+  Object.assign(facturas[4],{creadoPor:'montacargas',log:[{t:d(-19)+' 08:40',u:'Gina Pérez · Montacargas del Atlántico',a:'Subió la factura fiscal'}]});
+  const reclamos=[
+    {id:'r1',numero:'RC-0001',provId:'p1',facId:'f2',tipo:'programacion',estado:'respondido',creado:d(-3)+' 09:10',creadoPor:'istmo',
+      hilo:[{t:d(-3)+' 09:10',u:'Luis Batista · Transportes Istmo S.A.',lado:'proveedor',texto:'La factura A-0433 tiene más de 10 días vencida. ¿Para qué fecha está programado el pago?'},
+            {t:d(-2)+' 11:30',u:'Coordinador Administrativo',lado:'dpw',texto:'Está aprobada para pago. La incluimos en la corrida de pagos de esta semana.',fechaProg:d(3)}]},
+    {id:'r2',numero:'RC-0002',provId:'p2',facId:'f4',tipo:'informacion',estado:'abierto',creado:d(-1)+' 15:45',creadoPor:'montacargas',
+      hilo:[{t:d(-1)+' 15:45',u:'Gina Pérez · Montacargas del Atlántico',lado:'proveedor',texto:'La factura MA-0977 aparece vencida. ¿Falta algún documento o aprobación de su lado?'}]}
+  ];
+  facturas[1].log.push({t:d(-3)+' 09:10',u:'Luis Batista · Transportes Istmo S.A.',a:'Reclamo RC-0001: solicitó programación de pago'},{t:d(-2)+' 11:30',u:'Coordinador Administrativo',a:'Respondió el reclamo RC-0001 · pago programado para el '+fecha(d(3))});
+  facturas[3].log.push({t:d(-1)+' 15:45',u:'Gina Pérez · Montacargas del Atlántico',a:'Reclamo RC-0002: solicitó información'});
   /* el pago ya ejecutado también queda en el historial de su factura */
   facturas[11].log.push({t:d(-60)+' 11:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0001'},{t:d(-58)+' 14:00',u:'Coordinador Administrativo',a:'Pagada con PG-0001 · ACH-558120 · '+money(facturas[11].total)});
   facturas[7].log.push({t:d(-3)+' 10:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0002'});
   facturas[0].log.push({t:d(-2)+' 09:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0003 por '+money(2000)});
   pagos.forEach(g=>g.log.forEach(l=>{l.u=l.u==='Coordinador'?'Coordinador Administrativo':l.u==='Aprobador'?'Aprobador de Pagos':l.u;}));
   proveedores.forEach(pv=>pv.log.forEach(l=>{if(l.u==='Coordinador')l.u='Coordinador Administrativo';}));
-  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7},bitacora:[]};
+  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7},bitacora:[],reclamos,notifs:[],wa:{}};
 }
 
 /* ── estado ── */
-const S={db:null,user:null,vista:'resumen',f:{pq:'',pe:'',fq:'',fe:'',fp:'',ge:'',ec:'',bq:'',bt:'',bu:'',bd:'',bh:''},bVer:100};
-const ROLES={coordinador:'Coordinador',aprobador:'Aprobador',admin:'Administrador'};
+const S={db:null,user:null,vista:'resumen',f:{pq:'',pe:'',fq:'',fe:'',fp:'',ge:'',ec:'',bq:'',bt:'',bu:'',bd:'',bh:'',re:'',mb:'',mm:''},bVer:100,ctxFac:null};
+const ROLES={coordinador:'Coordinador',aprobador:'Aprobador',admin:'Administrador',proveedor:'Proveedor'};
 const rol=()=>S.user&&S.user.rol;
 const quien=()=>S.user?S.user.nombre:'';
 /* permisos: el admin hace todo; la misma persona no aprueba lo que ella registró (segregación de funciones) */
 const PUEDE={
-  registrar:()=>rol()!=='aprobador',
-  aprobar:()=>rol()!=='coordinador',
+  registrar:()=>rol()==='coordinador'||rol()==='admin',
+  aprobar:()=>rol()==='aprobador'||rol()==='admin',
   admin:()=>rol()==='admin'
 };
+/* el proveedor entra a su portal: solo ve sus facturas, sus pagos y sus reclamos */
+const esProv=()=>rol()==='proveedor';
+const miProv=()=>esProv()?S.user.provId:null;
+const facturasVisibles=()=>esProv()?S.db.facturas.filter(f=>f.provId===miProv()):S.db.facturas;
+const pagosVisibles=()=>esProv()?S.db.pagos.filter(g=>g.provId===miProv()):S.db.pagos;
+const reclamosVisibles=()=>esProv()?S.db.reclamos.filter(r=>r.provId===miProv()):S.db.reclamos;
+const firma=()=>esProv()?quien()+' · '+((prov(miProv())||{}).nombre||''):quien();
 const mismo=x=>x&&x.creadoPor===S.user.u;
 
 const prov=id=>S.db.proveedores.find(p=>p.id===id);
@@ -345,36 +431,48 @@ function pendientes(){
     facValidar:re?S.db.facturas.filter(f=>f.estado==='recibida').length:0,
     facAprobar:ap?S.db.facturas.filter(f=>f.estado==='validada'&&f.creadoPor!==u).length:0,
     pagAutorizar:ap?S.db.pagos.filter(g=>g.estado==='solicitado'&&g.creadoPor!==u).length:0,
-    pagEjecutar:re?S.db.pagos.filter(g=>g.estado==='autorizado').length:0
+    pagEjecutar:re?S.db.pagos.filter(g=>g.estado==='autorizado').length:0,
+    reclamos:!esProv()?S.db.reclamos.filter(r=>r.estado==='abierto').length:0
   };
 }
 
 /* ════════ navegación ════════ */
-const VISTAS={resumen:vResumen,proveedores:vProveedores,facturas:vFacturas,pagos:vPagos,cuenta:vCuenta,bitacora:vBitacora,config:vConfig};
+const VISTAS={resumen:vResumen,proveedores:vProveedores,facturas:vFacturas,pagos:vPagos,cuenta:vCuenta,mapa:vMapa,reclamos:vReclamos,bitacora:vBitacora,avisos:vAvisos,config:vConfig};
+const SOLO_INTERNAS=['proveedores','bitacora'];
 function ir(v){S.vista=v;pintar();window.scrollTo(0,0);}
 function pintar(){
   if(!S.user)return;
-  const p=pendientes();
+  const p=pendientes(),pv=esProv(),sinLeer=misNotifs().filter(n=>!n.leida).length;
+  const rcProv=pv?reclamosVisibles().filter(r=>r.estado==='respondido').length:0;
   DPW.menu([
     {id:'resumen',label:'Resumen',on:()=>ir('resumen')},
-    {id:'proveedores',label:'Proveedores',badge:p.provAprobar||0,on:()=>ir('proveedores')},
-    {id:'facturas',label:'Facturas',badge:(p.facValidar+p.facAprobar)||0,on:()=>ir('facturas')},
-    {id:'pagos',label:'Pagos',badge:(p.pagAutorizar+p.pagEjecutar)||0,on:()=>ir('pagos')},
+    {id:'proveedores',label:'Proveedores',badge:p.provAprobar||0,hidden:pv,on:()=>ir('proveedores')},
+    {id:'facturas',label:pv?'Mis facturas':'Facturas',badge:(p.facValidar+p.facAprobar)||0,on:()=>ir('facturas')},
+    {id:'pagos',label:pv?'Mis pagos':'Pagos',badge:(p.pagAutorizar+p.pagEjecutar)||0,on:()=>ir('pagos')},
     {id:'cuenta',label:'Estado de cuenta',on:()=>ir('cuenta')},
-    {id:'bitacora',label:'Bitácora',hint:'quién hizo qué',on:()=>{S.bVer=100;ir('bitacora');}},
+    {id:'mapa',label:'Mapa de pagos',hint:'pagadas y vencidas por mes',on:()=>ir('mapa')},
+    {id:'reclamos',label:'Reclamos',badge:(pv?rcProv:p.reclamos)||0,on:()=>ir('reclamos')},
+    {id:'bitacora',label:'Bitácora',hint:'quién hizo qué',hidden:pv,on:()=>{S.bVer=100;ir('bitacora');}},
+    {id:'avisos',label:'Notificaciones',badge:sinLeer||0,group:'Ayuda',on:()=>ir('avisos')},
+    {id:'tutorial',label:'Ver tutorial',hint:'qué es cada cosa',group:'Ayuda',on:()=>iniciarTutorial()},
     {id:'config',label:'Configuración',group:'Administración',hidden:!PUEDE.admin(),on:()=>ir('config')}
   ],S.vista);
-  if(!VISTAS[S.vista]||(S.vista==='config'&&!PUEDE.admin()))S.vista='resumen';
+  if(!VISTAS[S.vista]||(S.vista==='config'&&!PUEDE.admin())||(pv&&SOLO_INTERNAS.includes(S.vista)))S.vista='resumen';
   $('vista').innerHTML=VISTAS[S.vista]();
   if(S.vista==='proveedores')listaProv();
   if(S.vista==='facturas')listaFac();
   if(S.vista==='pagos')listaPagos();
   if(S.vista==='cuenta')cuentaDetalle();
   if(S.vista==='bitacora')listaBitacora();
+  if(S.vista==='mapa')pintarMapa();
+  if(S.vista==='reclamos')listaReclamos();
+  if(S.vista==='avisos')listaAvisos();
+  waPintar();
 }
 
 /* ════════ RESUMEN ════════ */
 function vResumen(){
+  if(esProv())return vResumenProv();
   const fs=vivas().map(f=>({f,c:calc(f)})).filter(x=>x.c.saldo>0.004);
   const total=fs.reduce((s,x)=>s+x.c.saldo,0);
   const venc=fs.filter(x=>x.c.vencida),tv=venc.reduce((s,x)=>s+x.c.saldo,0);
@@ -385,7 +483,8 @@ function vResumen(){
     [p.facValidar,'Facturas por validar contra la orden de compra','facturas','fe','recibida'],
     [p.facAprobar,'Facturas por aprobar para pago','facturas','fe','validada'],
     [p.pagAutorizar,'Pagos por autorizar','pagos','ge','solicitado'],
-    [p.pagEjecutar,'Pagos autorizados por ejecutar','pagos','ge','autorizado']
+    [p.pagEjecutar,'Pagos autorizados por ejecutar','pagos','ge','autorizado'],
+    [p.reclamos,'Reclamos de proveedores por responder','reclamos','re','abierto']
   ].filter(t=>t[0]);
   /* antigüedad por proveedor */
   const filas={};
@@ -396,7 +495,7 @@ function vResumen(){
     (PUEDE.registrar()?'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="nuevoProv">Nuevo proveedor</button><button class="btn pri" data-act="nuevaFac">Registrar factura</button></div>':'')+'</div>'+
   '<div class="grid kpis">'+
     '<div class="card kpi"><div class="l">Saldo por pagar</div><div class="v">'+money(total)+'</div><div class="s">'+fs.length+' facturas abiertas</div></div>'+
-    '<div class="card kpi err"><div class="l">Vencido</div><div class="v">'+money(tv)+'</div><div class="s">'+venc.length+' facturas pasaron su fecha</div></div>'+
+    '<div class="card kpi err"><div class="l">Vencido</div><div class="v">'+money(tv)+'</div><div class="s">'+(venc.length===1?'1 factura pasó su fecha':venc.length+' facturas pasaron su fecha')+'</div></div>'+
     '<div class="card kpi warn"><div class="l">Vence en 7 días</div><div class="v">'+money(ts)+'</div><div class="s">'+sem.length+' facturas</div></div>'+
     '<div class="card kpi ok"><div class="l">Pendientes para ti</div><div class="v">'+npend+'</div><div class="s">'+esc(ROLES[rol()])+'</div></div>'+
   '</div>'+
@@ -424,7 +523,7 @@ function vProveedores(){
 function listaProv(){
   const q=S.f.pq.toLowerCase();
   const l=S.db.proveedores.filter(p=>(!S.f.pe||p.estado===S.f.pe)&&(!q||(p.nombre+' '+p.ruc+' '+p.categoria+' '+p.codigo).toLowerCase().includes(q)));
-  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Código</th><th>Proveedor</th><th class="hide-sm">RUC</th><th class="hide-sm">Plazo</th><th class="num">Saldo</th><th class="num hide-sm">Crédito</th><th>Estado</th></tr></thead><tbody>'+
+  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Código</th><th>Proveedor</th><th class="hide-sm">RUC</th><th class="hide-sm">Días de crédito</th><th class="num">Saldo</th><th class="num hide-sm">Crédito</th><th>Estado</th></tr></thead><tbody>'+
     l.map(p=>{const s=saldoProv(p.id),sobre=p.limite>0&&s>p.limite;return '<tr class="clic" data-act="verProv" data-id="'+p.id+'"><td class="mut">'+esc(p.codigo)+'</td><td><div class="b">'+esc(p.nombre)+'</div><div class="mut">'+esc(p.categoria)+'</div></td><td class="hide-sm mut">'+esc(p.ruc)+' DV '+esc(p.dv)+'</td><td class="hide-sm">'+p.plazo+' días</td><td class="num"'+(sobre?' style="color:var(--err);font-weight:700"':'')+'>'+money(s)+'</td><td class="num hide-sm">'+(p.limite?money(p.limite):'<span class="mut">Sin límite</span>')+'</td><td>'+chip(p.estado,ESTADO_PROV)+'</td></tr>';}).join('')+
     '</tbody></table></div>':'<div class="card vacio">No hay proveedores con ese filtro.</div>';
 }
@@ -440,7 +539,8 @@ function formProv(p){
     i('pBanco','Banco',p.banco)+'<label class="f"><span>Tipo de cuenta</span><select class="sel" id="pTipo">'+['Corriente','Ahorros'].map(t=>'<option'+(p.tipoCuenta===t?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'+
     i('pCuenta','Número de cuenta',p.cuenta,{full:true})+
     '<div class="sec">Condiciones de crédito que da el proveedor</div>'+
-    i('pPlazo','Plazo de pago (días)',p.plazo,{type:'number',min:0})+i('pLimite','Límite de crédito (USD, 0 = sin límite)',p.limite,{type:'number',min:0})+
+    '<p class="mut full" style="margin:0">Los días de crédito son la base del vencimiento: cada factura vence en su fecha de factura más estos días.</p>'+
+    i('pPlazo','Días de crédito (base del vencimiento)',p.plazo,{type:'number',min:0})+i('pLimite','Límite de crédito (USD, 0 = sin límite)',p.limite,{type:'number',min:0})+
     '<div class="sec">Documentos recibidos</div>'+
     DOCS.map(([k,l])=>'<label class="chk"><input type="checkbox" id="pd_'+k+'"'+(p.docs&&p.docs[k]?' checked':'')+'><span>'+l+'</span></label>').join('')+
     '<label class="f full"><span>Notas</span><textarea class="in" id="pNotas" rows="2">'+esc(p.notas||'')+'</textarea></label>'+
@@ -464,7 +564,8 @@ function nuevoProv(){
     const d=leerProv();if(!d)return;
     const n=S.db.proveedores.length+1;
     const p=Object.assign({id:uid('p'),codigo:'PRV-'+String(n).padStart(3,'0'),estado:'solicitud',creadoPor:S.user.u,creado:ahora(),log:[{t:ahora(),u:quien(),a:'Registró el proveedor'}]},d);
-    await api.guardar('proveedores',p);cerrarModal();toast('Proveedor registrado. Queda por aprobar.');pintar();
+    await api.guardar('proveedores',p);notificar('prov_pend','Proveedor por aprobar',p.nombre+' · registrado por '+quien()+'.',{act:'verProv',id:p.id});
+    cerrarModal();toast('Proveedor registrado. Queda por aprobar.');pintar();
   }}]);
 }
 function verProv(id){
@@ -482,7 +583,8 @@ function verProv(id){
     (p.estado==='solicitud'&&faltan.length?'<div class="aviso warn"><b>Faltan documentos para aprobar:</b> '+faltan.map(x=>x[1]).join(', ')+'.</div>':'')+
     (p.limite&&s>p.limite?'<div class="aviso err"><b>Excede el crédito otorgado por el proveedor:</b> saldo '+money(s)+' contra un límite de '+money(p.limite)+'.</div>':'')+
     '<div style="margin-bottom:14px">'+chip(p.estado,ESTADO_PROV)+' <span class="mut">'+esc(p.codigo)+' · '+esc(p.categoria||'Sin categoría')+'</span></div>'+
-    '<div class="kv">'+[['RUC',p.ruc+(p.dv?' DV '+p.dv:'')],['Contacto',p.contacto],['Teléfono',p.telefono],['Correo',p.correo],['Banco',p.banco],['Cuenta',(p.tipoCuenta||'')+' '+(p.cuenta||'')],['Plazo de pago',p.plazo+' días'],['Límite de crédito',p.limite?money(p.limite):'Sin límite'],['Saldo por pagar',money(s)]].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
+    (()=>{const us=S.db.usuarios.filter(u=>u.rol==='proveedor'&&u.provId===p.id);return '<div class="aviso info"><b>Acceso al portal:</b> '+(us.length?us.map(u=>esc(u.nombre)+' ('+esc(u.u)+')'+(u.activo?'':' · de baja')).join(', '):'sin usuario. El administrador lo crea en Configuración con el rol Proveedor.')+'</div>';})()+
+    '<div class="kv">'+[['RUC',p.ruc+(p.dv?' DV '+p.dv:'')],['Contacto',p.contacto],['Teléfono',p.telefono],['Correo',p.correo],['Banco',p.banco],['Cuenta',(p.tipoCuenta||'')+' '+(p.cuenta||'')],['Días de crédito',p.plazo+' días'],['Límite de crédito',p.limite?money(p.limite):'Sin límite'],['Saldo por pagar',money(s)]].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Documentos</h2>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">'+DOCS.map(([k,l])=>'<span class="chip '+(p.docs[k]?'ok':'err')+'">'+(p.docs[k]?'':'Falta · ')+l+'</span>').join('')+'</div>'+
     (p.notas?'<p class="mut" style="margin:0 0 14px">'+esc(p.notas)+'</p>':'')+
@@ -493,54 +595,65 @@ function editarProv(id){
   const p=prov(id);
   modal('Editar · '+p.nombre,formProv(p),[{t:'Cancelar',on:()=>verProv(id)},{t:'Guardar',cls:'pri',on:async()=>{
     const d=leerProv(p);if(!d)return;
-    const cambioBanco=d.cuenta!==p.cuenta||d.banco!==p.banco;
-    Object.assign(p,d);p.log.push({t:ahora(),u:quien(),a:'Editó los datos'+(cambioBanco?' · cambió la cuenta bancaria':'')});
+    const cambioBanco=d.cuenta!==p.cuenta||d.banco!==p.banco,plazoAntes=p.plazo;
+    Object.assign(p,d);p.log.push({t:ahora(),u:quien(),a:'Editó los datos'+(cambioBanco?' · cambió la cuenta bancaria':'')+(plazoAntes!==d.plazo?' · días de crédito de '+plazoAntes+' a '+d.plazo+' (aplica a facturas nuevas)':'')});
+    if(cambioBanco&&p.estado==='aprobado')notificar('prov_pend','Proveedor por aprobar','Cambió la cuenta bancaria de '+p.nombre+'. Vuelve a aprobación.',{act:'verProv',id:p.id});
     /* control: un cambio de cuenta bancaria de un proveedor aprobado vuelve a pasar por aprobación */
     if(cambioBanco&&p.estado==='aprobado'){p.estado='solicitud';p.creadoPor=S.user.u;p.log.push({t:ahora(),u:'Sistema',a:'Cambio de cuenta bancaria: vuelve a aprobación'});toast('Cambió la cuenta bancaria: el proveedor vuelve a aprobación.');}
     else toast('Proveedor actualizado.');
     await api.guardar('proveedores',p);pintar();verProv(id);
   }}]);
 }
-async function cambiarProv(p,estado,accion){p.estado=estado;p.log.push({t:ahora(),u:quien(),a:accion});await api.guardar('proveedores',p);toast(accion+'.');pintar();verProv(p.id);}
+async function cambiarProv(p,estado,accion){p.estado=estado;p.log.push({t:ahora(),u:quien(),a:accion});await api.guardar('proveedores',p);
+  if(estado==='aprobado'||estado==='rechazado')notificar('prov_resuelto','Proveedor '+(estado==='aprobado'?'aprobado':'rechazado'),p.nombre+' · '+accion+'.',{act:'verProv',id:p.id},{users:[p.creadoPor]});toast(accion+'.');pintar();verProv(p.id);}
 
 /* ════════ FACTURAS ════════ */
+const PROCESO='<b>Proceso:</b> el proveedor envía el respaldo por correo · DP World lo aprueba por correo · el proveedor sube aquí la factura fiscal con su fecha y los datos de ese correo · vence en la fecha de la factura más sus días de crédito.';
 function vFacturas(){
-  const provs=[...S.db.proveedores].sort((a,b)=>a.nombre.localeCompare(b.nombre));
-  return '<div class="vhead"><div><h1 class="vtitle">Facturas</h1><p class="vsub">Recibida → validada contra la orden de compra → aprobada para pago → pagada.</p></div>'+
-    (PUEDE.registrar()?'<button class="btn pri" data-act="nuevaFac">Registrar factura</button>':'')+'</div>'+
+  const provs=[...S.db.proveedores].sort((a,b)=>a.nombre.localeCompare(b.nombre)),pv=esProv();
+  return '<div class="vhead"><div><h1 class="vtitle">'+(pv?'Mis facturas':'Facturas')+'</h1><p class="vsub">Recibida → validada contra el respaldo aprobado por correo → aprobada para pago → pagada.</p></div>'+
+    (pv?'<button class="btn pri" data-act="nuevaFac">Subir factura fiscal</button>':PUEDE.registrar()?'<button class="btn pri" data-act="nuevaFac">Registrar factura</button>':'')+'</div>'+
+    '<div class="aviso info">'+PROCESO+'</div>'+
     '<div class="filtros"><input class="in" placeholder="Buscar por número, orden de compra, concepto o file" data-f="fq" value="'+esc(S.f.fq)+'">'+
-    '<select class="sel" data-f="fp"><option value="">Todos los proveedores</option>'+provs.map(p=>'<option value="'+p.id+'"'+(S.f.fp===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select>'+
+    (pv?'':'<select class="sel" data-f="fp"><option value="">Todos los proveedores</option>'+provs.map(p=>'<option value="'+p.id+'"'+(S.f.fp===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select>')+
     '<select class="sel" data-f="fe"><option value="">Todos los estados</option><option value="abiertas"'+(S.f.fe==='abiertas'?' selected':'')+'>Con saldo</option><option value="vencidas"'+(S.f.fe==='vencidas'?' selected':'')+'>Vencidas</option>'+Object.entries(ESTADO_FAC).map(([k,v])=>'<option value="'+k+'"'+(S.f.fe===k?' selected':'')+'>'+v[0]+'</option>').join('')+'</select></div>'+
     '<div id="lista"></div>';
 }
 function listaFac(){
   const q=S.f.fq.toLowerCase();
-  const l=S.db.facturas.map(f=>({f,c:calc(f)})).filter(({f,c})=>(!S.f.fp||f.provId===S.f.fp)&&
+  const l=facturasVisibles().map(f=>({f,c:calc(f)})).filter(({f,c})=>(!S.f.fp||f.provId===S.f.fp)&&
     (!S.f.fe||(S.f.fe==='abiertas'?c.saldo>0.004&&f.estado!=='rechazada':S.f.fe==='vencidas'?c.vencida:c.est===S.f.fe))&&
     (!q||(f.numero+' '+f.oc+' '+f.concepto+' '+f.file+' '+prov(f.provId).nombre).toLowerCase().includes(q)))
     .sort((a,b)=>a.f.vence.localeCompare(b.f.vence));
   const tot=l.reduce((s,x)=>s+(x.f.estado==='rechazada'?0:x.c.saldo),0);
-  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Factura</th><th>Proveedor</th><th class="hide-sm">Emisión</th><th>Vence</th><th class="num hide-sm">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead><tbody>'+
-    l.map(({f,c})=>'<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td><div class="b">'+esc(f.numero)+'</div><div class="mut">'+esc(f.oc||'')+'</div>'+((f.adjuntos||[]).length||f.estado!=='recibida'?'':'<div style="color:var(--warn);font-size:12px;font-weight:700">Sin archivo</div>')+'</td><td>'+esc(prov(f.provId).nombre)+'</td><td class="hide-sm">'+fecha(f.fecha)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':c.saldo>0.004&&f.estado!=='rechazada'&&c.dias>=-7?'<div style="color:var(--warn);font-size:12px;font-weight:700">'+(c.dias===0?'Vence hoy':'En '+(-c.dias)+' d')+'</div>':'')+'</td><td class="num hide-sm">'+money(f.total)+'</td><td class="num b">'+(f.estado==='rechazada'?'<span class="mut">—</span>':money(c.saldo))+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>').join('')+
+  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Factura</th>'+(esProv()?'':'<th>Proveedor</th>')+'<th class="hide-sm">Emisión</th><th>Vence</th><th class="num hide-sm">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead><tbody>'+
+    l.map(({f,c})=>'<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td><div class="b">'+esc(f.numero)+'</div><div class="mut">'+esc(f.oc||'')+'</div>'+((f.adjuntos||[]).length||f.estado!=='recibida'?'':'<div style="color:var(--warn);font-size:12px;font-weight:700">Sin archivo</div>')+'</td>'+(esProv()?'':'<td>'+esc(prov(f.provId).nombre)+'</td>')+'<td class="hide-sm">'+fecha(f.fecha)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':c.saldo>0.004&&f.estado!=='rechazada'&&c.dias>=-7?'<div style="color:var(--warn);font-size:12px;font-weight:700">'+(c.dias===0?'Vence hoy':'En '+(-c.dias)+' d')+'</div>':'')+'</td><td class="num hide-sm">'+money(f.total)+'</td><td class="num b">'+(f.estado==='rechazada'?'<span class="mut">—</span>':money(c.saldo))+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>').join('')+
     '</tbody></table></div><div class="tot"><span class="mut">'+l.length+' facturas</span><span>Saldo <b>'+money(tot)+'</b></span></div>':'<div class="card vacio">No hay facturas con ese filtro.</div>';
 }
 function formFac(f){
-  const it=S.db.parametros.itbms;
-  const aprob=S.db.proveedores.filter(p=>p.estado==='aprobado'||(f&&p.id===f.provId)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
-  f=f||{fecha:hoy(),subtotal:'',itbms:'',conItbms:true};
-  const conIt=f.id?f.itbms>0:true;
+  const it=S.db.parametros.itbms,pv=esProv();
+  const aprob=S.db.proveedores.filter(p=>(pv?p.id===miProv():p.estado==='aprobado')||(f&&p.id===f.provId)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  f=f||{fecha:hoy(),subtotal:'',itbms:'',conItbms:true,provId:pv?miProv():''};
+  const conIt=f.id?f.itbms>0:true,ap=f.aprobCorreo||{};
   return (aprob.length?'':'<div class="aviso warn">No hay proveedores aprobados. Registra uno y pide su aprobación antes de cargar facturas.</div>')+
+  (f.id?'':'<div class="aviso info">'+PROCESO+'</div>')+
   '<div class="form">'+
-    '<label class="f full"><span>Proveedor (solo aprobados)</span><select class="sel" id="fProv"><option value="">Elige el proveedor</option>'+aprob.map(p=>'<option value="'+p.id+'"'+(f.provId===p.id?' selected':'')+'>'+esc(p.nombre)+' · '+p.plazo+' días</option>').join('')+'</select></label>'+
+    (pv?'<input type="hidden" id="fProv" value="'+esc(miProv())+'"><div class="f full"><span>Proveedor</span><b>'+esc(prov(miProv()).nombre)+' · '+prov(miProv()).plazo+' días de crédito</b></div>'
+       :'<label class="f full"><span>Proveedor (solo aprobados)</span><select class="sel" id="fProv"><option value="">Elige el proveedor</option>'+aprob.map(p=>'<option value="'+p.id+'"'+(f.provId===p.id?' selected':'')+'>'+esc(p.nombre)+' · '+p.plazo+' días de crédito</option>').join('')+'</select></label>')+
     '<label class="f"><span>Número de factura</span><input class="in" id="fNum" value="'+esc(f.numero||'')+'" placeholder="A-0001"></label>'+
     '<label class="f"><span>Orden de compra</span><input class="in" id="fOc" value="'+esc(f.oc||'')+'" placeholder="OC-0000"></label>'+
-    '<label class="f"><span>Fecha de emisión</span><input class="in" type="date" id="fFecha" value="'+esc(f.fecha)+'"></label>'+
-    '<label class="f"><span>Vence (según plazo del proveedor)</span><input class="in" type="date" id="fVence" value="'+esc(f.vence||'')+'"></label>'+
+    '<label class="f"><span>Fecha de la factura fiscal</span><input class="in" type="date" id="fFecha" value="'+esc(f.fecha)+'"></label>'+
+    '<label class="f"><span>Vence · fecha de la factura + días de crédito</span><input class="in" type="date" id="fVence" value="'+esc(f.vence||'')+'" readonly tabindex="-1" style="background:var(--card2)"></label>'+
     '<label class="f"><span>Subtotal (USD)</span><input class="in" type="number" step="0.01" min="0" id="fSub" value="'+esc(f.subtotal)+'"></label>'+
     '<label class="f"><span>ITBMS</span><select class="sel" id="fIt"><option value="1"'+(conIt?' selected':'')+'>Con ITBMS '+it+' %</option><option value="0"'+(conIt?'':' selected')+'>Exenta</option></select></label>'+
     '<label class="f full"><span>Concepto</span><input class="in" id="fCon" value="'+esc(f.concepto||'')+'" placeholder="Servicio o material facturado"></label>'+
-    '<label class="f full"><span>Cliente o file al que se carga el costo (opcional)</span><input class="in" id="fFile" value="'+esc(f.file||'')+'" placeholder="Cliente · FILE-0000"></label>'+
-    (f.id?'':'<label class="f full"><span>Archivo de la factura · PDF, JPG o PNG, máximo 10 MB</span><input class="in" type="file" id="fArch" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>')+
+    (pv?'':'<label class="f full"><span>Cliente o file al que se carga el costo (opcional)</span><input class="in" id="fFile" value="'+esc(f.file||'')+'" placeholder="Cliente · FILE-0000"></label>')+
+    '<div class="sec">Respaldo aprobado por correo</div>'+
+    '<label class="f"><span>Aprobado por (DP World)</span><input class="in" id="fApPor" value="'+esc(ap.por||'')+'" placeholder="Nombre o correo de quien aprobó"></label>'+
+    '<label class="f"><span>Fecha del correo de aprobación</span><input class="in" type="date" id="fApFecha" value="'+esc(ap.fecha||'')+'"></label>'+
+    '<label class="f full"><span>Asunto o referencia del correo</span><input class="in" id="fApRef" value="'+esc(ap.ref||'')+'" placeholder="Ej.: Aprobación respaldo acarreo semana 40"></label>'+
+    (f.id?'':'<label class="f full"><span>Correo de aprobación (opcional) · PDF o imagen</span><input class="in" type="file" id="fApArch" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>'+
+      '<div class="sec">Factura fiscal</div><label class="f full"><span>Archivo de la factura fiscal · PDF, JPG o PNG, máximo 10 MB</span><input class="in" type="file" id="fArch" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>')+
   '</div><div class="tot"><span class="mut" id="fCalc"></span></div><div class="aviso err" id="fCred" hidden></div><div class="err-msg" id="mErr"></div>';
 }
 function enlazarFac(f){
@@ -548,7 +661,7 @@ function enlazarFac(f){
     const p=prov($('fProv').value),sub=r2($('fSub').value),it=$('fIt').value==='1'?r2(sub*S.db.parametros.itbms/100):0,tot=r2(sub+it);
     $('fCalc').innerHTML='ITBMS '+money(it)+' · Total <b style="font:800 18px var(--fd);color:var(--t)">'+money(tot)+'</b>';
     const c=$('fCred');c.hidden=true;
-    if(p&&p.limite){const s=saldoProv(p.id)-(f?calc(f).saldo:0);if(s+tot>p.limite){c.hidden=false;c.innerHTML='<b>Con esta factura se excede el crédito que otorga el proveedor.</b> Saldo actual '+money(s)+' + '+money(tot)+' = '+money(s+tot)+', límite '+money(p.limite)+'. Se puede registrar, pero hay que programar pagos para volver al límite.';}}
+    if(p&&p.limite&&!esProv()){const s=saldoProv(p.id)-(f?calc(f).saldo:0);if(s+tot>p.limite){c.hidden=false;c.innerHTML='<b>Con esta factura se excede el crédito que otorga el proveedor.</b> Saldo actual '+money(s)+' + '+money(tot)+' = '+money(s+tot)+', límite '+money(p.limite)+'. Se puede registrar, pero hay que programar pagos para volver al límite.';}}
   };
   const venc=()=>{const p=prov($('fProv').value);if(p&&$('fFecha').value)$('fVence').value=sumar($('fFecha').value,p.plazo);upd();};
   $('fProv').onchange=venc;$('fFecha').onchange=venc;$('fSub').oninput=upd;$('fIt').onchange=upd;upd();
@@ -559,68 +672,94 @@ function leerFac(base){
   if(!provId)return err('Elige el proveedor.');
   if(!num)return err('Escribe el número de factura.');
   if(S.db.facturas.some(x=>x!==base&&x.provId===provId&&x.numero.toLowerCase()===num.toLowerCase()))return err('Esa factura ya está registrada para este proveedor.');
-  if(!v('fFecha')||!v('fVence'))return err('Completa la fecha de emisión y el vencimiento.');
-  if(v('fVence')<v('fFecha'))return err('El vencimiento no puede ser antes de la emisión.');
+  if(!v('fFecha'))return err('Escribe la fecha de la factura fiscal.');
+  if(v('fFecha')>hoy())return err('La fecha de la factura no puede ser futura.');
+  if(!v('fApPor'))return err('Escribe quién de DP World aprobó el respaldo por correo.');
+  if(!v('fApFecha'))return err('Escribe la fecha del correo de aprobación.');
+  if(v('fApFecha')>hoy())return err('La fecha del correo de aprobación no puede ser futura.');
+  const vence=sumar(v('fFecha'),prov(provId).plazo);
   if(!(sub>0))return err('El subtotal debe ser mayor que cero.');
   const it=v('fIt')==='1'?r2(sub*S.db.parametros.itbms/100):0;
-  return {provId,numero:num,oc:v('fOc'),fecha:v('fFecha'),vence:v('fVence'),subtotal:sub,itbms:it,total:r2(sub+it),concepto:v('fCon'),file:v('fFile')};
+  return {provId,numero:num,oc:v('fOc'),fecha:v('fFecha'),vence,subtotal:sub,itbms:it,total:r2(sub+it),concepto:v('fCon'),file:$('fFile')?v('fFile'):(base?base.file:''),
+    aprobCorreo:{por:v('fApPor'),fecha:v('fApFecha'),ref:v('fApRef')}};
 }
 function nuevaFac(){
-  modal('Registrar factura',formFac(),[{t:'Cancelar',on:cerrarModal},{t:'Registrar',cls:'pri',on:async()=>{
+  const pv=esProv();
+  modal(pv?'Subir factura fiscal':'Registrar factura',formFac(),[{t:'Cancelar',on:cerrarModal},{t:pv?'Subir factura':'Registrar',cls:'pri',on:async()=>{
     const d=leerFac();if(!d)return;
-    const files=[...$('fArch').files];
-    if(!files.length)return $('mErr').textContent='Adjunta el archivo de la factura (PDF o foto).';
-    const malo=revisarArchivos(files);if(malo)return $('mErr').textContent=malo;
-    let adjuntos;try{adjuntos=await Promise.all(files.map(x=>api.subirArchivo(x)));}catch(e){return $('mErr').textContent='No se pudo guardar el archivo en este navegador.';}
-    const f=Object.assign({id:uid('f'),recibida:hoy(),estado:'recibida',check:{oc:false,servicio:false,fiscal:false},motivo:'',creadoPor:S.user.u,adjuntos,log:[{t:ahora(),u:quien(),a:'Registró la factura · '+adjuntos.map(a=>a.nombre).join(', ')}]},d);
-    await api.guardar('facturas',f);cerrarModal();toast('Factura registrada. Sigue validarla contra la orden de compra.');pintar();
+    const files=[...$('fArch').files],correo=[...$('fApArch').files];
+    if(!files.length)return $('mErr').textContent='Adjunta el archivo de la factura fiscal (PDF o foto).';
+    const malo=revisarArchivos(files.concat(correo));if(malo)return $('mErr').textContent=malo;
+    let adjuntos;try{adjuntos=(await Promise.all(files.map(x=>api.subirArchivo(x)))).map(a=>Object.assign(a,{clase:'fiscal'}))
+      .concat((await Promise.all(correo.map(x=>api.subirArchivo(x)))).map(a=>Object.assign(a,{clase:'correo'})));}catch(e){return $('mErr').textContent='No se pudo guardar el archivo en este navegador.';}
+    const f=Object.assign({id:uid('f'),recibida:hoy(),estado:'recibida',check:{oc:false,servicio:false,fiscal:false},motivo:'',creadoPor:S.user.u,adjuntos,log:[{t:ahora(),u:firma(),a:(pv?'Subió la factura fiscal':'Registró la factura')+' · '+adjuntos.map(a=>a.nombre).join(', ')+' · respaldo aprobado por '+d.aprobCorreo.por+' el '+fecha(d.aprobCorreo.fecha)}]},d);
+    await api.guardar('facturas',f);
+    notificar('fac_nueva','Factura fiscal nueva',prov(f.provId).nombre+' · '+f.numero+' por '+money(f.total)+' · vence '+fecha(f.vence)+'.',{act:'verFac',id:f.id});
+    cerrarModal();toast(pv?'Factura enviada. DP World la valida contra el respaldo aprobado.':'Factura registrada. Sigue validarla contra el respaldo aprobado.');pintar();
   }}]);
   enlazarFac();
 }
-const CHECK=[['oc','Coincide con la orden de compra (montos y cantidades)'],['servicio','El servicio o material fue recibido conforme'],['fiscal','Datos fiscales correctos (RUC, DV, razón social de DP World)']];
+const CHECK=[['oc','Coincide con el respaldo aprobado por correo (monto y servicio)'],['servicio','El servicio o material fue recibido conforme'],['fiscal','Datos fiscales correctos (RUC, DV, razón social de DP World)']];
 function verFac(id){
   const f=fac(id),c=calc(f),p=prov(f.provId),acc=[{t:'Cerrar',on:cerrarModal}];
+  if(f.estado==='recibida'&&esProv()&&f.creadoPor===S.user.u)acc.unshift({t:'Editar',on:()=>editarFac(id)});
   if(f.estado==='recibida'&&PUEDE.registrar()){
     acc.unshift({t:'Editar',on:()=>editarFac(id)});
     acc.unshift({t:'Marcar validada',cls:'pri',on:async()=>{
       const ch={};CHECK.forEach(([k])=>ch[k]=$('ck_'+k).checked);
       if(!(f.adjuntos||[]).length)return toast('Para validar, adjunta primero el archivo de la factura.',true);
       if(!CHECK.every(([k])=>ch[k]))return toast('Para validar, confirma los tres puntos de revisión.',true);
-      f.check=ch;f.estado='validada';f.log.push({t:ahora(),u:quien(),a:'Validó la factura contra la orden de compra'});await api.guardar('facturas',f);toast('Factura validada. Pasa a aprobación.');pintar();verFac(id);}});
+      f.check=ch;f.estado='validada';f.log.push({t:ahora(),u:quien(),a:'Validó la factura contra el respaldo aprobado por correo'});await api.guardar('facturas',f);
+      notificar('fac_validada','Factura por aprobar',prov(f.provId).nombre+' · '+f.numero+' por '+money(f.total)+'.',{act:'verFac',id:f.id});
+      notificar('p_fac','Factura validada','Tu factura '+f.numero+' fue validada y pasa a aprobación de pago.',{act:'verFac',id:f.id},{provId:f.provId});
+      toast('Factura validada. Pasa a aprobación.');pintar();verFac(id);}});
   }
   if(f.estado==='validada'&&PUEDE.aprobar()){
     if(mismo(f))acc.unshift({t:'Aprobar para pago',cls:'ok',dis:true,title:'La registraste tú: la aprueba otra persona'});
-    else acc.unshift({t:'Aprobar para pago',cls:'ok',on:async()=>{f.estado='aprobada';f.log.push({t:ahora(),u:quien(),a:'Aprobó la factura para pago'});await api.guardar('facturas',f);toast('Factura aprobada para pago.');pintar();verFac(id);}});
+    else acc.unshift({t:'Aprobar para pago',cls:'ok',on:async()=>{f.estado='aprobada';f.log.push({t:ahora(),u:quien(),a:'Aprobó la factura para pago'});await api.guardar('facturas',f);
+      notificar('fac_resuelta','Factura aprobada para pago',f.numero+' de '+prov(f.provId).nombre+'. Ya puedes incluirla en una solicitud de pago.',{act:'verFac',id:f.id});
+      notificar('p_fac','Factura aprobada para pago','Tu factura '+f.numero+' fue aprobada para pago. Vence el '+fecha(f.vence)+'.',{act:'verFac',id:f.id},{provId:f.provId});
+      toast('Factura aprobada para pago.');pintar();verFac(id);}});
   }
-  if((f.estado==='recibida'||f.estado==='validada'||(f.estado==='aprobada'&&c.pagado===0&&c.comprometido===0))&&(PUEDE.aprobar()||f.estado==='recibida'))
-    acc.unshift({t:'Rechazar',cls:'mal',on:()=>pedirMotivo('Rechazar factura '+f.numero,async m=>{f.estado='rechazada';f.motivo=m;f.log.push({t:ahora(),u:quien(),a:'Rechazó la factura: '+m});await api.guardar('facturas',f);toast('Factura rechazada.');pintar();verFac(id);})});
+  if((f.estado==='recibida'||f.estado==='validada'||(f.estado==='aprobada'&&c.pagado===0&&c.comprometido===0))&&(PUEDE.aprobar()||(f.estado==='recibida'&&PUEDE.registrar())))
+    acc.unshift({t:'Rechazar',cls:'mal',on:()=>pedirMotivo('Rechazar factura '+f.numero,async m=>{f.estado='rechazada';f.motivo=m;f.log.push({t:ahora(),u:quien(),a:'Rechazó la factura: '+m});await api.guardar('facturas',f);
+      notificar('fac_resuelta','Factura rechazada',f.numero+' de '+prov(f.provId).nombre+': '+m,{act:'verFac',id:f.id});
+      notificar('p_fac','Factura rechazada','Tu factura '+f.numero+' fue rechazada: '+m,{act:'verFac',id:f.id},{provId:f.provId});toast('Factura rechazada.');pintar();verFac(id);})});
   if(f.estado==='aprobada'&&c.libre>0.004&&PUEDE.registrar())acc.unshift({t:'Solicitar pago',cls:'pri',on:()=>nuevoPago(f.provId,[f.id])});
-  const pagos=S.db.pagos.filter(g=>g.items.some(i=>i.facId===id));
+  if(esProv()){const abierto=S.db.reclamos.find(r=>r.facId===id&&r.estado!=='cerrado');
+    if(abierto)acc.unshift({t:'Ver reclamo '+abierto.numero,on:()=>verReclamo(abierto.id)});
+    else if(c.vencida)acc.unshift({t:'Hacer reclamo',cls:'pri',on:()=>nuevoReclamo(id)});}
+  S.ctxFac=id;
+  const pagos=S.db.pagos.filter(g=>g.items.some(i=>i.facId===id)),rcs=S.db.reclamos.filter(r=>r.facId===id);
+  const ap=f.aprobCorreo||{};
   modal('Factura '+f.numero,
     (c.vencida?'<div class="aviso err"><b>Vencida hace '+c.dias+' días.</b> Venció el '+fecha(f.vence)+'.</div>':'')+
     (f.estado==='rechazada'?'<div class="aviso err"><b>Rechazada:</b> '+esc(f.motivo)+'</div>':'')+
     '<div style="margin-bottom:14px">'+chip(c.est,ESTADO_FAC)+' <span class="mut">'+esc(p.nombre)+'</span></div>'+
-    '<div class="kv">'+[['Orden de compra',f.oc],['Emisión',fecha(f.fecha)],['Vence',fecha(f.vence)],['Subtotal',money(f.subtotal)],['ITBMS',money(f.itbms)],['Total',money(f.total)],['Pagado',money(c.pagado)],['En solicitud de pago',money(c.comprometido)],['Saldo',money(c.saldo)],['Concepto',f.concepto],['Cliente o file',f.file],['Recibida',fecha(f.recibida)]].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
+    '<div class="kv">'+[['Orden de compra',f.oc],['Emisión',fecha(f.fecha)],['Vence',fecha(f.vence)],['Subtotal',money(f.subtotal)],['ITBMS',money(f.itbms)],['Total',money(f.total)],['Pagado',money(c.pagado)],['En solicitud de pago',money(c.comprometido)],['Saldo',money(c.saldo)],['Concepto',f.concepto]].concat(esProv()?[]:[['Cliente o file',f.file]]).concat([['Recibida',fecha(f.recibida)],['Respaldo aprobado por',ap.por],['Fecha del correo',ap.fecha?fecha(ap.fecha):''],['Referencia del correo',ap.ref]]).map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
     seccionArchivos(f)+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Revisión antes de aprobar</h2>'+
     '<div class="grid" style="gap:6px;margin-bottom:14px">'+CHECK.map(([k,l])=>'<label class="chk"><input type="checkbox" id="ck_'+k+'"'+(f.check&&f.check[k]?' checked':'')+(f.estado==='recibida'&&PUEDE.registrar()?'':' disabled')+'><span>'+l+'</span></label>').join('')+'</div>'+
+    (rcs.length?'<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Reclamos</h2><div class="tw" style="margin-bottom:14px"><table><tbody>'+rcs.map(r=>'<tr class="clic" data-act="verReclamo" data-id="'+r.id+'"><td class="b">'+esc(r.numero)+'</td><td>'+esc(TIPO_RC[r.tipo])+'</td><td>'+chip(r.estado,ESTADO_RC)+'</td></tr>').join('')+'</tbody></table></div>':'')+
     (pagos.length?'<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Pagos</h2><div class="tw" style="margin-bottom:14px"><table><tbody>'+pagos.map(g=>'<tr class="clic" data-act="verPago" data-id="'+g.id+'"><td class="b">'+esc(g.numero)+'</td><td>'+fecha(g.ejecutado||g.fecha)+'</td><td class="num">'+money(g.items.find(i=>i.facId===id).monto)+'</td><td>'+chip(g.estado,ESTADO_PAGO)+'</td></tr>').join('')+'</tbody></table></div>':'')+
     '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Historial</h2>'+hist(f.log),acc);
   const inp=$('fAdj');if(inp)inp.onchange=async()=>{
     const files=[...inp.files];if(!files.length)return;
     const malo=revisarArchivos(files);if(malo)return toast(malo,true);
-    try{const nuevos=await Promise.all(files.map(x=>api.subirArchivo(x)));f.adjuntos=(f.adjuntos||[]).concat(nuevos);f.log.push({t:ahora(),u:quien(),a:'Adjuntó '+nuevos.map(a=>a.nombre).join(', ')});await api.guardar('facturas',f);toast('Archivo adjuntado.');pintar();verFac(id);}
+    try{const nuevos=await Promise.all(files.map(x=>api.subirArchivo(x)));f.adjuntos=(f.adjuntos||[]).concat(nuevos);f.log.push({t:ahora(),u:firma(),a:'Adjuntó '+nuevos.map(a=>a.nombre).join(', ')});await api.guardar('facturas',f);toast('Archivo adjuntado.');pintar();verFac(id);}
     catch(e){toast('No se pudo guardar el archivo en este navegador.',true);}
   };
 }
 /* archivos de la factura: se agregan mientras no esté pagada ni rechazada; se quitan solo antes de validarla */
 function seccionArchivos(f){
   const adj=f.adjuntos||[],c=calc(f);
-  const agregar=PUEDE.registrar()&&f.estado!=='rechazada'&&c.est!=='pagada',quitar=PUEDE.registrar()&&f.estado==='recibida';
-  return '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Archivo de la factura</h2>'+
-    (adj.length?'<div class="grid" style="gap:6px;margin-bottom:8px">'+adj.map(a=>'<div class="adj"><span class="nom" title="'+esc(a.nombre)+'">'+esc(a.nombre)+'</span><span class="mut hide-sm">'+tamano(a.tam)+' · '+esc(a.por||'')+'</span>'+
+  const propia=esProv()&&f.creadoPor===S.user.u;
+  const agregar=(PUEDE.registrar()&&f.estado!=='rechazada'&&c.est!=='pagada')||(propia&&f.estado==='recibida'),quitar=(PUEDE.registrar()||propia)&&f.estado==='recibida';
+  const CLASE={fiscal:'Factura fiscal',correo:'Correo de aprobación'};
+  return '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Archivos de la factura</h2>'+
+    (adj.length?'<div class="grid" style="gap:6px;margin-bottom:8px">'+adj.map(a=>'<div class="adj">'+(CLASE[a.clase]?'<span class="chip '+(a.clase==='fiscal'?'ind':'')+'">'+CLASE[a.clase]+'</span>':'')+'<span class="nom" title="'+esc(a.nombre)+'">'+esc(a.nombre)+'</span><span class="mut hide-sm">'+tamano(a.tam)+' · '+esc(a.por||'')+'</span>'+
       '<button class="btn sm" data-act="verArchivo" data-id="'+f.id+'" data-a="'+a.id+'">Ver</button>'+(quitar?'<button class="btn sm mal" data-act="quitarArchivo" data-id="'+f.id+'" data-a="'+a.id+'">Quitar</button>':'')+'</div>').join('')+'</div>'
-      :'<div class="aviso warn" style="margin-bottom:8px"><b>Sin archivo.</b> Adjunta el PDF o la foto de la factura antes de validarla.</div>')+
+      :f.estado==='recibida'?'<div class="aviso warn" style="margin-bottom:8px"><b>Sin archivo.</b> Adjunta el PDF o la foto de la factura antes de validarla.</div>':'<p class="mut" style="margin:0 0 8px">Sin archivos adjuntos.</p>')+
     (agregar?'<label class="btn sm" style="margin-bottom:14px">Adjuntar archivo<input type="file" id="fAdj" hidden multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>':'<div style="margin-bottom:14px"></div>');
 }
 /* el archivo se muestra dentro de la app (sin ventanas nuevas, que el iPhone y la app instalada bloquean) */
@@ -639,29 +778,29 @@ async function verArchivo(fid,el){
 }
 async function quitarArchivo(fid,el){
   const f=fac(fid),a=(f.adjuntos||[]).find(x=>x.id===el.dataset.a);if(!a)return;
-  f.adjuntos=f.adjuntos.filter(x=>x!==a);f.log.push({t:ahora(),u:quien(),a:'Quitó el archivo '+a.nombre});
+  f.adjuntos=f.adjuntos.filter(x=>x!==a);f.log.push({t:ahora(),u:firma(),a:'Quitó el archivo '+a.nombre});
   await api.guardar('facturas',f);try{await api.borrarArchivo(a.id);}catch(e){}
   toast('Archivo quitado.');pintar();verFac(fid);
 }
 function editarFac(id){
   const f=fac(id);
   modal('Editar factura '+f.numero,formFac(f),[{t:'Cancelar',on:()=>verFac(id)},{t:'Guardar',cls:'pri',on:async()=>{
-    const d=leerFac(f);if(!d)return;Object.assign(f,d);f.log.push({t:ahora(),u:quien(),a:'Editó la factura'});await api.guardar('facturas',f);toast('Factura actualizada.');pintar();verFac(id);
+    const d=leerFac(f);if(!d)return;Object.assign(f,d);f.log.push({t:ahora(),u:firma(),a:'Editó la factura'});await api.guardar('facturas',f);toast('Factura actualizada.');pintar();verFac(id);
   }}]);
   enlazarFac(f);
 }
 
 /* ════════ PAGOS ════════ */
 function vPagos(){
-  return '<div class="vhead"><div><h1 class="vtitle">Pagos</h1><p class="vsub">Solicitud → autorización por otra persona → ejecución con referencia bancaria.</p></div>'+
+  return '<div class="vhead"><div><h1 class="vtitle">'+(esProv()?'Mis pagos':'Pagos')+'</h1><p class="vsub">Solicitud → autorización por otra persona → ejecución con referencia bancaria.</p></div>'+
     (PUEDE.registrar()?'<button class="btn pri" data-act="nuevoPago">Solicitar pago</button>':'')+'</div>'+
     '<div class="filtros"><select class="sel" data-f="ge"><option value="">Todos los estados</option>'+Object.entries(ESTADO_PAGO).map(([k,v])=>'<option value="'+k+'"'+(S.f.ge===k?' selected':'')+'>'+v[0]+'</option>').join('')+'</select></div>'+
     '<div id="lista"></div>';
 }
 function listaPagos(){
-  const l=S.db.pagos.filter(g=>!S.f.ge||g.estado===S.f.ge).sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.numero.localeCompare(a.numero));
-  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Pago</th><th>Proveedor</th><th class="hide-sm">Solicitado</th><th class="hide-sm">Método</th><th class="num">Monto</th><th>Estado</th></tr></thead><tbody>'+
-    l.map(g=>'<tr class="clic" data-act="verPago" data-id="'+g.id+'"><td><div class="b">'+esc(g.numero)+'</div><div class="mut">'+g.items.length+' factura'+(g.items.length>1?'s':'')+'</div></td><td>'+esc(prov(g.provId).nombre)+'</td><td class="hide-sm">'+fecha(g.fecha)+'</td><td class="hide-sm">'+esc(g.metodo)+'</td><td class="num b">'+money(g.total)+'</td><td>'+chip(g.estado,ESTADO_PAGO)+'</td></tr>').join('')+
+  const l=pagosVisibles().filter(g=>!S.f.ge||g.estado===S.f.ge).sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.numero.localeCompare(a.numero));
+  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Pago</th>'+(esProv()?'':'<th>Proveedor</th>')+'<th class="hide-sm">Solicitado</th><th class="hide-sm">Método</th><th class="num">Monto</th><th>Estado</th></tr></thead><tbody>'+
+    l.map(g=>'<tr class="clic" data-act="verPago" data-id="'+g.id+'"><td><div class="b">'+esc(g.numero)+'</div><div class="mut">'+g.items.length+' factura'+(g.items.length>1?'s':'')+'</div></td>'+(esProv()?'':'<td>'+esc(prov(g.provId).nombre)+'</td>')+'<td class="hide-sm">'+fecha(g.fecha)+'</td><td class="hide-sm">'+esc(g.metodo)+'</td><td class="num b">'+money(g.total)+'</td><td>'+chip(g.estado,ESTADO_PAGO)+'</td></tr>').join('')+
     '</tbody></table></div>':'<div class="card vacio">No hay pagos con ese filtro.</div>';
 }
 function nuevoPago(provId,marcar){
@@ -692,6 +831,7 @@ function nuevoPago(provId,marcar){
       const g={id:uid('g'),numero:'PG-'+String(n).padStart(4,'0'),provId:$('gProv').value,fecha:$('gFecha').value||hoy(),metodo:$('gMet').value,referencia:'',items,total:r2(items.reduce((s,i)=>s+i.monto,0)),estado:'solicitado',creadoPor:S.user.u,autorizadoPor:'',ejecutado:'',log:[{t:ahora(),u:quien(),a:'Solicitó el pago'}]};
       await api.guardar('pagos',g);
       for(const it of items){const f=fac(it.facId);f.log.push({t:ahora(),u:quien(),a:'Incluida en la solicitud de pago '+g.numero+' por '+money(it.monto)});await api.guardar('facturas',f);}
+      notificar('pago_pend','Pago por autorizar',g.numero+' · '+prov(g.provId).nombre+' por '+money(g.total)+'.',{act:'verPago',id:g.id});
       cerrarModal();toast('Pago '+g.numero+' enviado a autorización.');pintar();
     }}]);
   $('gProv').onchange=pinta;
@@ -702,8 +842,11 @@ function verPago(id){
   const g=S.db.pagos.find(x=>x.id===id),p=prov(g.provId),acc=[{t:'Cerrar',on:cerrarModal}];
   if(g.estado==='solicitado'&&PUEDE.aprobar()){
     if(mismo(g))acc.unshift({t:'Autorizar',cls:'ok',dis:true,title:'Lo solicitaste tú: lo autoriza otra persona'});
-    else{acc.unshift({t:'Autorizar',cls:'ok',on:async()=>{g.estado='autorizado';g.autorizadoPor=S.user.u;g.log.push({t:ahora(),u:quien(),a:'Autorizó el pago'});await api.guardar('pagos',g);await notaFacturas(g,'Pago '+g.numero+' autorizado');toast('Pago autorizado.');pintar();verPago(id);}});
-      acc.unshift({t:'Rechazar',cls:'mal',on:()=>pedirMotivo('Rechazar pago '+g.numero,async m=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Rechazó el pago: '+m});await api.guardar('pagos',g);await notaFacturas(g,'Pago '+g.numero+' rechazado: '+m);toast('Pago rechazado. Las facturas vuelven a quedar libres.');pintar();verPago(id);})});}
+    else{acc.unshift({t:'Autorizar',cls:'ok',on:async()=>{g.estado='autorizado';g.autorizadoPor=S.user.u;g.log.push({t:ahora(),u:quien(),a:'Autorizó el pago'});await api.guardar('pagos',g);await notaFacturas(g,'Pago '+g.numero+' autorizado');
+      notificar('pago_aut','Pago autorizado',g.numero+' · '+prov(g.provId).nombre+' por '+money(g.total)+'. Listo para ejecutar.',{act:'verPago',id:g.id});
+      notificar('p_pago','Pago programado','DP World programó el pago '+g.numero+' por '+money(g.total)+' para el '+fecha(g.fecha)+'.',{act:'verPago',id:g.id},{provId:g.provId});toast('Pago autorizado.');pintar();verPago(id);}});
+      acc.unshift({t:'Rechazar',cls:'mal',on:()=>pedirMotivo('Rechazar pago '+g.numero,async m=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Rechazó el pago: '+m});await api.guardar('pagos',g);await notaFacturas(g,'Pago '+g.numero+' rechazado: '+m);
+      notificar('pago_aut','Pago rechazado',g.numero+' · '+prov(g.provId).nombre+': '+m,{act:'verPago',id:g.id});toast('Pago rechazado. Las facturas vuelven a quedar libres.');pintar();verPago(id);})});}
   }
   if(g.estado==='solicitado'&&mismo(g))acc.unshift({t:'Anular solicitud',cls:'mal',on:async()=>{g.estado='rechazado';g.log.push({t:ahora(),u:quien(),a:'Anuló la solicitud'});await api.guardar('pagos',g);await notaFacturas(g,'Solicitud de pago '+g.numero+' anulada');toast('Solicitud anulada.');pintar();verPago(id);}});
   if(g.estado==='autorizado'&&PUEDE.registrar())acc.unshift({t:'Registrar ejecución',cls:'pri',on:()=>ejecutarPago(g)});
@@ -725,17 +868,19 @@ function ejecutarPago(g){
       const ref=$('eRef').value.trim();if(ref.length<3)return $('mErr').textContent='Escribe la referencia bancaria o el número de cheque.';
       g.estado='pagado';g.referencia=ref;g.ejecutado=$('eFecha').value||hoy();g.log.push({t:ahora(),u:quien(),a:'Registró la ejecución · '+ref});
       await api.guardar('pagos',g);
-      for(const it of g.items){const f=fac(it.facId);f.log.push({t:ahora(),u:quien(),a:'Pagada con '+g.numero+' · '+ref+' · '+money(it.monto)});await api.guardar('facturas',f);}toast('Pago registrado.');pintar();verPago(g.id);
+      for(const it of g.items){const f=fac(it.facId);f.log.push({t:ahora(),u:quien(),a:'Pagada con '+g.numero+' · '+ref+' · '+money(it.monto)});await api.guardar('facturas',f);}
+      notificar('p_pago','Pago realizado','DP World pagó '+money(g.total)+' con '+g.numero+' · referencia '+ref+' · facturas '+g.items.map(i=>fac(i.facId).numero).join(', ')+'.',{act:'verPago',id:g.id},{provId:g.provId});toast('Pago registrado.');pintar();verPago(g.id);
     }}]);
 }
 
 /* ════════ ESTADO DE CUENTA ════════ */
 function vCuenta(){
-  const provs=[...S.db.proveedores].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const provs=esProv()?[prov(miProv())]:[...S.db.proveedores].sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  if(esProv())S.f.ec=miProv();
   if(!S.f.ec||!prov(S.f.ec))S.f.ec=provs[0]?provs[0].id:'';
   return '<div class="vhead"><div><h1 class="vtitle">Estado de cuenta</h1><p class="vsub">Facturas, pagos y saldo corrido por proveedor.</p></div>'+
     '<div class="noprint" style="display:flex;gap:8px"><button class="btn" data-act="csv">Exportar CSV</button><button class="btn" data-act="imprimir">Imprimir</button></div></div>'+
-    '<div class="filtros"><select class="sel" data-f="ec" style="flex:1 1 280px">'+provs.map(p=>'<option value="'+p.id+'"'+(S.f.ec===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select></div><div id="lista"></div>';
+    (esProv()?'':'<div class="filtros"><select class="sel" data-f="ec" style="flex:1 1 280px">'+provs.map(p=>'<option value="'+p.id+'"'+(S.f.ec===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select></div>')+'<div id="lista"></div>';
 }
 function movimientos(pid){
   const m=[];
@@ -752,7 +897,7 @@ function cuentaDetalle(){
   $('lista').innerHTML='<div class="grid kpis" style="margin-bottom:14px">'+
     '<div class="card kpi"><div class="l">Saldo por pagar</div><div class="v">'+money(s)+'</div><div class="s">'+ab.length+' facturas abiertas</div></div>'+
     '<div class="card kpi '+(tr[1]+tr[2]+tr[3]+tr[4]>0?'err':'ok')+'"><div class="l">Vencido</div><div class="v">'+money(tr[1]+tr[2]+tr[3]+tr[4])+'</div><div class="s">'+TRAMOS.slice(1).map((t,i)=>tr[i+1]?t+': '+money(tr[i+1]):'').filter(Boolean).join(' · ')+'</div></div>'+
-    '<div class="card kpi"><div class="l">Crédito otorgado</div><div class="v">'+(p.limite?money(p.limite):'Sin límite')+'</div><div class="s">Plazo '+p.plazo+' días</div></div>'+
+    '<div class="card kpi"><div class="l">Crédito otorgado</div><div class="v">'+(p.limite?money(p.limite):'Sin límite')+'</div><div class="s">'+p.plazo+' días de crédito</div></div>'+
     '<div class="card kpi '+(pc>=1?'err':pc>=.8?'warn':'ok')+'"><div class="l">Crédito disponible</div><div class="v">'+(p.limite?money(p.limite-s):'—')+'</div>'+(p.limite?'<div class="barra '+(pc>=1?'err':pc>=.8?'warn':'')+'" style="margin-top:10px"><i style="width:'+Math.min(100,pc*100).toFixed(0)+'%"></i></div>':'<div class="s">No aplica</div>')+'</div>'+
   '</div>'+
   (m.length?'<div class="tw"><table><thead><tr><th>Fecha</th><th>Documento</th><th class="hide-sm">Detalle</th><th class="num">Cargo</th><th class="num">Abono</th><th class="num">Saldo</th></tr></thead><tbody>'+
@@ -776,6 +921,8 @@ function bitacora(){
   S.db.proveedores.forEach(p=>(p.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Proveedor',doc:p.codigo,prov:p.nombre,act:'verProv',id:p.id,txt:p.ruc})));
   S.db.facturas.forEach(f=>{const p=prov(f.provId);(f.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Factura',doc:'Factura '+f.numero,prov:p?p.nombre:'',act:'verFac',id:f.id,txt:f.oc}));});
   S.db.pagos.forEach(g=>{const p=prov(g.provId),nums=g.items.map(i=>{const f=fac(i.facId);return f?f.numero:'';}).join(' ');(g.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Pago',doc:'Pago '+g.numero,prov:p?p.nombre:'',act:'verPago',id:g.id,txt:nums+' '+g.referencia}));});
+  S.db.reclamos.forEach(r=>{const p=prov(r.provId),f=fac(r.facId);r.hilo.forEach((h,i)=>e.push({t:h.t,u:h.u,a:(i===0?'Abrió el reclamo · '+TIPO_RC[r.tipo]+': ':h.lado==='dpw'?'Respondió'+(h.fechaProg?' · pago programado para el '+fecha(h.fechaProg):'')+': ':'Escribió: ')+h.texto,tipo:'Reclamo',doc:r.numero+' · '+(f?f.numero:''),prov:p?p.nombre:'',act:'verReclamo',id:r.id,txt:''}));
+    (r.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Reclamo',doc:r.numero,prov:p?p.nombre:'',act:'verReclamo',id:r.id,txt:''}));});
   (S.db.bitacora||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Configuración',doc:l.doc,prov:'',act:'',id:'',txt:''}));
   return e.sort((a,b)=>b.t.localeCompare(a.t));
 }
@@ -789,13 +936,13 @@ function vBitacora(){
   return '<div class="vhead"><div><h1 class="vtitle">Bitácora</h1><p class="vsub">Cada acción con quién la hizo y cuándo: registros, archivos, validaciones, aprobaciones, pagos y cambios de configuración.</p></div>'+
     '<div class="noprint" style="display:flex;gap:8px"><button class="btn" data-act="csvBitacora">Exportar CSV</button><button class="btn" data-act="imprimir">Imprimir</button></div></div>'+
     '<div class="filtros"><input class="in" placeholder="Buscar por factura, pago, proveedor, acción o referencia" data-f="bq" value="'+esc(S.f.bq)+'">'+
-    '<select class="sel" data-f="bt"><option value="">Todo</option>'+['Proveedor','Factura','Pago','Configuración'].map(t=>'<option'+(S.f.bt===t?' selected':'')+'>'+t+'</option>').join('')+'</select>'+
+    '<select class="sel" data-f="bt"><option value="">Todo</option>'+['Proveedor','Factura','Pago','Reclamo','Configuración'].map(t=>'<option'+(S.f.bt===t?' selected':'')+'>'+t+'</option>').join('')+'</select>'+
     '<select class="sel" data-f="bu"><option value="">Todos los usuarios</option>'+usuarios.map(u=>'<option'+(S.f.bu===u?' selected':'')+'>'+esc(u)+'</option>').join('')+'</select>'+
     '<label class="f" style="flex:0 1 160px"><span>Desde</span><input class="in" type="date" data-f="bd" value="'+esc(S.f.bd)+'"></label>'+
     '<label class="f" style="flex:0 1 160px"><span>Hasta</span><input class="in" type="date" data-f="bh" value="'+esc(S.f.bh)+'"></label></div>'+
     '<div id="lista"></div>';
 }
-const TIPO_CHIP={Proveedor:'ind',Factura:'info',Pago:'ok','Configuración':''};
+const TIPO_CHIP={Proveedor:'ind',Factura:'info',Pago:'ok',Reclamo:'warn','Configuración':''};
 function listaBitacora(){
   const l=filtrarBitacora(),ver=l.slice(0,S.bVer);
   $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th class="hide-sm">Documento</th><th class="hide-sm">Proveedor</th></tr></thead><tbody>'+
@@ -814,11 +961,14 @@ function csvBitacora(){
 /* ════════ CONFIGURACIÓN ════════ */
 function vConfig(){
   return '<div class="vhead"><div><h1 class="vtitle">Configuración</h1><p class="vsub">Usuarios, roles y parámetros.</p></div><button class="btn pri" data-act="nuevoUsuario">Nuevo usuario</button></div>'+
-  '<div class="aviso info"><b>Roles.</b> Coordinador: registra proveedores y facturas, valida, solicita y ejecuta pagos. Aprobador: aprueba proveedores y facturas y autoriza pagos. Administrador: todo lo anterior y esta pantalla. Nadie aprueba lo que registró. En el prototipo las contraseñas se guardan en este navegador; con Supabase irán cifradas.</div>'+
+  '<div class="aviso info"><b>Roles.</b> Coordinador: registra proveedores y facturas, valida, solicita y ejecuta pagos. Aprobador: aprueba proveedores y facturas y autoriza pagos. Administrador: todo lo anterior y esta pantalla. Proveedor: entra a su portal, sube sus facturas fiscales, ve sus pagos y hace reclamos de facturas vencidas. Nadie aprueba lo que registró. En el prototipo las contraseñas se guardan en este navegador; con Supabase irán cifradas.</div>'+
   '<div class="tw" style="margin-bottom:16px"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr></thead><tbody>'+
-    S.db.usuarios.map(u=>'<tr class="clic" data-act="editarUsuario" data-id="'+u.id+'"><td class="b">'+esc(u.u)+'</td><td>'+esc(u.nombre)+'</td><td>'+esc(ROLES[u.rol])+'</td><td>'+(u.activo?'<span class="chip ok">Activo</span>':'<span class="chip">De baja</span>')+'</td></tr>').join('')+
+    S.db.usuarios.map(u=>'<tr class="clic" data-act="editarUsuario" data-id="'+u.id+'"><td class="b">'+esc(u.u)+'</td><td>'+esc(u.nombre)+'</td><td>'+esc(ROLES[u.rol])+(u.rol==='proveedor'&&prov(u.provId)?'<div class="mut">'+esc(prov(u.provId).nombre)+'</div>':'')+'</td><td>'+(u.activo?'<span class="chip ok">Activo</span>':'<span class="chip">De baja</span>')+'</td></tr>').join('')+
   '</tbody></table></div>'+
   '<div class="grid two"><div class="card"><h2>Parámetros</h2><label class="f" style="max-width:220px"><span>ITBMS (%)</span><input class="in" type="number" min="0" step="0.5" id="cIt" value="'+S.db.parametros.itbms+'"></label><div style="margin-top:10px"><button class="btn" data-act="guardarParam">Guardar</button></div></div>'+
+  '<div class="card"><h2>Contactos de WhatsApp</h2><p class="mut" style="margin-top:0">Aparecen en la burbuja verde según el perfil. Número con código de país (un número de 8 dígitos se completa con 507) o enlace de un grupo de WhatsApp.</p>'+
+    WA_CONTACTOS.map(([k,t,d])=>'<label class="f" style="margin-bottom:8px"><span>'+t+' · '+d+'</span><input class="in" id="wa_'+k+'" inputmode="tel" value="'+esc(S.db.wa[k]||'')+'" placeholder="6000-0000"></label>').join('')+
+    '<button class="btn" data-act="guardarWa">Guardar contactos</button></div>'+
   '<div class="card"><h2>Datos de ejemplo</h2><p class="mut" style="margin-top:0">Borra todo lo registrado en este navegador y vuelve a cargar los proveedores, facturas y pagos de ejemplo.</p><button class="btn mal" data-act="restaurar">Restaurar datos de ejemplo</button></div></div>';
 }
 function formUsuario(u){
@@ -827,6 +977,7 @@ function formUsuario(u){
     '<label class="f"><span>Usuario</span><input class="in" id="uU" value="'+esc(u.u||'')+'"'+(u.id?' disabled':'')+' autocapitalize="none"></label>'+
     '<label class="f"><span>Nombre</span><input class="in" id="uN" value="'+esc(u.nombre||'')+'"></label>'+
     '<label class="f"><span>Rol</span><select class="sel" id="uR">'+Object.entries(ROLES).map(([k,v])=>'<option value="'+k+'"'+(u.rol===k?' selected':'')+'>'+v+'</option>').join('')+'</select></label>'+
+    '<label class="f" id="uProvW"'+(u.rol==='proveedor'?'':' hidden')+'><span>Proveedor</span><select class="sel" id="uProv"><option value="">Elige el proveedor</option>'+S.db.proveedores.filter(p=>p.estado==='aprobado'||p.id===u.provId).map(p=>'<option value="'+p.id+'"'+(u.provId===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select></label>'+
     '<label class="f"><span>'+(u.id?'Nueva contraseña':'Contraseña')+'</span><input class="in" id="uP" type="password" autocomplete="new-password" placeholder="'+(u.id?'Vacía para no cambiarla':'Mínimo 4 caracteres')+'"></label>'+
     (u.id?'<label class="chk full"><input type="checkbox" id="uA"'+(u.activo?' checked':'')+'><span>Activo</span></label>':'')+
     '</div><div class="err-msg" id="mErr"></div>',
@@ -835,16 +986,379 @@ function formUsuario(u){
       if(!u.id){if(!/^[a-z0-9._-]{3,20}$/.test(us))return err('El usuario lleva de 3 a 20 letras, números, punto o guion, sin espacios.');if(S.db.usuarios.some(x=>x.u===us))return err('Ese usuario ya existe.');}
       if(n.length<2)return err('Escribe el nombre.');
       if((!u.id||pw)&&pw.length<4)return err('La contraseña lleva mínimo 4 caracteres.');
+      const pid=$('uProv').value;if(r==='proveedor'&&!pid)return err('Elige a qué proveedor pertenece este usuario.');
       const quedanAdmin=S.db.usuarios.filter(x=>x.id!==u.id&&x.rol==='admin'&&x.activo).length+((r==='admin'&&act)?1:0);
       if(!quedanAdmin)return err('Debe quedar al menos un administrador activo.');
-      const x=u.id?u:{id:uid('u'),u:us};Object.assign(x,{nombre:n,rol:r,activo:act});if(pw)x.pass=pw;
+      const x=u.id?u:{id:uid('u'),u:us};Object.assign(x,{nombre:n,rol:r,activo:act,provId:r==='proveedor'?pid:undefined});if(pw)x.pass=pw;
       await api.guardar('usuarios',x);
-      const cambios='rol '+ROLES[r]+(u.id?' · '+(act?'activo':'de baja')+(pw?' · cambió la contraseña':''):'');
+      const cambios='rol '+ROLES[r]+(r==='proveedor'?' de '+prov(pid).nombre:'')+(u.id?' · '+(act?'activo':'de baja')+(pw?' · cambió la contraseña':''):'');
       await api.registrar((u.id?'Editó el usuario ':'Creó el usuario ')+x.u+' · '+cambios,'Usuario '+x.u);
       if(x.u===S.user.u){S.user=x;if(!x.activo)return salir();sesionUI();}
       cerrarModal();toast('Usuario guardado.');pintar();
     }}]);
+  $('uR').onchange=()=>{$('uProvW').hidden=$('uR').value!=='proveedor';};
 }
+
+
+/* ════════ PORTAL DEL PROVEEDOR · RESUMEN ════════ */
+function vResumenProv(){
+  const p=prov(miProv()),fs=facturasVisibles().filter(f=>f.estado!=='rechazada').map(f=>({f,c:calc(f)}));
+  const abiertas=fs.filter(x=>x.c.saldo>0.004),saldo=abiertas.reduce((s,x)=>s+x.c.saldo,0);
+  const venc=abiertas.filter(x=>x.c.vencida),tv=venc.reduce((s,x)=>s+x.c.saldo,0);
+  const prog=pagosVisibles().filter(g=>g.estado==='autorizado').sort((a,b)=>a.fecha.localeCompare(b.fecha)),tp=prog.reduce((s,g)=>s+g.total,0);
+  const rcAbiertos=S.db.reclamos.filter(r=>r.facId&&fac(r.facId)&&r.provId===p.id&&r.estado!=='cerrado');
+  return '<div class="vhead"><div><h1 class="vtitle">Resumen</h1><p class="vsub">'+esc(p.nombre)+' · cuentas por cobrar a DP World al '+fecha(hoy())+'.</p></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="nuevoReclamo">Hacer reclamo</button><button class="btn pri" data-act="nuevaFac">Subir factura fiscal</button></div></div>'+
+  '<div class="grid kpis">'+
+    '<div class="card kpi"><div class="l">Por cobrar</div><div class="v">'+money(saldo)+'</div><div class="s">'+abiertas.length+' facturas abiertas</div></div>'+
+    '<div class="card kpi err"><div class="l">Vencido</div><div class="v">'+money(tv)+'</div><div class="s">'+(venc.length===1?'1 factura pasó su fecha':venc.length+' facturas pasaron su fecha')+'</div></div>'+
+    '<div class="card kpi ok"><div class="l">Pago programado</div><div class="v">'+money(tp)+'</div><div class="s">'+(prog.length?'Próximo: '+fecha(prog[0].fecha):'Sin pagos programados')+'</div></div>'+
+    '<div class="card kpi"><div class="l">Días de crédito</div><div class="v">'+p.plazo+'</div><div class="s">Base del vencimiento de cada factura</div></div>'+
+  '</div>'+
+  '<div class="grid two" style="margin-top:14px">'+
+    '<div class="card"><h2>Facturas vencidas</h2>'+(venc.length?'<div class="tareas">'+venc.sort((a,b)=>a.f.vence.localeCompare(b.f.vence)).map(({f,c})=>{const r=rcAbiertos.find(x=>x.facId===f.id);
+      return '<div class="tarea" style="cursor:default"><span><b>'+esc(f.numero)+'</b> · '+money(c.saldo)+'<br><span class="mut">Venció el '+fecha(f.vence)+' · hace '+c.dias+' días</span></span>'+
+        (r?'<button class="btn sm" data-act="verReclamo" data-id="'+r.id+'">'+esc(r.numero)+' · '+ESTADO_RC[r.estado][0]+'</button>':'<button class="btn sm pri" data-act="nuevoReclamo" data-id="'+f.id+'">Reclamar</button>')+'</div>';}).join('')+'</div>'
+      :'<div class="mut">No tienes facturas vencidas.</div>')+'</div>'+
+    '<div class="card"><h2>Cómo subir tus facturas</h2><ol class="ntf-steps" style="margin-top:0"><li>Envía el respaldo del servicio por correo a DP World.</li><li>DP World lo aprueba por correo.</li><li>Sube aquí la factura fiscal con su fecha, el archivo y los datos del correo de aprobación.</li><li>Vence en la fecha de la factura más tus '+p.plazo+' días de crédito. Si se vence sin pago, haz un reclamo.</li></ol></div>'+
+  '</div>';
+}
+
+/* ════════ RECLAMOS ════════
+   El proveedor reclama una factura vencida: pide información o la programación del pago. DP World responde en el hilo. */
+const TIPO_RC={informacion:'Solicitud de información',programacion:'Solicitud de programación de pago'};
+const ESTADO_RC={abierto:['Por responder','warn'],respondido:['Respondido','info'],cerrado:['Cerrado','ok']};
+const ultima=r=>(r.hilo[r.hilo.length-1]||{}).t||r.creado;
+function vReclamos(){
+  const pv=esProv();
+  return '<div class="vhead"><div><h1 class="vtitle">Reclamos</h1><p class="vsub">'+(pv?'Reclamos de tus facturas vencidas: pide información o la programación del pago.':'Reclamos de proveedores por facturas vencidas: responde y, si aplica, da la fecha programada de pago.')+'</p></div>'+
+    (pv?'<button class="btn pri" data-act="nuevoReclamo">Nuevo reclamo</button>':'')+'</div>'+
+    '<div class="filtros"><select class="sel" data-f="re"><option value="">Todos los estados</option>'+Object.entries(ESTADO_RC).map(([k,v])=>'<option value="'+k+'"'+(S.f.re===k?' selected':'')+'>'+v[0]+'</option>').join('')+'</select></div><div id="lista"></div>';
+}
+function listaReclamos(){
+  const l=reclamosVisibles().filter(r=>!S.f.re||r.estado===S.f.re).sort((a,b)=>ultima(b).localeCompare(ultima(a)));
+  $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Reclamo</th><th>Factura</th>'+(esProv()?'':'<th class="hide-sm">Proveedor</th>')+'<th class="hide-sm">Última actividad</th><th>Estado</th></tr></thead><tbody>'+
+    l.map(r=>{const f=fac(r.facId),c=f?calc(f):null;return '<tr class="clic" data-act="verReclamo" data-id="'+r.id+'"><td><div class="b">'+esc(r.numero)+'</div><div class="mut">'+esc(TIPO_RC[r.tipo])+'</div></td>'+
+      '<td><div class="b">'+esc(f?f.numero:'—')+'</div>'+(c&&c.saldo>0.004?'<div class="mut">'+money(c.saldo)+(c.vencida?' · vencida hace '+c.dias+' d':'')+'</div>':'<div class="mut">Pagada</div>')+'</td>'+
+      (esProv()?'':'<td class="hide-sm">'+esc((prov(r.provId)||{}).nombre||'')+'</td>')+'<td class="hide-sm">'+esc(ultima(r).slice(0,10).split('-').reverse().join('/'))+' <span class="mut">'+esc(ultima(r).slice(11))+'</span></td><td>'+chip(r.estado,ESTADO_RC)+'</td></tr>';}).join('')+
+    '</tbody></table></div>':'<div class="card vacio">'+(esProv()?'No tienes reclamos. Si una factura se vence sin pago, aquí puedes reclamarla.':'No hay reclamos con ese filtro.')+'</div>';
+}
+function nuevoReclamo(facId){
+  if(!esProv())return;
+  const ops=facturasVisibles().filter(f=>calc(f).vencida&&!S.db.reclamos.some(r=>r.facId===f.id&&r.estado!=='cerrado'));
+  if(!ops.length)return toast('No tienes facturas vencidas sin un reclamo abierto.',true);
+  modal('Nuevo reclamo','<div class="form">'+
+    '<label class="f full"><span>Factura vencida</span><select class="sel" id="rcFac">'+ops.map(f=>{const c=calc(f);return '<option value="'+f.id+'"'+(f.id===facId?' selected':'')+'>'+esc(f.numero)+' · '+money(c.saldo)+' · vencida hace '+c.dias+' días</option>';}).join('')+'</select></label>'+
+    '<label class="f full"><span>Qué necesitas</span><select class="sel" id="rcTipo">'+Object.entries(TIPO_RC).map(([k,v])=>'<option value="'+k+'">'+v+'</option>').join('')+'</select></label>'+
+    '<label class="f full"><span>Mensaje para DP World</span><textarea class="in" id="rcMsg" rows="4" placeholder="Ej.: ¿Para qué fecha está programado el pago de esta factura?"></textarea></label>'+
+    '</div><div class="err-msg" id="mErr"></div>',
+    [{t:'Cancelar',on:cerrarModal},{t:'Enviar reclamo',cls:'pri',on:async()=>{
+      const m=$('rcMsg').value.trim();if(m.length<10)return $('mErr').textContent='Escribe tu mensaje (mínimo 10 caracteres).';
+      const f=fac($('rcFac').value),tipo=$('rcTipo').value,n=S.db.reclamos.reduce((x,r)=>Math.max(x,+r.numero.slice(3)||0),0)+1;
+      const r={id:uid('r'),numero:'RC-'+String(n).padStart(4,'0'),provId:f.provId,facId:f.id,tipo,estado:'abierto',creado:ahora(),creadoPor:S.user.u,hilo:[{t:ahora(),u:firma(),lado:'proveedor',texto:m}],log:[]};
+      await api.guardar('reclamos',r);
+      f.log.push({t:ahora(),u:firma(),a:'Reclamo '+r.numero+': '+(tipo==='programacion'?'solicitó programación de pago':'solicitó información')});await api.guardar('facturas',f);
+      notificar('reclamo_nuevo','Reclamo de proveedor',prov(f.provId).nombre+' · '+r.numero+' · '+TIPO_RC[tipo]+' de la factura '+f.numero+'.',{act:'verReclamo',id:r.id});
+      toast('Reclamo '+r.numero+' enviado. Te avisamos cuando DP World responda.');pintar();verReclamo(r.id);
+    }}]);
+}
+function verReclamo(id){
+  const r=S.db.reclamos.find(x=>x.id===id);if(!r)return;
+  const f=fac(r.facId),c=f?calc(f):null,pv=esProv(),acc=[{t:'Cerrar',on:cerrarModal}];
+  if(pv&&r.provId!==miProv())return;
+  if(r.estado!=='cerrado'){
+    acc.unshift({t:'Cerrar reclamo',cls:'mal',on:async()=>{r.estado='cerrado';(r.log=r.log||[]).push({t:ahora(),u:firma(),a:'Cerró el reclamo'});await api.guardar('reclamos',r);toast('Reclamo cerrado.');pintar();verReclamo(id);}});
+    acc.unshift({t:'Responder',cls:'pri',on:async()=>{
+      const t=$('rcTxt').value.trim(),fp=$('rcFecha')?$('rcFecha').value:'';
+      if(t.length<4)return $('mErr').textContent='Escribe la respuesta.';
+      if(fp&&fp<hoy())return $('mErr').textContent='La fecha programada no puede ser pasada.';
+      r.hilo.push(Object.assign({t:ahora(),u:firma(),lado:pv?'proveedor':'dpw',texto:t},fp?{fechaProg:fp}:{}));r.estado=pv?'abierto':'respondido';
+      await api.guardar('reclamos',r);
+      if(f){f.log.push({t:ahora(),u:firma(),a:(pv?'Escribió en el reclamo ':'Respondió el reclamo ')+r.numero+(fp?' · pago programado para el '+fecha(fp):'')});await api.guardar('facturas',f);}
+      if(pv)notificar('reclamo_nuevo','Reclamo de proveedor',prov(r.provId).nombre+' escribió en '+r.numero+'.',{act:'verReclamo',id:r.id});
+      else notificar('p_reclamo','Respuesta a tu reclamo','DP World respondió '+r.numero+(fp?' · pago programado para el '+fecha(fp):'')+'.',{act:'verReclamo',id:r.id},{provId:r.provId});
+      toast('Respuesta enviada.');pintar();verReclamo(id);}});
+  }
+  modal('Reclamo '+r.numero,
+    '<div style="margin-bottom:14px">'+chip(r.estado,ESTADO_RC)+' <span class="mut">'+esc(TIPO_RC[r.tipo])+(pv?'':' · '+esc(prov(r.provId).nombre))+'</span></div>'+
+    (f?'<div class="kv">'+[['Factura',f.numero],['Total',money(f.total)],['Saldo',money(c.saldo)],['Venció',fecha(f.vence)],['Días vencida',c.vencida?String(c.dias):'—'],['Estado de la factura',ESTADO_FAC[c.est][0]]].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'+
+      '<div style="margin:-4px 0 14px"><button class="btn sm" data-act="verFac" data-id="'+f.id+'">Ver la factura →</button></div>':'')+
+    '<div class="hilo">'+r.hilo.map(h=>'<div class="msg '+(h.lado==='dpw'?'dpw':'prov')+'"><small>'+esc(h.u)+' · '+esc(h.t.slice(0,10).split('-').reverse().join('/')+' '+h.t.slice(11))+'</small>'+esc(h.texto)+(h.fechaProg?'<div class="prog">Pago programado para el '+fecha(h.fechaProg)+'</div>':'')+'</div>').join('')+'</div>'+
+    (r.estado!=='cerrado'?'<div class="form"><label class="f full"><span>'+(pv?'Escribe a DP World':'Respuesta al proveedor')+'</span><textarea class="in" id="rcTxt" rows="3"></textarea></label>'+
+      (pv?'':'<label class="f"><span>Fecha programada de pago (opcional)</span><input class="in" type="date" id="rcFecha" min="'+hoy()+'"></label>')+'</div><div class="err-msg" id="mErr"></div>':''),acc);
+}
+
+/* ════════ MAPA DE PAGOS ════════
+   Filas: proveedores. Columnas: meses. Verde: todo pagado · rojo: hay facturas vencidas sin pagar · ámbar: por vencer. */
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function vMapa(){
+  const base=S.f.mb||'vence',n=S.f.mm||'6';
+  return '<div class="vhead"><div><h1 class="vtitle">Mapa de pagos</h1><p class="vsub">'+(esProv()?'Tus facturas por mes':'Proveedores por mes')+': pagadas en verde, vencidas en rojo, por vencer en ámbar. Toca una celda para ver sus facturas.</p></div></div>'+
+    '<div class="filtros"><select class="sel" data-f="mb"><option value="vence"'+(base==='vence'?' selected':'')+'>Por mes de vencimiento</option><option value="fecha"'+(base==='fecha'?' selected':'')+'>Por mes de la factura</option></select>'+
+    '<select class="sel" data-f="mm">'+['6','12'].map(x=>'<option value="'+x+'"'+(n===x?' selected':'')+'>Últimos '+x+' meses</option>').join('')+'</select></div>'+
+    '<div class="ley"><span><i style="background:#00C389"></i>Pagadas</span><span><i style="background:#E8003D"></i>Vencidas sin pagar</span><span><i style="background:#f5a20b"></i>Por vencer o pago parcial al día</span></div><div id="lista"></div>';
+}
+function mesesMapa(){
+  const n=+(S.f.mm||6),[y,m]=hoy().split('-').map(Number),out=[];
+  for(let i=n-2;i>=-1;i--){const d=new Date(y,m-1-i,1);out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
+  return out;
+}
+function celdasMapa(){
+  const base=S.f.mb||'vence',meses=mesesMapa(),cel={};
+  facturasVisibles().filter(f=>f.estado!=='rechazada').forEach(f=>{
+    const k=(base==='fecha'?f.fecha:f.vence).slice(0,7);if(!meses.includes(k))return;
+    const c=calc(f),x=cel[f.provId+'|'+k]=cel[f.provId+'|'+k]||{pag:0,venc:0,pend:0,mPag:0,mVenc:0,mPend:0,total:0,ids:[]};
+    x.ids.push(f.id);x.total+=f.total;
+    if(c.est==='pagada'){x.pag++;x.mPag+=f.total;}else if(c.vencida){x.venc++;x.mVenc+=c.saldo;x.mPag+=c.pagado;}else{x.pend++;x.mPend+=c.saldo;x.mPag+=c.pagado;}
+  });
+  return {meses,cel};
+}
+function pintarMapa(){
+  const {meses,cel}=celdasMapa();
+  const provs=(esProv()?[prov(miProv())]:S.db.proveedores).filter(p=>meses.some(m=>cel[p.id+'|'+m])).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  if(!provs.length){$('lista').innerHTML='<div class="card vacio">No hay facturas en estos meses.</div>';return;}
+  const tot=meses.map(m=>provs.reduce((t,p)=>{const x=cel[p.id+'|'+m];if(x){t.p+=x.mPag;t.v+=x.mVenc;t.e+=x.mPend;}return t;},{p:0,v:0,e:0}));
+  const mesLbl=k=>MESES[+k.slice(5)-1]+' '+k.slice(2,4);
+  $('lista').innerHTML='<div class="tw mapa"><table><thead><tr><th>Proveedor</th>'+meses.map(m=>'<th class="mes'+(m===hoy().slice(0,7)?'" style="color:var(--ind-t)':'')+'">'+mesLbl(m)+'</th>').join('')+'</tr></thead><tbody>'+
+    provs.map(p=>'<tr><td class="pv b">'+esc(p.nombre)+'<div class="mut">'+p.plazo+' días de crédito</div></td>'+meses.map(m=>{const x=cel[p.id+'|'+m];
+      if(!x)return '<td class="cel"><span class="c vac">—</span></td>';
+      const cls=x.venc?'rojo':x.pend?'ambar':'verde',det=[x.pag?x.pag+' pagada'+(x.pag>1?'s':''):'',x.venc?x.venc+' vencida'+(x.venc>1?'s':''):'',x.pend?x.pend+' por vencer':''].filter(Boolean).join(' · ');
+      return '<td class="cel"><button type="button" class="c '+cls+'" data-act="verCelda" data-id="'+p.id+'|'+m+'" title="'+esc(p.nombre+' · '+mesLbl(m)+' · '+det)+'"><b>'+money(x.total)+'</b><small>'+det+'</small></button></td>';}).join('')+'</tr>').join('')+
+    '<tr><td class="pv b">Total del mes</td>'+tot.map(t=>'<td class="cel" style="font-size:12px;line-height:1.5">'+([t.p?'<span style="color:var(--ok);font-weight:700">'+money(t.p)+'</span>':'',t.v?'<span style="color:var(--err);font-weight:700">'+money(t.v)+'</span>':'',t.e?'<span style="color:var(--warn)">'+money(t.e)+'</span>':''].filter(Boolean).join('<br>')||'<span class="mut">—</span>')+'</td>').join('')+'</tr>'+
+    '</tbody></table></div><p class="mut" style="margin-top:8px">En la fila de totales: pagado en verde, vencido sin pagar en rojo y por vencer en ámbar.</p>';
+  const tw=$('lista').querySelector('.tw');tw.scrollLeft=tw.scrollWidth;   // en el celular abre en los meses recientes
+}
+function verCelda(key){
+  const [pid,m]=key.split('|'),{cel}=celdasMapa(),x=cel[key];if(!x)return;
+  modal(prov(pid).nombre+' · '+MESES[+m.slice(5)-1]+' '+m.slice(0,4),'<div class="tw"><table><thead><tr><th>Factura</th><th>Vence</th><th class="num">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead><tbody>'+
+    x.ids.map(fac).sort((a,b)=>a.vence.localeCompare(b.vence)).map(f=>{const c=calc(f);return '<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td class="b">'+esc(f.numero)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':'')+'</td><td class="num">'+money(f.total)+'</td><td class="num b">'+money(c.saldo)+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>';}).join('')+
+    '</tbody></table></div>',[{t:'Cerrar',on:cerrarModal}]);
+}
+
+/* ════════ NOTIFICACIONES ════════
+   Cada usuario elige con interruptores qué avisos le llegan. Se guardan en el centro de notificaciones de la app y,
+   si activó los avisos en su equipo, también llegan como notificación del sistema.
+   En el prototipo la notificación del sistema la muestra el service worker del mismo equipo donde ocurre la acción.
+   Con Supabase, una Edge Function con web-push las envía a cada equipo registrado aunque la app esté cerrada (ver sw.js). */
+const NOTIF=[
+  ['fac_nueva','Facturas fiscales nuevas','Cuando un proveedor sube una factura desde su portal.',['coordinador','admin']],
+  ['fac_validada','Facturas por aprobar','Validadas y listas para tu aprobación de pago.',['aprobador','admin']],
+  ['fac_resuelta','Facturas aprobadas o rechazadas','Para incluirlas en una solicitud de pago o corregirlas.',['coordinador','admin']],
+  ['prov_pend','Proveedores por aprobar','Registros nuevos o con cambio de cuenta bancaria.',['aprobador','admin']],
+  ['prov_resuelto','Proveedores aprobados o rechazados','Respuesta a los proveedores que registraste.',['coordinador','admin']],
+  ['pago_pend','Pagos por autorizar','Cada solicitud de pago nueva.',['aprobador','admin']],
+  ['pago_aut','Pagos autorizados o rechazados','Listos para ejecutar o devueltos.',['coordinador','admin']],
+  ['reclamo_nuevo','Reclamos de proveedores','Solicitudes de información o de programación de pago.',['coordinador','aprobador','admin']],
+  ['venc','Resumen de vencimientos','Al entrar cada día: facturas vencidas y las que vencen en 3 días.',['coordinador','aprobador','admin']],
+  ['p_fac','Estado de tus facturas','Validada, aprobada para pago o rechazada.',['proveedor']],
+  ['p_pago','Tus pagos','Pago programado y pago realizado con su referencia.',['proveedor']],
+  ['p_reclamo','Respuestas a tus reclamos','Cuando DP World responde o programa el pago.',['proveedor']],
+  ['p_venc','Facturas vencidas sin pago','Al entrar cada día, para que puedas reclamarlas.',['proveedor']]
+];
+const notifDe=r=>NOTIF.filter(n=>n[3].includes(r));
+const notifOn=(u,k)=>!((u.notif||{})[k]===false);
+const misNotifs=()=>S.user?S.db.notifs.filter(n=>n.para===S.user.u).sort((a,b)=>b.t.localeCompare(a.t)):[];
+const PUSH_KEY='dpw_proveedores_push';
+let swReg=null;
+const pushSubs=()=>{try{return JSON.parse(localStorage.getItem(PUSH_KEY))||{};}catch(e){return {};}};
+const pushSet=o=>{try{localStorage.setItem(PUSH_KEY,JSON.stringify(o));}catch(e){}};
+const esIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const instalada=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const pushOK=()=>!!swReg&&'Notification' in window;
+const pushActivo=u=>pushOK()&&Notification.permission==='granted'&&!!pushSubs()[u];
+function avisoSistema(u,titulo,texto,ref){
+  if(!pushActivo(u.u))return;
+  swReg.showNotification(titulo,{body:texto+'\nPara: '+u.nombre,icon:'dpw/pwa/icon-192.png',badge:'dpw/pwa/icon-192.png',tag:uid('n'),data:{ref:ref||null}}).catch(()=>{});
+}
+/* opts.users: solo esos usuarios · opts.provId: los usuarios de ese proveedor · sin opts: los perfiles internos del aviso. Nunca a quien hizo la acción. */
+function notificar(ev,titulo,texto,ref,opts){
+  const cat=NOTIF.find(n=>n[0]===ev);if(!cat)return;opts=opts||{};
+  let dest=S.db.usuarios.filter(u=>u.activo&&(!S.user||u.u!==S.user.u)&&cat[3].includes(u.rol));
+  if(opts.users)dest=dest.filter(u=>opts.users.includes(u.u));
+  else if(opts.provId)dest=dest.filter(u=>u.rol==='proveedor'&&u.provId===opts.provId);
+  else dest=dest.filter(u=>u.rol!=='proveedor');
+  dest=dest.filter(u=>notifOn(u,ev));
+  dest.forEach(u=>{S.db.notifs.push({id:uid('n'),t:ahora(),para:u.u,ev,titulo,texto,ref:ref||null,leida:false});avisoSistema(u,titulo,texto,ref);});
+  if(S.db.notifs.length>800)S.db.notifs=S.db.notifs.slice(-800);
+  api._persistir();
+}
+/* resumen diario al entrar: vencidas y por vencer, una vez al día por usuario */
+async function resumenDiario(){
+  const u=S.user;if(!u||u.digest===hoy())return;
+  const pv=esProv(),ev=pv?'p_venc':'venc';
+  u.digest=hoy();await api.guardar('usuarios',u);
+  if(!notifOn(u,ev))return;
+  const fs=facturasVisibles().filter(f=>f.estado!=='rechazada').map(f=>({f,c:calc(f)})).filter(x=>x.c.saldo>0.004);
+  const v=fs.filter(x=>x.c.vencida),pr=fs.filter(x=>!x.c.vencida&&x.c.dias>=-3);
+  if(!v.length&&(pv||!pr.length))return;
+  const titulo=pv?'Tienes facturas vencidas sin pago':'Resumen de vencimientos';
+  const texto=(v.length?v.length+' vencida'+(v.length>1?'s':'')+' por '+money(v.reduce((s,x)=>s+x.c.saldo,0)):'Sin vencidas')+(pv?'. Puedes reclamarlas desde Reclamos.':' · '+pr.length+' vence'+(pr.length===1?'':'n')+' en 3 días o menos.');
+  S.db.notifs.push({id:uid('n'),t:ahora(),para:u.u,ev,titulo,texto,ref:{act:'irVista',id:pv?'reclamos':'facturas'},leida:false});api._persistir();
+  avisoSistema(u,titulo,texto,{act:'irVista',id:pv?'reclamos':'facturas'});pintar();
+}
+function vAvisos(){
+  const u=S.user,L=notifDe(u.rol),on=L.filter(n=>notifOn(u,n[0])).length,ios=esIOS(),inst=instalada(),perm=pushOK()?Notification.permission:'';
+  let est;
+  if(ios&&!inst)est='<div class="aviso warn">En iPhone los avisos solo funcionan con la app agregada a la pantalla de inicio.</div><ol class="ntf-steps"><li>Abre esta página en <b>Safari</b>.</li><li>Toca <b>Compartir</b> y elige <b>Agregar a inicio</b>.</li><li>Abre la app desde el ícono nuevo y vuelve a esta pantalla para activarlos.</li></ol>';
+  else if(!pushOK())est='<div class="aviso warn">Este navegador no permite notificaciones en esta página. Ábrela desde el enlace publicado (https) en Chrome, Edge o Firefox, o en Safari con la app agregada a inicio.</div>';
+  else if(perm==='denied')est='<div class="aviso warn">Las notificaciones están <b>bloqueadas</b> para esta página. Permítelas en los ajustes del sitio (junto a la dirección) o en los ajustes de notificaciones del teléfono y vuelve aquí.</div>';
+  else{const a=pushActivo(u.u);est='<div class="ntf-state'+(a?' on':'')+'"><span class="dot"></span><div><b>'+(a?'Activadas en este equipo':'Desactivadas en este equipo')+'</b><span>'+esc(u.nombre)+'</span></div></div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(a?'<button class="btn" data-act="pushTest">Enviar prueba</button><button class="btn mal" data-act="pushOff">Desactivar</button>':'<button class="btn ok" data-act="pushOn">Activar en este equipo</button>')+'</div>';}
+  return '<div class="vhead"><div><h1 class="vtitle">Notificaciones</h1><p class="vsub">Elige qué avisos te llegan según tu perfil y actívalos en este equipo.</p></div></div>'+
+  '<div class="grid two" style="align-items:start">'+
+    '<div class="card" id="ntConfig"><h2>Qué avisos recibir</h2><div class="nt"><div class="nt-h"><span>'+on+' de '+L.length+' encendidos</span><span><button type="button" class="link" data-act="avisoSw" data-id="*1">Encender todos</button> · <button type="button" class="link" data-act="avisoSw" data-id="*0">Apagar todos</button></span></div>'+
+      L.map(n=>{const x=notifOn(u,n[0]);return '<div class="nt-i"><div><b>'+n[1]+'</b><span>'+n[2]+'</span></div><button type="button" class="sw'+(x?' on':'')+'" role="switch" aria-checked="'+x+'" aria-label="'+esc(n[1])+'" data-act="avisoSw" data-id="'+n[0]+'"><i></i></button></div>';}).join('')+'</div></div>'+
+    '<div class="grid" style="align-content:start"><div class="card"><h2>Este equipo</h2>'+est+
+      '<p class="mut" style="margin:12px 0 0">Los avisos que enciendes llegan siempre al centro de notificaciones de abajo. Activados en este equipo, también aparecen como notificación del teléfono o la computadora. En el prototipo se muestran en el equipo donde ocurre la acción; con el servidor (Supabase) llegarán a cada equipo registrado aunque la app esté cerrada.</p></div>'+
+    '<div class="card"><h2 style="display:flex;justify-content:space-between;align-items:center;gap:8px">Recibidas <button class="link" data-act="marcarLeidas">Marcar todas como leídas</button></h2><div id="ntLista"></div></div></div>'+
+  '</div>';
+}
+function listaAvisos(){
+  const l=misNotifs().slice(0,60);
+  $('ntLista').innerHTML=l.length?'<div class="grid" style="gap:6px">'+l.map(n=>'<button type="button" class="notif'+(n.leida?'':' nueva')+'" data-act="abrirAviso" data-id="'+n.id+'"><div><b>'+esc(n.titulo)+'</b><p>'+esc(n.texto)+'</p></div><time>'+esc(n.t.slice(0,10).split('-').reverse().join('/').slice(0,5)+' '+n.t.slice(11))+'</time></button>').join('')+'</div>':'<div class="mut">Todavía no tienes notificaciones.</div>';
+}
+async function avisoSw(k){
+  const u=S.user;u.notif=u.notif||{};
+  if(k[0]==='*')notifDe(u.rol).forEach(n=>u.notif[n[0]]=k[1]==='1');else u.notif[k]=!notifOn(u,k);
+  await api.guardar('usuarios',u);pintar();
+}
+function marcarLeidas(){misNotifs().forEach(n=>n.leida=true);api._persistir();pintar();}
+function abrirRef(ref){
+  if(!ref||!S.user)return;
+  if(ref.act==='irVista')return ir(ref.id);
+  const fn={verFac,verPago,verProv,verReclamo}[ref.act];
+  if(fn&&(ref.act!=='verProv'||!esProv()))fn(ref.id);
+}
+function abrirAviso(id){const n=S.db.notifs.find(x=>x.id===id);if(!n)return;n.leida=true;api._persistir();pintar();abrirRef(n.ref);}
+function swListo(){
+  if(!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
+  navigator.serviceWorker.ready.then(r=>{swReg=r;if(S.user&&S.vista==='avisos')pintar();}).catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.abrir)abrirRef(e.data.abrir);});
+}
+function pushActivar(){
+  if(!pushOK())return;
+  Notification.requestPermission().then(pm=>{
+    if(pm==='granted'){const s=pushSubs();s[S.user.u]=Date.now();pushSet(s);
+      swReg.showNotification('Notificaciones activadas',{body:'Te avisaremos aquí según tu perfil.\nPara: '+S.user.nombre,icon:'dpw/pwa/icon-192.png',tag:uid('n')}).catch(()=>{});
+      toast('Notificaciones activadas en este equipo.');}
+    else toast('No se dio permiso para notificaciones.',true);
+    pintar();});
+}
+function pushDesactivar(){const s=pushSubs();delete s[S.user.u];pushSet(s);toast('Notificaciones desactivadas en este equipo.');pintar();}
+function pushProbar(){if(pushOK())swReg.showNotification('Prueba · Facturas y Pagos a Proveedores',{body:'Así te llegarán los avisos.\nPara: '+S.user.nombre,icon:'dpw/pwa/icon-192.png',tag:uid('n')}).catch(()=>{});}
+
+/* ════════ WHATSAPP · soluciones rápidas según el perfil ════════ */
+const WA_CONTACTOS=[['cxp','Cuentas por pagar','facturas y estado de pago'],['compras','Compras','respaldos y aprobaciones por correo'],['aprob','Aprobación de pagos','autorizaciones urgentes'],['teso','Tesorería','ejecución de pagos'],['soporte','Soporte de la app','accesos y fallas']];
+const WA_TEMAS={
+  proveedor:[['Estado de una factura','cxp','Quisiera saber el estado de mi factura{fac}.'],['Programación de pago','teso','Quisiera confirmar la fecha programada de pago de mi factura{fac}.'],
+    ['Enviar respaldo para aprobación','compras','Envié por correo un respaldo para aprobación y quisiera confirmar que lo recibieron.'],['No puedo subir mi factura','soporte','Tengo un problema para subir mi factura fiscal en el portal.']],
+  coordinador:[['Pedir aprobación urgente','aprob','Necesito la aprobación de la factura{fac} para incluirla en la corrida de pagos.'],['Confirmar un pago con tesorería','teso','Quisiera confirmar la ejecución del pago{fac}.'],
+    ['Consultar un respaldo con compras','compras','Necesito confirmar el respaldo aprobado por correo de la factura{fac}.'],['Ayuda con la app','soporte','Necesito ayuda con la app de Facturas y Pagos a Proveedores.']],
+  aprobador:[['Duda sobre una factura','cxp','Tengo una duda sobre la factura{fac} antes de aprobarla.'],['Coordinar los pagos del día','teso','Quisiera coordinar los pagos autorizados de hoy.'],['Ayuda con la app','soporte','Necesito ayuda con la app de Facturas y Pagos a Proveedores.']]
+};
+WA_TEMAS.admin=WA_TEMAS.coordinador.concat(WA_TEMAS.aprobador.filter(t=>!WA_TEMAS.coordinador.some(x=>x[0]===t[0])));
+// WhatsApp necesita el número completo con código de país: un número local de Panamá (8 dígitos) se completa con 507
+const waIntl=v=>{let d=(v||'').replace(/\D/g,'');if(/^00/.test(d))d=d.slice(2);else if(!/^\s*\+/.test(v||'')&&d.length<=8&&d.length)d='507'+d;return d;};
+const waFmt=d=>/^507\d{8}$/.test(d)?'+507 '+d.slice(3,7)+'-'+d.slice(7):'+'+d;
+const waGrupo=v=>/^https:\/\/chat\.whatsapp\.com\/\w+/.test(v||'');
+function waPintar(){const f=$('waFab');if(!f)return;f.hidden=!S.user;if(!S.user)waMenu(false);}
+function waMenu(open){
+  const m=$('waMenu'),b=document.querySelector('.wa-btn');if(!m)return;
+  if(open&&S.user){
+    const u=S.user,f=S.ctxFac&&fac(S.ctxFac);
+    const ctx=f?' '+f.numero+' de '+prov(f.provId).nombre+' ('+money(f.total)+', vence el '+fecha(f.vence)+')':'';
+    const yo='Hola, soy '+u.nombre+(esProv()?' de '+prov(miProv()).nombre:' ('+ROLES[u.rol]+' DP World)')+', te escribo desde la app de Facturas y Pagos a Proveedores. ';
+    const movil=esIOS()||/Android/i.test(navigator.userAgent);
+    m.innerHTML='<div class="wa-h">Soluciones rápidas<small>'+(f?'Con los datos de la factura '+esc(f.numero):'Elige el tema y se abre WhatsApp con el mensaje listo')+'</small></div>'+
+      (WA_TEMAS[u.rol]||[]).map(([t,k,msg])=>{
+        const ct=WA_CONTACTOS.find(c=>c[0]===k),n=S.db.wa[k]||'',txt=yo+msg.replace('{fac}',ctx),q=d=>'phone='+d+'&text='+encodeURIComponent(txt);
+        const cab='<b>'+esc(t)+'</b><span>Para: '+esc(ct[1])+'</span>';
+        if(waGrupo(n))return '<a class="wa-i" role="menuitem" href="'+esc(n)+'" target="_blank" rel="noopener" data-act="waGo">'+cab+'<small>Grupo de WhatsApp</small></a>';
+        const d=waIntl(n);if(!d)return '<div class="wa-i off">'+cab+'<small>Sin número configurado'+(PUEDE.admin()?' · ponlo en Configuración':'')+'</small></div>';
+        return movil?'<a class="wa-i" role="menuitem" href="whatsapp://send?'+q(d)+'" data-act="waGo">'+cab+'<small>'+waFmt(d)+'</small></a>':
+          '<div class="wa-i">'+cab+'<small>'+waFmt(d)+'</small><div class="wa-acts"><a class="wa-a" role="menuitem" href="whatsapp://send?'+q(d)+'" data-act="waGo">App de escritorio</a><a class="wa-a" role="menuitem" href="https://web.whatsapp.com/send?'+q(d)+'" target="_blank" rel="noopener" data-act="waGo">WhatsApp Web</a></div></div>';
+      }).join('')+(movil?'':'<div class="wa-note">WhatsApp Web pide escanear un código QR la primera vez en cada navegador: en tu teléfono, WhatsApp → Dispositivos vinculados.</div>');
+  }
+  m.hidden=!(open&&S.user);if(b)b.setAttribute('aria-expanded',String(!m.hidden));
+}
+document.addEventListener('click',e=>{const m=$('waMenu');if(m&&!m.hidden&&!e.target.closest('.wa-fab'))waMenu(false);});
+
+/* ════════ TUTORIAL de arranque por perfil (como Control de Horas) ════════
+   Se muestra la primera vez que cada usuario entra en este equipo; se vuelve a ver desde el menú, «Ver tutorial». */
+const TUT_KEY=()=>'dpw_proveedores_tutorial_'+(S.user?S.user.u:'');
+function tutorialPendiente(){try{return !!S.user&&!localStorage.getItem(TUT_KEY());}catch(e){return false;}}
+function pasosTutorial(){
+  const r=rol(),P=[],nombre=S.user.nombre.split(' ')[0];
+  P.push({t:'Bienvenido, '+nombre,d:'Te mostramos en pocas tarjetas qué es cada parte de la app'+(r==='proveedor'?' para tu empresa':' según tu perfil de '+ROLES[r])+'. Puedes saltarlo y volver a verlo cuando quieras desde el menú, en «Ver tutorial».'});
+  P.push({sel:'.dpw-burger',t:'Menú',d:'Aquí están todas las secciones y, en Ayuda, tus notificaciones y este tutorial.'});
+  if(r==='proveedor'){
+    P.push({nav:'resumen',sel:'.kpis',t:'Tu resumen',d:'Lo que DP World te debe, lo vencido, el próximo pago programado y tus días de crédito.'});
+    P.push({nav:'facturas',sel:'.vhead [data-act="nuevaFac"]',t:'Subir factura fiscal',d:'Primero envías el respaldo por correo y DP World lo aprueba por correo. Después subes aquí la factura fiscal con su fecha, el archivo y los datos de ese correo. Vence en la fecha de la factura más tus días de crédito.'});
+    P.push({nav:'facturas',sel:'#lista',t:'Mis facturas',d:'El estado de cada una: recibida, validada, aprobada para pago o pagada, y cuánto falta por pagar.'});
+    P.push({nav:'pagos',sel:'#lista',t:'Mis pagos',d:'Pagos programados y realizados, con su referencia bancaria.'});
+    P.push({nav:'mapa',sel:'#lista',t:'Mapa de pagos',d:'Tus facturas por mes: verde pagadas, rojo vencidas y ámbar por vencer.'});
+    P.push({nav:'reclamos',sel:'.vhead [data-act="nuevoReclamo"]',t:'Reclamos',d:'Si una factura se vence sin pago, pide información o la programación de su pago. DP World te responde aquí y te llega una notificación.'});
+  }else{
+    P.push({nav:'resumen',sel:()=>document.querySelector('.tareas')||document.querySelector('.kpis'),t:'Lo que te toca',d:r==='aprobador'?'Facturas por aprobar, pagos por autorizar, proveedores por aprobar y reclamos.':'Facturas por validar, pagos por ejecutar y reclamos de proveedores por responder.'});
+    if(r!=='aprobador'){
+      P.push({nav:'proveedores',sel:'.vhead [data-act="nuevoProv"]',t:'Proveedores',d:'Registro con documentos, datos bancarios y días de crédito, que son la base del vencimiento de cada factura. Otra persona lo aprueba.'});
+      P.push({nav:'facturas',sel:'#lista',t:'Facturas',d:'Las suben los proveedores desde su portal con el respaldo aprobado por correo. Las validas contra ese respaldo antes de pasarlas a aprobación.'});
+      P.push({nav:'pagos',sel:'.vhead [data-act="nuevoPago"]',t:'Pagos',d:'Agrupa facturas aprobadas en una solicitud; otra persona la autoriza y tú registras la ejecución con su referencia.'});
+    }else{
+      P.push({nav:'facturas',sel:'#lista',t:'Facturas',d:'Apruebas para pago las facturas validadas. Nadie aprueba lo que registró.'});
+      P.push({nav:'pagos',sel:'#lista',t:'Pagos',d:'Autorizas o rechazas cada solicitud de pago.'});
+      P.push({nav:'proveedores',sel:'#lista',t:'Proveedores',d:'Apruebas los proveedores nuevos cuando tienen todos sus documentos.'});
+    }
+    P.push({nav:'mapa',sel:'#lista',t:'Mapa de pagos',d:'Proveedores en filas y meses en columnas: verde pagadas, rojo vencidas y ámbar por vencer. Toca una celda para ver sus facturas.'});
+    P.push({nav:'reclamos',sel:'#lista',t:'Reclamos',d:'Los proveedores reclaman sus facturas vencidas. Respóndeles aquí y, si aplica, da la fecha programada de pago.'});
+    P.push({nav:'bitacora',sel:'#lista',t:'Bitácora',d:'Cada acción con quién la hizo y cuándo.'});
+    if(r==='admin')P.push({nav:'config',sel:'.vhead',t:'Configuración',d:'Usuarios (también los de cada proveedor), ITBMS y los contactos de WhatsApp.'});
+  }
+  P.push({nav:'avisos',sel:'#ntConfig',t:'Notificaciones',d:'Con interruptores eliges qué avisos te llegan y los activas en este equipo para recibirlos como notificación.'});
+  P.push({sel:'.wa-btn',t:'WhatsApp',d:'Soluciones rápidas según tu perfil: abre WhatsApp con el mensaje listo para la persona correcta. Si tienes una factura abierta, el mensaje lleva sus datos.'});
+  P.push({t:'Listo',d:'Eso es todo. Si necesitas repasarlo, está en el menú, en «Ver tutorial».'});
+  return P;
+}
+let _tour=null;
+function iniciarTutorial(){
+  if(!S.user)return;cerrarModal();waMenu(false);
+  _tour={pasos:pasosTutorial(),i:0,vista:S.vista};
+  let el=$('tour');if(!el){el=document.createElement('div');el.id='tour';el.className='tour';el.innerHTML='<div class="tour-hole sin"></div><div class="tour-card" role="dialog" aria-modal="true" aria-live="polite"></div>';document.body.appendChild(el);}
+  el.hidden=false;pintarTutorial();
+}
+function pintarTutorial(){
+  const T=_tour,el=$('tour');if(!T||!el)return;const p=T.pasos[T.i];
+  if(p.nav&&S.vista!==p.nav)ir(p.nav);
+  let tgt=typeof p.sel==='function'?p.sel():p.sel?document.querySelector(p.sel):null;
+  if(tgt&&!(tgt.offsetWidth||tgt.offsetHeight))tgt=null;
+  const hole=el.querySelector('.tour-hole'),card=el.querySelector('.tour-card'),ult=T.i===T.pasos.length-1;
+  card.innerHTML='<div class="tour-paso">Tutorial · '+(T.i+1)+' de '+T.pasos.length+'</div><h3>'+esc(p.t)+'</h3><p>'+esc(p.d)+'</p>'+
+    '<div class="tour-puntos">'+T.pasos.map((_,k)=>'<i class="'+(k===T.i?'on':'')+'"></i>').join('')+'</div>'+
+    '<div class="tour-nav"><button class="btn sm tour-saltar" data-act="tutSaltar">'+(ult?'Cerrar':'Saltar')+'</button>'+(T.i?'<button class="btn sm" data-act="tutAnt">Anterior</button>':'')+
+    '<button class="btn sm ok" data-act="tutSig">'+(ult?'Terminar':'Siguiente')+'</button></div>';
+  const ubicar=()=>{
+    const cw=card.offsetWidth,ch=card.offsetHeight,W=innerWidth,H=innerHeight;
+    if(!tgt){hole.className='tour-hole sin';card.style.left=Math.max(12,(W-cw)/2)+'px';card.style.top=Math.max(12,(H-ch)/2)+'px';return;}
+    const r0=tgt.getBoundingClientRect(),pad=6,top=Math.max(r0.top,56),alto=Math.min(r0.bottom-top,H*.55),r={left:r0.left,width:r0.width,top};
+    hole.className='tour-hole';Object.assign(hole.style,{left:(r.left-pad)+'px',top:(r.top-pad)+'px',width:(r.width+pad*2)+'px',height:(alto+pad*2)+'px'});
+    const abajo=r.top+alto+pad+12,arriba=r.top-pad-12-ch;
+    card.style.top=Math.min(Math.max(8,abajo+ch<=H-8?abajo:arriba>=8?arriba:H-ch-8),H-ch-8)+'px';
+    card.style.left=Math.min(Math.max(12,r.left+r.width/2-cw/2),W-cw-12)+'px';
+  };
+  /* lo alto (listas) se muestra desde su inicio; lo demás, centrado */
+  if(tgt){const r=tgt.getBoundingClientRect();if(r.height>innerHeight*.5){if(r.top<70||r.top>innerHeight*.4)scrollBy(0,r.top-80);}else if(r.top<70||r.bottom>innerHeight-40)tgt.scrollIntoView({block:'center'});}
+  ubicar();setTimeout(ubicar,80);
+  card.querySelector('[data-act="tutSig"]').focus();
+}
+function pasoTutorial(d){if(!_tour)return;_tour.i=Math.max(0,Math.min(_tour.pasos.length-1,_tour.i+d));pintarTutorial();}
+function cerrarTutorial(silencio){
+  const el=$('tour');if(el)el.hidden=true;
+  if(!_tour)return;
+  try{localStorage.setItem(TUT_KEY(),new Date().toISOString());}catch(e){}
+  const v=_tour.vista;_tour=null;if(!silencio&&S.user)ir(v||'resumen');
+}
+document.addEventListener('keydown',e=>{if(!_tour)return;if(e.key==='Escape'){e.stopPropagation();cerrarTutorial();}else if(e.key==='ArrowRight')pasoTutorial(1);else if(e.key==='ArrowLeft')pasoTutorial(-1);},true);
+window.addEventListener('resize',()=>{if(_tour)pintarTutorial();});
 
 /* ════════ piezas comunes ════════ */
 function hist(log){return '<ul class="hist">'+[...(log||[])].reverse().map(l=>'<li><time>'+esc(l.t.slice(0,10).split('-').reverse().join('/')+' '+(l.t.slice(11)||''))+'</time><span><b>'+esc(l.u)+'</b> · '+esc(l.a)+'</span></li>').join('')+'</ul>';}
@@ -856,7 +1370,7 @@ function modal(titulo,html,botones){
     '<div class="mod-f">'+_botones.map((b,i)=>'<button class="btn '+(b.cls||'')+'" data-mb="'+i+'"'+(b.dis?' disabled':'')+(b.title?' title="'+esc(b.title)+'"':'')+'>'+esc(b.t)+'</button>').join('')+'</div></div></div>';
   const first=$('modal').querySelector('.mod-b input:not([disabled]),.mod-b select,.mod-b textarea');(first||$('modal').querySelector('.mod-x')).focus();
 }
-function cerrarModal(){$('modal').innerHTML='';if(_foco&&_foco.focus&&document.body.contains(_foco))_foco.focus();_foco=null;}
+function cerrarModal(){S.ctxFac=null;$('modal').innerHTML='';if(_foco&&_foco.focus&&document.body.contains(_foco))_foco.focus();_foco=null;}
 function pedirMotivo(titulo,fn){
   modal(titulo,'<label class="f"><span>Motivo</span><textarea class="in" id="mMot" rows="3" placeholder="Explica el motivo para dejarlo en el historial"></textarea></label><div class="err-msg" id="mErr"></div>',
     [{t:'Cancelar',on:cerrarModal},{t:'Confirmar',cls:'mal',on:()=>{const m=$('mMot').value.trim();if(m.length<4)return $('mErr').textContent='Escribe el motivo.';fn(m);}}]);
@@ -867,7 +1381,9 @@ const ACT={
   salir,cerrarModal,
   fondoModal:(id,el,e)=>{if(e.target===el)cerrarModal();},
   nuevoProv,nuevaFac,nuevoPago:()=>nuevoPago(),
-  verProv,verFac,verPago,verArchivo,quitarArchivo,
+  verProv,verFac,verPago,verArchivo,quitarArchivo,verReclamo,nuevoReclamo:id=>nuevoReclamo(id),verCelda,
+  marcarLeidas,abrirAviso,avisoSw,tutSaltar:()=>cerrarTutorial(),tutAnt:()=>pasoTutorial(-1),tutSig:()=>_tour&&_tour.i===_tour.pasos.length-1?cerrarTutorial():pasoTutorial(1),irVista:id=>ir(id),pushOn:pushActivar,pushOff:pushDesactivar,pushTest:pushProbar,waOpen:()=>waMenu($('waMenu').hidden),waGo:()=>waMenu(false),
+  guardarWa:async()=>{WA_CONTACTOS.forEach(([k])=>S.db.wa[k]=$('wa_'+k).value.trim());await api.parametros({});await api.registrar('Actualizó los contactos de WhatsApp','Parámetros');toast('Contactos guardados.');waPintar();},
   verCuenta:id=>{cerrarModal();S.f.ec=id;ir('cuenta');},
   irFiltro:(id,el)=>{S.f[el.dataset.k]=el.dataset.val;ir(el.dataset.v);},
   csv,imprimir:()=>window.print(),csvBitacora,masBitacora:()=>{S.bVer+=200;listaBitacora();},
@@ -882,15 +1398,17 @@ document.addEventListener('click',e=>{
   const fn=ACT[el.dataset.act];if(fn)fn(el.dataset.id,el,e);
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('modal').innerHTML)cerrarModal();});
-const LISTAS={pq:listaProv,pe:listaProv,fq:listaFac,fe:listaFac,fp:listaFac,ge:listaPagos,ec:cuentaDetalle,bq:listaBitacora,bt:listaBitacora,bu:listaBitacora,bd:listaBitacora,bh:listaBitacora};
+const LISTAS={re:listaReclamos,mb:pintarMapa,mm:pintarMapa,pq:listaProv,pe:listaProv,fq:listaFac,fe:listaFac,fp:listaFac,ge:listaPagos,ec:cuentaDetalle,bq:listaBitacora,bt:listaBitacora,bu:listaBitacora,bd:listaBitacora,bh:listaBitacora};
 /* sin redibujar si el valor no cambió: el «change» al salir del buscador borraría la fila que se está tocando */
 ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const k=e.target.dataset&&e.target.dataset.f;if(!k||S.f[k]===e.target.value)return;S.f[k]=e.target.value;LISTAS[k]();}));
 
 /* ════════ sesión ════════ */
 const login=$('dpwLogin');
-function sesionUI(){$('rolChip').textContent=ROLES[rol()];DPW.quien('Sesión',S.user.nombre+' · '+ROLES[rol()]);}
-function entrar(u){S.user=u;Object.keys(S.f).forEach(k=>S.f[k]='');S.bVer=100;try{localStorage.setItem(KEY_SES,u.u);}catch(e){}login.hidden=true;S.vista='resumen';sesionUI();pintar();}
-function salir(){DPW.cerrarMenu();cerrarModal();S.user=null;try{localStorage.removeItem(KEY_SES);}catch(e){}$('vista').innerHTML='';$('lgPass').value='';login.hidden=false;}
+function sesionUI(){$('rolChip').textContent=esProv()?'Proveedor':ROLES[rol()];DPW.quien('Sesión',S.user.nombre+' · '+(esProv()?prov(miProv()).nombre:ROLES[rol()]));}
+function entrar(u){S.user=u;Object.keys(S.f).forEach(k=>S.f[k]='');S.bVer=100;try{localStorage.setItem(KEY_SES,u.u);}catch(e){}login.hidden=true;S.vista='resumen';sesionUI();pintar();
+  resumenDiario();
+  if(tutorialPendiente())setTimeout(()=>{if(S.user&&!_tour&&tutorialPendiente())iniciarTutorial();},700);}
+function salir(){DPW.cerrarMenu();cerrarModal();cerrarTutorial(true);waMenu(false);S.user=null;waPintar();try{localStorage.removeItem(KEY_SES);}catch(e){}$('vista').innerHTML='';$('lgPass').value='';login.hidden=false;}
 $('lgForm').onsubmit=e=>{
   e.preventDefault();
   const us=$('lgUser').value.trim().toLowerCase(),pw=$('lgPass').value;
@@ -902,8 +1420,11 @@ $('lgForm').onsubmit=e=>{
   let ses=null;try{ses=localStorage.getItem(KEY_SES);}catch(e){}
   const u=ses&&S.db.usuarios.find(x=>x.u===ses&&x.activo);
   if(u)entrar(u);
+  const q=new URLSearchParams(location.search).get('abrir');
+  if(q&&S.user){const [act,id]=q.split(':');setTimeout(()=>abrirRef({act,id}),300);history.replaceState(null,'',location.pathname);}
   DPW.escena('libro',login);
   DPW.pwa('sw.js');
+  swListo();
 })();
 </script>
 </body>
