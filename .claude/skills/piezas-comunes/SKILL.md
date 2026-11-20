@@ -67,7 +67,22 @@ Antes de agregarlas, pregúntale al usuario cuáles quiere en la app y para qué
 - Cada cambio tiene un perfil responsable (`PUEDE.registrar()`, `PUEDE.aprobar()`…) y **segregación de funciones**: nadie aprueba lo que registró (`mismo(x)` deja el botón deshabilitado con su explicación).
 - Rechazar o anular pide **motivo** obligatorio, que queda en el historial.
 - Controles antes de avanzar: lista de revisión, archivo obligatorio, datos completos. Un cambio sensible (cuenta bancaria) devuelve el registro a aprobación.
-- Documentar en la app y al usuario, en una tabla, quién mueve cada estado y cómo.
+- Documentar en la app y al usuario quién mueve cada estado y cómo: en la lista de documentos va el enlace «Quién cambia cada estado», que abre tarjetas por estado (en el celular, tarjetas y no tabla). Referencia: `verEstados()` en Proveedores.
+
+Ejemplo, Facturas y Pagos a Proveedores:
+
+| Estado | Tipo | Quién / cuándo |
+|---|---|---|
+| Recibida | Lo cambia una persona | Proveedor desde su portal o coordinador, al subir la factura fiscal con archivo y datos del correo de aprobación |
+| Validada | Lo cambia una persona | Coordinador o admin: «Marcar validada» con archivo y lista de revisión contra el respaldo aprobado por correo |
+| Aprobada para pago | Lo cambia una persona | Aprobador o admin, nunca quien la registró |
+| Rechazada | Lo cambia una persona | Coordinador mientras está recibida; aprobador o admin hasta antes de pagar; motivo obligatorio |
+| En solicitud de pago | Lo calcula la app | Una solicitud de pago abierta (solicitada o autorizada) incluye la factura |
+| Pago parcial | Lo calcula la app | Se ejecutó un pago que no cubre el total |
+| Pagada | Lo calcula la app | Los pagos ejecutados cubren el total |
+| Vencida | Lo calcula la app | Fecha de la factura + días de crédito del proveedor ya pasó y queda saldo |
+
+El pago: el coordinador lo solicita, otra persona (aprobador o admin) lo autoriza y el coordinador registra la ejecución con la referencia bancaria; con eso las facturas pasan solas a Pagada o Pago parcial.
 
 ## 6. Reclamos o solicitudes de usuarios externos
 

@@ -612,7 +612,7 @@ function vFacturas(){
   const provs=[...S.db.proveedores].sort((a,b)=>a.nombre.localeCompare(b.nombre)),pv=esProv();
   return '<div class="vhead"><div><h1 class="vtitle">'+(pv?'Mis facturas':'Facturas')+'</h1><p class="vsub">Recibida → validada contra el respaldo aprobado por correo → aprobada para pago → pagada.</p></div>'+
     (pv?'<button class="btn pri" data-act="nuevaFac">Subir factura fiscal</button>':PUEDE.registrar()?'<button class="btn pri" data-act="nuevaFac">Registrar factura</button>':'')+'</div>'+
-    '<div class="aviso info">'+PROCESO+'</div>'+
+    '<div class="aviso info">'+PROCESO+' <button type="button" class="link" data-act="verEstados">Quién cambia cada estado</button></div>'+
     '<div class="filtros"><input class="in" placeholder="Buscar por número, orden de compra, concepto o file" data-f="fq" value="'+esc(S.f.fq)+'">'+
     (pv?'':'<select class="sel" data-f="fp"><option value="">Todos los proveedores</option>'+provs.map(p=>'<option value="'+p.id+'"'+(S.f.fp===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select>')+
     '<select class="sel" data-f="fe"><option value="">Todos los estados</option><option value="abiertas"'+(S.f.fe==='abiertas'?' selected':'')+'>Con saldo</option><option value="vencidas"'+(S.f.fe==='vencidas'?' selected':'')+'>Vencidas</option>'+Object.entries(ESTADO_FAC).map(([k,v])=>'<option value="'+k+'"'+(S.f.fe===k?' selected':'')+'>'+v[0]+'</option>').join('')+'</select></div>'+
@@ -787,6 +787,25 @@ function editarFac(id){
     const d=leerFac(f);if(!d)return;Object.assign(f,d);f.log.push({t:ahora(),u:firma(),a:'Editó la factura'});await api.guardar('facturas',f);toast('Factura actualizada.');pintar();verFac(id);
   }}]);
   enlazarFac(f);
+}
+
+/* quién cambia cada estado: unos los cambia una persona con su botón; otros los calcula la app con los pagos y las fechas */
+function verEstados(){
+  const tarjeta=(c,q,t)=>'<div class="nt-i" style="display:grid;gap:4px;justify-content:stretch"><div style="display:block">'+c+'</div>'+(q?'<b style="font-size:13.5px">'+q+'</b>':'')+'<span style="font-size:13px">'+t+'</span></div>';
+  const tit=t=>'<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">'+t+'</h2>';
+  modal('Quién cambia cada estado',
+    tit('Los cambia una persona')+'<div class="grid" style="gap:6px;margin-bottom:16px">'+
+      tarjeta(chip('recibida',ESTADO_FAC),'Proveedor o coordinador','Al subir o registrar la factura fiscal con su archivo y los datos del correo de aprobación.')+
+      tarjeta(chip('validada',ESTADO_FAC),'Coordinador o administrador','«Marcar validada»: con archivo y los tres puntos de revisión contra el respaldo aprobado por correo.')+
+      tarjeta(chip('aprobada',ESTADO_FAC),'Aprobador o administrador','«Aprobar para pago». Nadie aprueba lo que registró.')+
+      tarjeta(chip('rechazada',ESTADO_FAC),'Coordinador si está recibida · aprobador o administrador hasta antes de pagar','«Rechazar», con motivo obligatorio.')+
+    '</div>'+tit('Los calcula la app')+'<div class="grid" style="gap:6px;margin-bottom:12px">'+
+      tarjeta(chip('en_pago',ESTADO_FAC),'','Una solicitud de pago abierta (solicitada o autorizada) incluye la factura.')+
+      tarjeta(chip('parcial',ESTADO_FAC),'','Se ejecutó un pago, pero no cubre el total.')+
+      tarjeta(chip('pagada',ESTADO_FAC),'','Lo pagado cubre el total.')+
+      tarjeta('<span class="chip err">Vencida</span>','','Pasó la fecha de la factura más los días de crédito del proveedor y queda saldo.')+
+    '</div><p class="mut" style="margin:0">El pago tiene sus propios pasos: el coordinador lo solicita, otra persona (aprobador o administrador) lo autoriza y el coordinador registra la ejecución con la referencia bancaria. En ese momento las facturas pasan solas a Pagada o Pago parcial. Cada cambio queda en el historial y en la bitácora con nombre, fecha y hora.</p>',
+    [{t:'Entendido',cls:'pri',on:cerrarModal}]);
 }
 
 /* ════════ PAGOS ════════ */
@@ -1380,7 +1399,7 @@ const ACT={
   salir,cerrarModal,
   fondoModal:(id,el,e)=>{if(e.target===el)cerrarModal();},
   nuevoProv,nuevaFac,nuevoPago:()=>nuevoPago(),
-  verProv,verFac,verPago,verArchivo,quitarArchivo,verReclamo,nuevoReclamo:id=>nuevoReclamo(id),verCelda,
+  verProv,verFac,verPago,verArchivo,quitarArchivo,verEstados,verReclamo,nuevoReclamo:id=>nuevoReclamo(id),verCelda,
   marcarLeidas,abrirAviso,avisoSw,tutSaltar:()=>cerrarTutorial(),tutAnt:()=>pasoTutorial(-1),tutSig:()=>_tour&&_tour.i===_tour.pasos.length-1?cerrarTutorial():pasoTutorial(1),irVista:id=>ir(id),pushOn:pushActivar,pushOff:pushDesactivar,pushTest:pushProbar,waOpen:()=>waMenu($('waMenu').hidden),waGo:()=>waMenu(false),
   guardarWa:async()=>{WA_CONTACTOS.forEach(([k])=>S.db.wa[k]=$('wa_'+k).value.trim());await api.parametros({});await api.registrar('Actualizó los contactos de WhatsApp','Parámetros');toast('Contactos guardados.');waPintar();},
   verCuenta:id=>{cerrarModal();S.f.ec=id;ir('cuenta');},
