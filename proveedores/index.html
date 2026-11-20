@@ -171,6 +171,7 @@ a.wa-i:hover{background:#f2fbf5}.wa-i b{font-size:14px}.wa-i span{font-size:12.5
 .mapa .c.rojo{background:rgba(232,0,61,.13);border-color:rgba(232,0,61,.45);color:var(--err)}
 .mapa .c.ambar{background:var(--warn-bg);border-color:rgba(245,162,11,.45);color:var(--warn)}
 .mapa .c.vac{color:var(--t3);cursor:default}
+.mapa .c.gris{background:var(--neu-bg);border-color:var(--b2);border-style:dashed;color:var(--t2)}
 .mapa td.pv{position:sticky;left:0;background:var(--card);z-index:1;min-width:170px}
 @media (max-width:640px){.mapa td.pv{min-width:124px;font-size:13px}.mapa .c{min-width:84px}}
 .ley{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--t2);margin:0 0 12px}
@@ -257,7 +258,7 @@ const api={
   async cargar(){
     let d=null;try{d=JSON.parse(localStorage.getItem(KEY));}catch(e){}
     if(!d||!d.proveedores){d=demo();localStorage.setItem(KEY,JSON.stringify(d));}
-    d.bitacora=d.bitacora||[];d.reclamos=d.reclamos||[];d.notifs=d.notifs||[];d.wa=d.wa||{};
+    d.bitacora=d.bitacora||[];d.reclamos=d.reclamos||[];d.notifs=d.notifs||[];d.wa=d.wa||{};d.fijos=d.fijos||[];
     /* datos guardados antes del portal de proveedores: se agregan los usuarios de ejemplo de proveedor */
     if(!d.usuarios.some(u=>u.rol==='proveedor'))demo().usuarios.filter(u=>u.rol==='proveedor').forEach(u=>{if(!d.usuarios.some(x=>x.u===u.u))d.usuarios.push(u);});
     return d;
@@ -302,6 +303,8 @@ const sumar=(f,dias)=>{const d=new Date(f+'T12:00:00');d.setDate(d.getDate()+(+d
 const dif=(a,b)=>Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/864e5);
 const fecha=f=>{if(!f)return '—';const[y,m,d]=f.split('-');return d+'/'+m+'/'+y;};
 const ahora=()=>{const d=new Date();return iso(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+const diaDelMes=(per,dia)=>{const [y,m]=per.split('-').map(Number),ult=new Date(y,m,0).getDate();return per+'-'+String(Math.min(+dia||1,ult)).padStart(2,'0');};
+const mesSig=(per,n)=>{const [y,m]=per.split('-').map(Number),x=new Date(y,m-1+(n||1),1);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');};
 const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 let _t;function toast(m,mal){let t=document.querySelector('.toast');if(!t){t=document.createElement('div');document.body.appendChild(t);}t.className='toast'+(mal?' mal':'');t.textContent=m;t.hidden=false;clearTimeout(_t);_t=setTimeout(()=>t.hidden=true,3600);}
 DPW.aviso=m=>toast(m);
@@ -325,25 +328,45 @@ function demo(){
       .concat(estado!=='recibida'?[{t:d(fe+2)+' 10:15',u:'Coordinador Administrativo',a:'Validó la factura contra la orden de compra'}]:[])
       .concat(estado==='aprobada'?[{t:d(fe+3)+' 15:30',u:'Aprobador de Pagos',a:'Aprobó la factura para pago'}]:[]),
       aprobCorreo:{por:'Rolando M. · Compras DP World',fecha:d(fe-3),ref:'Respaldo '+num}},extra||{});};
+  /* gastos fijos: el día indicado de cada mes se genera el cargo y el proveedor sube su factura fiscal sobre él */
+  const mesRel=n=>{const [y,m]=H.split('-').map(Number),x=new Date(y,m-1+n,1);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');};
+  const n4=()=>Math.floor(Math.random()*90+10);
+  const GX=(id,cod,provId,concepto,monto,dia,tol,desde)=>({id,codigo:cod,provId,concepto,monto,conItbms:true,dia,tolerancia:tol,desde,hasta:'',activo:true,creadoPor:'coordinador',creado:d(-100)+' 09:00',
+    log:[{t:d(-100)+' 09:00',u:'Coordinador Administrativo',a:'Registró el gasto fijo · '+money(monto)+' + ITBMS el día '+dia+' de cada mes'}]});
+  const fijos=[GX('x1','GF-001','p4','Vigilancia 24/7',5400,1,5,mesRel(-3)),GX('x2','GF-002','p3','Limpieza de bodega',950,5,10,mesRel(-3)),GX('x3','GF-003','p2','Alquiler montacargas 5 t',2600,25,5,mesRel(0))];
+  const FX=(id,g,rel,estado,num)=>{const pv=proveedores.find(x=>x.id===g.provId),per=mesRel(rel),fe=diaDelMes(per,g.dia),it=r2(g.monto*.07),gen=!num;
+    return {id,provId:g.provId,numero:num||'Por facturar · '+g.codigo+' '+per,fecha:fe,recibida:fe,vence:sumar(fe,pv.plazo),subtotal:g.monto,itbms:it,total:r2(g.monto+it),oc:'',file:'',concepto:g.concepto+' · '+per,estado,
+      check:{oc:estado!=='recibida',servicio:estado!=='recibida',fiscal:estado!=='recibida'},motivo:'',creadoPor:'sistema',fijoId:g.id,periodo:per,generada:true,fiscalPendiente:gen,
+      aprobCorreo:{por:'Gasto fijo '+g.codigo,fecha:g.desde+'-01',ref:'Contrato · '+g.concepto},
+      log:[{t:fe+' 06:00',u:'Sistema',a:'Generó el cargo del mes del gasto fijo '+g.codigo+' · '+money(r2(g.monto+it))}]
+        .concat(num?[{t:sumar(fe,1)+' 10:00',u:pv.contacto+' · '+pv.nombre,a:'Subió la factura fiscal '+num}]:[])
+        .concat(estado!=='recibida'?[{t:sumar(fe,2)+' 10:15',u:'Coordinador Administrativo',a:'Validó la factura contra el respaldo aprobado por correo'}]:[])
+        .concat(estado==='aprobada'?[{t:sumar(fe,3)+' 15:30',u:'Aprobador de Pagos',a:'Aprobó la factura para pago'}]:[])};};
   const facturas=[
     F('f1','p1','A-0418',-75,4200,'aprobada',{concepto:'Acarreo de contenedores BLB → DAL, semana 31',file:'CERNAC · FILE-2291'}),
     F('f2','p1','A-0433',-41,3850,'aprobada',{concepto:'Acarreo de contenedores, semana 36',file:'CERNAC · FILE-2340'}),
     F('f3','p1','A-0447',-12,5100,'validada',{concepto:'Acarreo y posicionamiento, semana 40',file:'Cliente retail · FILE-2388'}),
     F('f4','p2','MA-0977',-52,2600,'aprobada',{concepto:'Alquiler montacargas 5 t, mes anterior'}),
     F('f5','p2','MA-0990',-20,2600,'recibida',{concepto:'Alquiler montacargas 5 t, mes en curso'}),
-    F('f6','p3','LC-1205',-33,950,'aprobada',{concepto:'Limpieza de bodega, mes anterior'}),
-    F('f7','p3','LC-1219',-4,950,'recibida',{concepto:'Limpieza de bodega, mes en curso'}),
-    F('f8','p4','SP-2210',-95,5400,'aprobada',{concepto:'Vigilancia 24/7, trimestre anterior'}),
-    F('f9','p4','SP-2244',-28,5400,'aprobada',{concepto:'Vigilancia 24/7, mes anterior'}),
+    FX('f6',fijos[1],-1,'aprobada','LC-'+(1200+n4())),
+    FX('f7',fijos[1],0,'recibida',''),
+    FX('f8',fijos[0],-1,'aprobada','SP-'+(2200+n4())),
+    FX('f9',fijos[0],0,'recibida',''),
     F('f10','p5','EM-0311',-60,1850,'aprobada',{concepto:'Film stretch y esquineros'}),
     F('f11','p5','EM-0329',-9,2300,'validada',{concepto:'Pallets de madera tratada'}),
-    F('f12','p2','MA-0951',-110,2600,'aprobada',{concepto:'Alquiler montacargas 5 t'})
+    F('f12','p2','MA-0951',-110,2600,'aprobada',{concepto:'Alquiler montacargas 5 t'}),
+    FX('f13',fijos[0],-3,'aprobada','SP-'+(2100+n4())),FX('f14',fijos[0],-2,'aprobada','SP-'+(2150+n4())),
+    FX('f15',fijos[1],-3,'aprobada','LC-'+(1100+n4())),FX('f16',fijos[1],-2,'aprobada','LC-'+(1150+n4()))
   ];
   const pagos=[
     {id:'g1',numero:'PG-0001',provId:'p2',fecha:d(-60),metodo:'ACH',referencia:'ACH-558120',items:[{facId:'f12',monto:facturas[11].total}],total:facturas[11].total,estado:'pagado',creadoPor:'coordinador',autorizadoPor:'aprobador',ejecutado:d(-58),
       log:[{t:d(-60)+' 11:00',u:'Coordinador',a:'Solicitó el pago'},{t:d(-59)+' 09:30',u:'Aprobador',a:'Autorizó el pago'},{t:d(-58)+' 14:00',u:'Coordinador',a:'Registró la ejecución · ACH-558120'}]},
     {id:'g2',numero:'PG-0002',provId:'p4',fecha:d(-3),metodo:'Transferencia',referencia:'',items:[{facId:'f8',monto:facturas[7].total}],total:facturas[7].total,estado:'solicitado',creadoPor:'coordinador',autorizadoPor:'',ejecutado:'',
       log:[{t:d(-3)+' 10:00',u:'Coordinador',a:'Solicitó el pago'}]},
+    ...[['g4',-3,4],['g5',-2,6]].flatMap(([id,rel,base])=>[['x1','p4'],['x2','p3']].map(([gx,pv],k)=>{const f=facturas.find(x=>x.fijoId===gx&&x.periodo===mesRel(rel)),fp=sumar(f.vence,-2),ref='ACH-'+(600000+rel*-1000+k),num='PG-'+String(base+k).padStart(4,'0');
+      f.log.push({t:fp+' 11:00',u:'Coordinador Administrativo',a:'Pagada con '+num+' · '+ref+' · '+money(f.total)});
+      return {id:id+k,numero:num,provId:pv,fecha:fp,metodo:'ACH',referencia:ref,items:[{facId:f.id,monto:f.total}],total:f.total,estado:'pagado',creadoPor:'coordinador',autorizadoPor:'aprobador',ejecutado:fp,
+        log:[{t:fp+' 09:00',u:'Coordinador',a:'Solicitó el pago'},{t:fp+' 10:00',u:'Aprobador',a:'Autorizó el pago'},{t:fp+' 11:00',u:'Coordinador',a:'Registró la ejecución · '+ref}]};})),
     {id:'g3',numero:'PG-0003',provId:'p1',fecha:d(-2),metodo:'ACH',referencia:'',items:[{facId:'f1',monto:2000}],total:2000,estado:'autorizado',creadoPor:'coordinador',autorizadoPor:'aprobador',ejecutado:'',
       log:[{t:d(-2)+' 09:00',u:'Coordinador',a:'Solicitó el pago (abono parcial)'},{t:d(-1)+' 16:20',u:'Aprobador',a:'Autorizó el pago'}]}
   ];
@@ -371,11 +394,11 @@ function demo(){
   facturas[0].log.push({t:d(-2)+' 09:00',u:'Coordinador Administrativo',a:'Incluida en la solicitud de pago PG-0003 por '+money(2000)});
   pagos.forEach(g=>g.log.forEach(l=>{l.u=l.u==='Coordinador'?'Coordinador Administrativo':l.u==='Aprobador'?'Aprobador de Pagos':l.u;}));
   proveedores.forEach(pv=>pv.log.forEach(l=>{if(l.u==='Coordinador')l.u='Coordinador Administrativo';}));
-  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7},bitacora:[],reclamos,notifs:[],wa:{}};
+  return {proveedores,facturas,pagos,usuarios,parametros:{itbms:7},bitacora:[],reclamos,notifs:[],wa:{},fijos};
 }
 
 /* ── estado ── */
-const S={db:null,user:null,vista:'resumen',f:{pq:'',pe:'',fq:'',fe:'',fp:'',ge:'',ec:'',bq:'',bt:'',bu:'',bd:'',bh:'',re:'',mb:'',mm:''},bVer:100,ctxFac:null};
+const S={db:null,user:null,vista:'resumen',f:{pq:'',pe:'',fq:'',fe:'',fp:'',ge:'',ec:'',bq:'',bt:'',bu:'',bd:'',bh:'',re:'',mb:'',mm:'',ft:'',mt:''},bVer:100,ctxFac:null};
 const ROLES={coordinador:'Coordinador',aprobador:'Aprobador',admin:'Administrador',proveedor:'Proveedor'};
 const rol=()=>S.user&&S.user.rol;
 const quien=()=>S.user?S.user.nombre:'';
@@ -427,7 +450,8 @@ function pendientes(){
   const u=S.user.u,ap=PUEDE.aprobar(),re=PUEDE.registrar();
   return {
     provAprobar:ap?S.db.proveedores.filter(p=>p.estado==='solicitud'&&p.creadoPor!==u).length:0,
-    facValidar:re?S.db.facturas.filter(f=>f.estado==='recibida').length:0,
+    facValidar:re?S.db.facturas.filter(f=>f.estado==='recibida'&&!f.fiscalPendiente).length:0,
+    sinFiscal:re?S.db.facturas.filter(f=>f.estado==='recibida'&&f.fiscalPendiente).length:0,
     facAprobar:ap?S.db.facturas.filter(f=>f.estado==='validada'&&f.creadoPor!==u).length:0,
     pagAutorizar:ap?S.db.pagos.filter(g=>g.estado==='solicitado'&&g.creadoPor!==u).length:0,
     pagEjecutar:re?S.db.pagos.filter(g=>g.estado==='autorizado').length:0,
@@ -436,8 +460,8 @@ function pendientes(){
 }
 
 /* ════════ navegación ════════ */
-const VISTAS={resumen:vResumen,proveedores:vProveedores,facturas:vFacturas,pagos:vPagos,cuenta:vCuenta,mapa:vMapa,reclamos:vReclamos,bitacora:vBitacora,avisos:vAvisos,config:vConfig};
-const SOLO_INTERNAS=['proveedores','bitacora'];
+const VISTAS={resumen:vResumen,proveedores:vProveedores,facturas:vFacturas,pagos:vPagos,cuenta:vCuenta,mapa:vMapa,fijos:vFijos,reclamos:vReclamos,bitacora:vBitacora,avisos:vAvisos,config:vConfig};
+const SOLO_INTERNAS=['proveedores','bitacora','fijos'];
 function ir(v){S.vista=v;pintar();window.scrollTo(0,0);}
 function pintar(){
   if(!S.user)return;
@@ -448,6 +472,7 @@ function pintar(){
     {id:'proveedores',label:'Proveedores',badge:p.provAprobar||0,hidden:pv,on:()=>ir('proveedores')},
     {id:'facturas',label:pv?'Mis facturas':'Facturas',badge:(p.facValidar+p.facAprobar)||0,on:()=>ir('facturas')},
     {id:'pagos',label:pv?'Mis pagos':'Pagos',badge:(p.pagAutorizar+p.pagEjecutar)||0,on:()=>ir('pagos')},
+    {id:'fijos',label:'Gastos fijos',hint:'cargos de cada mes',hidden:pv,on:()=>ir('fijos')},
     {id:'cuenta',label:'Estado de cuenta',on:()=>ir('cuenta')},
     {id:'mapa',label:'Mapa de pagos',hint:'pagadas y vencidas por mes',on:()=>ir('mapa')},
     {id:'reclamos',label:'Reclamos',badge:(pv?rcProv:p.reclamos)||0,on:()=>ir('reclamos')},
@@ -464,6 +489,7 @@ function pintar(){
   if(S.vista==='cuenta')cuentaDetalle();
   if(S.vista==='bitacora')listaBitacora();
   if(S.vista==='mapa')pintarMapa();
+  if(S.vista==='fijos')listaFijos();
   if(S.vista==='reclamos')listaReclamos();
   if(S.vista==='avisos')listaAvisos();
   waPintar();
@@ -476,10 +502,11 @@ function vResumen(){
   const total=fs.reduce((s,x)=>s+x.c.saldo,0);
   const venc=fs.filter(x=>x.c.vencida),tv=venc.reduce((s,x)=>s+x.c.saldo,0);
   const sem=fs.filter(x=>!x.c.vencida&&x.c.dias>=-7),ts=sem.reduce((s,x)=>s+x.c.saldo,0);
-  const p=pendientes(),npend=Object.values(p).reduce((a,b)=>a+b,0);
+  const p=pendientes(),npend=Object.values(p).reduce((a,b)=>a+b,0)-p.sinFiscal;
   const tareas=[
     [p.provAprobar,'Proveedores por aprobar','proveedores','pe','solicitud'],
-    [p.facValidar,'Facturas por validar contra la orden de compra','facturas','fe','recibida'],
+    [p.facValidar,'Facturas por validar contra el respaldo aprobado','facturas','fe','recibida'],
+    [p.sinFiscal,'Cargos de gastos fijos esperando la factura fiscal del proveedor','facturas','ft','fijo'],
     [p.facAprobar,'Facturas por aprobar para pago','facturas','fe','validada'],
     [p.pagAutorizar,'Pagos por autorizar','pagos','ge','solicitado'],
     [p.pagEjecutar,'Pagos autorizados por ejecutar','pagos','ge','autorizado'],
@@ -495,9 +522,10 @@ function vResumen(){
   '<div class="grid kpis">'+
     '<div class="card kpi"><div class="l">Saldo por pagar</div><div class="v">'+money(total)+'</div><div class="s">'+fs.length+' facturas abiertas</div></div>'+
     '<div class="card kpi err"><div class="l">Vencido</div><div class="v">'+money(tv)+'</div><div class="s">'+(venc.length===1?'1 factura pasó su fecha':venc.length+' facturas pasaron su fecha')+'</div></div>'+
-    '<div class="card kpi warn"><div class="l">Vence en 7 días</div><div class="v">'+money(ts)+'</div><div class="s">'+sem.length+' facturas</div></div>'+
+    '<div class="card kpi warn"><div class="l">Vence en 7 días</div><div class="v">'+money(ts)+'</div><div class="s">'+sem.length+(sem.length===1?' factura':' facturas')+'</div></div>'+
     '<div class="card kpi ok"><div class="l">Pendientes para ti</div><div class="v">'+npend+'</div><div class="s">'+esc(ROLES[rol()])+'</div></div>'+
   '</div>'+
+  resumenFijos()+
   '<div class="grid two" style="margin-top:14px">'+
     '<div class="card"><h2>Antigüedad del saldo por proveedor</h2>'+
       (Object.keys(filas).length?'<div class="tw" style="border:0"><table><thead><tr><th>Proveedor</th>'+TRAMOS.map((t,i)=>'<th class="num'+(i>0&&i<4?' hide-sm':'')+'">'+t+'</th>').join('')+'<th class="num">Total</th></tr></thead><tbody>'+
@@ -615,18 +643,19 @@ function vFacturas(){
     '<div class="aviso info">'+PROCESO+' <button type="button" class="link" data-act="verEstados">Quién cambia cada estado</button></div>'+
     '<div class="filtros"><input class="in" placeholder="Buscar por número, orden de compra, concepto o file" data-f="fq" value="'+esc(S.f.fq)+'">'+
     (pv?'':'<select class="sel" data-f="fp"><option value="">Todos los proveedores</option>'+provs.map(p=>'<option value="'+p.id+'"'+(S.f.fp===p.id?' selected':'')+'>'+esc(p.nombre)+'</option>').join('')+'</select>')+
+    '<select class="sel" data-f="ft"><option value="">Fijos y variables</option><option value="fijo"'+(S.f.ft==='fijo'?' selected':'')+'>Gastos fijos</option><option value="variable"'+(S.f.ft==='variable'?' selected':'')+'>Gastos variables</option></select>'+
     '<select class="sel" data-f="fe"><option value="">Todos los estados</option><option value="abiertas"'+(S.f.fe==='abiertas'?' selected':'')+'>Con saldo</option><option value="vencidas"'+(S.f.fe==='vencidas'?' selected':'')+'>Vencidas</option>'+Object.entries(ESTADO_FAC).map(([k,v])=>'<option value="'+k+'"'+(S.f.fe===k?' selected':'')+'>'+v[0]+'</option>').join('')+'</select></div>'+
     '<div id="lista"></div>';
 }
 function listaFac(){
   const q=S.f.fq.toLowerCase();
-  const l=facturasVisibles().map(f=>({f,c:calc(f)})).filter(({f,c})=>(!S.f.fp||f.provId===S.f.fp)&&
+  const l=facturasVisibles().map(f=>({f,c:calc(f)})).filter(({f,c})=>(!S.f.fp||f.provId===S.f.fp)&&(!S.f.ft||(S.f.ft==='fijo')===!!f.fijoId)&&
     (!S.f.fe||(S.f.fe==='abiertas'?c.saldo>0.004&&f.estado!=='rechazada':S.f.fe==='vencidas'?c.vencida:c.est===S.f.fe))&&
     (!q||(f.numero+' '+f.oc+' '+f.concepto+' '+f.file+' '+prov(f.provId).nombre).toLowerCase().includes(q)))
     .sort((a,b)=>a.f.vence.localeCompare(b.f.vence));
   const tot=l.reduce((s,x)=>s+(x.f.estado==='rechazada'?0:x.c.saldo),0);
   $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Factura</th>'+(esProv()?'':'<th>Proveedor</th>')+'<th class="hide-sm">Emisión</th><th>Vence</th><th class="num hide-sm">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead><tbody>'+
-    l.map(({f,c})=>'<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td><div class="b">'+esc(f.numero)+'</div><div class="mut">'+esc(f.oc||'')+'</div>'+((f.adjuntos||[]).length||f.estado!=='recibida'?'':'<div style="color:var(--warn);font-size:12px;font-weight:700">Sin archivo</div>')+'</td>'+(esProv()?'':'<td>'+esc(prov(f.provId).nombre)+'</td>')+'<td class="hide-sm">'+fecha(f.fecha)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':c.saldo>0.004&&f.estado!=='rechazada'&&c.dias>=-7?'<div style="color:var(--warn);font-size:12px;font-weight:700">'+(c.dias===0?'Vence hoy':'En '+(-c.dias)+' d')+'</div>':'')+'</td><td class="num hide-sm">'+money(f.total)+'</td><td class="num b">'+(f.estado==='rechazada'?'<span class="mut">—</span>':money(c.saldo))+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>').join('')+
+    l.map(({f,c})=>'<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td><div class="b">'+esc(f.numero)+'</div><div class="mut">'+esc(f.oc||'')+'</div>'+(f.fijoId?'<span class="chip ind" style="margin-top:3px">Gasto fijo</span>':'')+(f.fiscalPendiente?'<div style="color:var(--warn);font-size:12px;font-weight:700">Falta factura fiscal</div>':(f.adjuntos||[]).length||f.estado!=='recibida'?'':'<div style="color:var(--warn);font-size:12px;font-weight:700">Sin archivo</div>')+'</td>'+(esProv()?'':'<td>'+esc(prov(f.provId).nombre)+'</td>')+'<td class="hide-sm">'+fecha(f.fecha)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':c.saldo>0.004&&f.estado!=='rechazada'&&c.dias>=-7?'<div style="color:var(--warn);font-size:12px;font-weight:700">'+(c.dias===0?'Vence hoy':'En '+(-c.dias)+' d')+'</div>':'')+'</td><td class="num hide-sm">'+money(f.total)+'</td><td class="num b">'+(f.estado==='rechazada'?'<span class="mut">—</span>':money(c.saldo))+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>').join('')+
     '</tbody></table></div><div class="tot"><span class="mut">'+l.length+' facturas</span><span>Saldo <b>'+money(tot)+'</b></span></div>':'<div class="card vacio">No hay facturas con ese filtro.</div>';
 }
 function formFac(f){
@@ -706,6 +735,7 @@ function verFac(id){
     acc.unshift({t:'Editar',on:()=>editarFac(id)});
     acc.unshift({t:'Marcar validada',cls:'pri',on:async()=>{
       const ch={};CHECK.forEach(([k])=>ch[k]=$('ck_'+k).checked);
+      if(f.fiscalPendiente)return toast('Falta la factura fiscal de este cargo: súbela con «Subir factura fiscal».',true);
       if(!(f.adjuntos||[]).length)return toast('Para validar, adjunta primero el archivo de la factura.',true);
       if(!CHECK.every(([k])=>ch[k]))return toast('Para validar, confirma los tres puntos de revisión.',true);
       f.check=ch;f.estado='validada';f.log.push({t:ahora(),u:quien(),a:'Validó la factura contra el respaldo aprobado por correo'});await api.guardar('facturas',f);
@@ -728,11 +758,14 @@ function verFac(id){
   if(esProv()){const abierto=S.db.reclamos.find(r=>r.facId===id&&r.estado!=='cerrado');
     if(abierto)acc.unshift({t:'Ver reclamo '+abierto.numero,on:()=>verReclamo(abierto.id)});
     else if(c.vencida)acc.unshift({t:'Hacer reclamo',cls:'pri',on:()=>nuevoReclamo(id)});}
+  if(f.fiscalPendiente&&f.estado==='recibida'&&(PUEDE.registrar()||(esProv()&&f.provId===miProv())))acc.unshift({t:'Subir factura fiscal',cls:'pri',on:()=>completarFijo(id)});
+  if(f.fiscalPendiente)acc.splice(acc.findIndex(a=>a.t==='Editar'),acc.some(a=>a.t==='Editar')?1:0);
   S.ctxFac=id;
   const pagos=S.db.pagos.filter(g=>g.items.some(i=>i.facId===id)),rcs=S.db.reclamos.filter(r=>r.facId===id);
   const ap=f.aprobCorreo||{};
   modal('Factura '+f.numero,
     (c.vencida?'<div class="aviso err"><b>Vencida hace '+c.dias+' días.</b> Venció el '+fecha(f.vence)+'.</div>':'')+
+    (f.fijoId?(()=>{const g=fijo(f.fijoId);return '<div class="aviso info"><b>Gasto fijo '+esc(g?g.codigo:'')+'</b> · '+esc(g?g.concepto:'')+' · cargo de '+esc(mesNombre(f.periodo))+'.'+(f.fiscalPendiente?' La app lo generó el '+fecha(f.fecha)+' por el monto pactado; <b>falta la factura fiscal</b> del proveedor.':'')+(f.variacion?' Variación contra el monto pactado: '+f.variacion+'.':'')+'</div>';})():'')+
     (f.estado==='rechazada'?'<div class="aviso err"><b>Rechazada:</b> '+esc(f.motivo)+'</div>':'')+
     '<div style="margin-bottom:14px">'+chip(c.est,ESTADO_FAC)+' <span class="mut">'+esc(p.nombre)+'</span></div>'+
     '<div class="kv">'+[['Orden de compra',f.oc],['Emisión',fecha(f.fecha)],['Vence',fecha(f.vence)],['Subtotal',money(f.subtotal)],['ITBMS',money(f.itbms)],['Total',money(f.total)],['Pagado',money(c.pagado)],['En solicitud de pago',money(c.comprometido)],['Saldo',money(c.saldo)],['Concepto',f.concepto]].concat(esProv()?[]:[['Cliente o file',f.file]]).concat([['Recibida',fecha(f.recibida)],['Respaldo aprobado por',ap.por],['Fecha del correo',ap.fecha?fecha(ap.fecha):''],['Referencia del correo',ap.ref]]).map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v||'—')+'</b></div>').join('')+'</div>'+
@@ -795,6 +828,7 @@ function verEstados(){
   const tit=t=>'<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">'+t+'</h2>';
   modal('Quién cambia cada estado',
     tit('Los cambia una persona')+'<div class="grid" style="gap:6px;margin-bottom:16px">'+
+      tarjeta('<span class="chip ind">Gasto fijo</span> <span class="chip warn">Falta factura fiscal</span>','La app, el día del mes indicado','Genera el cargo del mes por el monto pactado. El proveedor (o el coordinador) sube la factura fiscal sobre él; si el monto varía más que la tolerancia, se pide el motivo. Después sigue igual que cualquier factura.')+
       tarjeta(chip('recibida',ESTADO_FAC),'Proveedor o coordinador','Al subir o registrar la factura fiscal con su archivo y los datos del correo de aprobación.')+
       tarjeta(chip('validada',ESTADO_FAC),'Coordinador o administrador','«Marcar validada»: con archivo y los tres puntos de revisión contra el respaldo aprobado por correo.')+
       tarjeta(chip('aprobada',ESTADO_FAC),'Aprobador o administrador','«Aprobar para pago». Nadie aprueba lo que registró.')+
@@ -939,6 +973,7 @@ function bitacora(){
   S.db.proveedores.forEach(p=>(p.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Proveedor',doc:p.codigo,prov:p.nombre,act:'verProv',id:p.id,txt:p.ruc})));
   S.db.facturas.forEach(f=>{const p=prov(f.provId);(f.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Factura',doc:'Factura '+f.numero,prov:p?p.nombre:'',act:'verFac',id:f.id,txt:f.oc}));});
   S.db.pagos.forEach(g=>{const p=prov(g.provId),nums=g.items.map(i=>{const f=fac(i.facId);return f?f.numero:'';}).join(' ');(g.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Pago',doc:'Pago '+g.numero,prov:p?p.nombre:'',act:'verPago',id:g.id,txt:nums+' '+g.referencia}));});
+  (S.db.fijos||[]).forEach(g=>{const p=prov(g.provId);(g.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Gasto fijo',doc:g.codigo+' · '+g.concepto,prov:p?p.nombre:'',act:'verFijo',id:g.id,txt:''}));});
   S.db.reclamos.forEach(r=>{const p=prov(r.provId),f=fac(r.facId);r.hilo.forEach((h,i)=>e.push({t:h.t,u:h.u,a:(i===0?'Abrió el reclamo · '+TIPO_RC[r.tipo]+': ':h.lado==='dpw'?'Respondió'+(h.fechaProg?' · pago programado para el '+fecha(h.fechaProg):'')+': ':'Escribió: ')+h.texto,tipo:'Reclamo',doc:r.numero+' · '+(f?f.numero:''),prov:p?p.nombre:'',act:'verReclamo',id:r.id,txt:''}));
     (r.log||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Reclamo',doc:r.numero,prov:p?p.nombre:'',act:'verReclamo',id:r.id,txt:''}));});
   (S.db.bitacora||[]).forEach(l=>e.push({t:l.t,u:l.u,a:l.a,tipo:'Configuración',doc:l.doc,prov:'',act:'',id:'',txt:''}));
@@ -954,13 +989,13 @@ function vBitacora(){
   return '<div class="vhead"><div><h1 class="vtitle">Bitácora</h1><p class="vsub">Cada acción con quién la hizo y cuándo: registros, archivos, validaciones, aprobaciones, pagos y cambios de configuración.</p></div>'+
     '<div class="noprint" style="display:flex;gap:8px"><button class="btn" data-act="csvBitacora">Exportar CSV</button><button class="btn" data-act="imprimir">Imprimir</button></div></div>'+
     '<div class="filtros"><input class="in" placeholder="Buscar por factura, pago, proveedor, acción o referencia" data-f="bq" value="'+esc(S.f.bq)+'">'+
-    '<select class="sel" data-f="bt"><option value="">Todo</option>'+['Proveedor','Factura','Pago','Reclamo','Configuración'].map(t=>'<option'+(S.f.bt===t?' selected':'')+'>'+t+'</option>').join('')+'</select>'+
+    '<select class="sel" data-f="bt"><option value="">Todo</option>'+['Proveedor','Factura','Pago','Gasto fijo','Reclamo','Configuración'].map(t=>'<option'+(S.f.bt===t?' selected':'')+'>'+t+'</option>').join('')+'</select>'+
     '<select class="sel" data-f="bu"><option value="">Todos los usuarios</option>'+usuarios.map(u=>'<option'+(S.f.bu===u?' selected':'')+'>'+esc(u)+'</option>').join('')+'</select>'+
     '<label class="f" style="flex:0 1 160px"><span>Desde</span><input class="in" type="date" data-f="bd" value="'+esc(S.f.bd)+'"></label>'+
     '<label class="f" style="flex:0 1 160px"><span>Hasta</span><input class="in" type="date" data-f="bh" value="'+esc(S.f.bh)+'"></label></div>'+
     '<div id="lista"></div>';
 }
-const TIPO_CHIP={Proveedor:'ind',Factura:'info',Pago:'ok',Reclamo:'warn','Configuración':''};
+const TIPO_CHIP={Proveedor:'ind',Factura:'info',Pago:'ok','Gasto fijo':'ind',Reclamo:'warn','Configuración':''};
 function listaBitacora(){
   const l=filtrarBitacora(),ver=l.slice(0,S.bVer);
   $('lista').innerHTML=l.length?'<div class="tw"><table><thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Acción</th><th class="hide-sm">Documento</th><th class="hide-sm">Proveedor</th></tr></thead><tbody>'+
@@ -1113,21 +1148,28 @@ function vMapa(){
   const base=S.f.mb||'vence',n=S.f.mm||'6';
   return '<div class="vhead"><div><h1 class="vtitle">Mapa de pagos</h1><p class="vsub">'+(esProv()?'Tus facturas por mes':'Proveedores por mes')+': pagadas en verde, vencidas en rojo, por vencer en ámbar. Toca una celda para ver sus facturas.</p></div></div>'+
     '<div class="filtros"><select class="sel" data-f="mb"><option value="vence"'+(base==='vence'?' selected':'')+'>Por mes de vencimiento</option><option value="fecha"'+(base==='fecha'?' selected':'')+'>Por mes de la factura</option></select>'+
-    '<select class="sel" data-f="mm">'+['6','12'].map(x=>'<option value="'+x+'"'+(n===x?' selected':'')+'>Últimos '+x+' meses</option>').join('')+'</select></div>'+
-    '<div class="ley"><span><i style="background:#00C389"></i>Pagadas</span><span><i style="background:#E8003D"></i>Vencidas sin pagar</span><span><i style="background:#f5a20b"></i>Por vencer o pago parcial al día</span></div><div id="lista"></div>';
+    '<select class="sel" data-f="mm">'+['6','12'].map(x=>'<option value="'+x+'"'+(n===x?' selected':'')+'>Últimos '+x+' meses y 2 próximos</option>').join('')+'</select>'+
+    '<select class="sel" data-f="mt"><option value="">Fijos y variables</option><option value="fijo"'+(S.f.mt==='fijo'?' selected':'')+'>Solo gastos fijos</option><option value="variable"'+(S.f.mt==='variable'?' selected':'')+'>Solo gastos variables</option></select></div>'+
+    '<div class="ley"><span><i style="background:#00C389"></i>Pagadas</span><span><i style="background:#E8003D"></i>Vencidas sin pagar</span><span><i style="background:#f5a20b"></i>Por vencer o pago parcial al día</span><span><i style="background:#8a90a6"></i>Programado: gasto fijo que aún no llega a su día</span></div><div id="lista"></div>';
 }
 function mesesMapa(){
   const n=+(S.f.mm||6),[y,m]=hoy().split('-').map(Number),out=[];
-  for(let i=n-2;i>=-1;i--){const d=new Date(y,m-1-i,1);out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
+  for(let i=n-2;i>=-2;i--){const d=new Date(y,m-1-i,1);out.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
   return out;
 }
 function celdasMapa(){
   const base=S.f.mb||'vence',meses=mesesMapa(),cel={};
-  facturasVisibles().filter(f=>f.estado!=='rechazada').forEach(f=>{
+  const nueva=()=>({pag:0,venc:0,pend:0,prog:0,mPag:0,mVenc:0,mPend:0,mProg:0,total:0,ids:[],progs:[]});
+  facturasVisibles().filter(f=>f.estado!=='rechazada'&&(!S.f.mt||(S.f.mt==='fijo')===!!f.fijoId)).forEach(f=>{
     const k=(base==='fecha'?f.fecha:f.vence).slice(0,7);if(!meses.includes(k))return;
-    const c=calc(f),x=cel[f.provId+'|'+k]=cel[f.provId+'|'+k]||{pag:0,venc:0,pend:0,mPag:0,mVenc:0,mPend:0,total:0,ids:[]};
+    const c=calc(f),x=cel[f.provId+'|'+k]=cel[f.provId+'|'+k]||nueva();
     x.ids.push(f.id);x.total+=f.total;
     if(c.est==='pagada'){x.pag++;x.mPag+=f.total;}else if(c.vencida){x.venc++;x.mVenc+=c.saldo;x.mPag+=c.pagado;}else{x.pend++;x.mPend+=c.saldo;x.mPag+=c.pagado;}
+  });
+  /* gastos fijos programados: los meses cuyo cargo todavía no se generó */
+  if(S.f.mt!=='variable')cargosProgramados(meses[0],meses[meses.length-1]).forEach(q=>{
+    const k=(base==='fecha'?q.fecha:q.vence).slice(0,7);if(!meses.includes(k))return;
+    const x=cel[q.g.provId+'|'+k]=cel[q.g.provId+'|'+k]||nueva();x.prog++;x.mProg+=q.total;x.total+=q.total;x.progs.push(q);
   });
   return {meses,cel};
 }
@@ -1135,22 +1177,173 @@ function pintarMapa(){
   const {meses,cel}=celdasMapa();
   const provs=(esProv()?[prov(miProv())]:S.db.proveedores).filter(p=>meses.some(m=>cel[p.id+'|'+m])).sort((a,b)=>a.nombre.localeCompare(b.nombre));
   if(!provs.length){$('lista').innerHTML='<div class="card vacio">No hay facturas en estos meses.</div>';return;}
-  const tot=meses.map(m=>provs.reduce((t,p)=>{const x=cel[p.id+'|'+m];if(x){t.p+=x.mPag;t.v+=x.mVenc;t.e+=x.mPend;}return t;},{p:0,v:0,e:0}));
+  const tot=meses.map(m=>provs.reduce((t,p)=>{const x=cel[p.id+'|'+m];if(x){t.p+=x.mPag;t.v+=x.mVenc;t.e+=x.mPend;t.g+=x.mProg;}return t;},{p:0,v:0,e:0,g:0}));
   const mesLbl=k=>MESES[+k.slice(5)-1]+' '+k.slice(2,4);
   $('lista').innerHTML='<div class="tw mapa"><table><thead><tr><th>Proveedor</th>'+meses.map(m=>'<th class="mes'+(m===hoy().slice(0,7)?'" style="color:var(--ind-t)':'')+'">'+mesLbl(m)+'</th>').join('')+'</tr></thead><tbody>'+
     provs.map(p=>'<tr><td class="pv b">'+esc(p.nombre)+'<div class="mut">'+p.plazo+' días de crédito</div></td>'+meses.map(m=>{const x=cel[p.id+'|'+m];
       if(!x)return '<td class="cel"><span class="c vac">—</span></td>';
-      const cls=x.venc?'rojo':x.pend?'ambar':'verde',det=[x.pag?x.pag+' pagada'+(x.pag>1?'s':''):'',x.venc?x.venc+' vencida'+(x.venc>1?'s':''):'',x.pend?x.pend+' por vencer':''].filter(Boolean).join(' · ');
+      const cls=x.venc?'rojo':x.pend?'ambar':x.prog?'gris':'verde',det=[x.pag?x.pag+' pagada'+(x.pag>1?'s':''):'',x.venc?x.venc+' vencida'+(x.venc>1?'s':''):'',x.pend?x.pend+' por vencer':'',x.prog?x.prog+' programada'+(x.prog>1?'s':''):''].filter(Boolean).join(' · ');
       return '<td class="cel"><button type="button" class="c '+cls+'" data-act="verCelda" data-id="'+p.id+'|'+m+'" title="'+esc(p.nombre+' · '+mesLbl(m)+' · '+det)+'"><b>'+money(x.total)+'</b><small>'+det+'</small></button></td>';}).join('')+'</tr>').join('')+
-    '<tr><td class="pv b">Total del mes</td>'+tot.map(t=>'<td class="cel" style="font-size:12px;line-height:1.5">'+([t.p?'<span style="color:var(--ok);font-weight:700">'+money(t.p)+'</span>':'',t.v?'<span style="color:var(--err);font-weight:700">'+money(t.v)+'</span>':'',t.e?'<span style="color:var(--warn)">'+money(t.e)+'</span>':''].filter(Boolean).join('<br>')||'<span class="mut">—</span>')+'</td>').join('')+'</tr>'+
-    '</tbody></table></div><p class="mut" style="margin-top:8px">En la fila de totales: pagado en verde, vencido sin pagar en rojo y por vencer en ámbar.</p>';
+    '<tr><td class="pv b">Total del mes</td>'+tot.map(t=>'<td class="cel" style="font-size:12px;line-height:1.5">'+([t.p?'<span style="color:var(--ok);font-weight:700">'+money(t.p)+'</span>':'',t.v?'<span style="color:var(--err);font-weight:700">'+money(t.v)+'</span>':'',t.e?'<span style="color:var(--warn)">'+money(t.e)+'</span>':'',t.g?'<span style="color:var(--t3)">'+money(t.g)+'</span>':''].filter(Boolean).join('<br>')||'<span class="mut">—</span>')+'</td>').join('')+'</tr>'+
+    '</tbody></table></div><p class="mut" style="margin-top:8px">En la fila de totales: pagado en verde, vencido sin pagar en rojo, por vencer en ámbar y programado en gris.</p>';
   const tw=$('lista').querySelector('.tw');tw.scrollLeft=tw.scrollWidth;   // en el celular abre en los meses recientes
 }
 function verCelda(key){
   const [pid,m]=key.split('|'),{cel}=celdasMapa(),x=cel[key];if(!x)return;
   modal(prov(pid).nombre+' · '+MESES[+m.slice(5)-1]+' '+m.slice(0,4),'<div class="tw"><table><thead><tr><th>Factura</th><th>Vence</th><th class="num">Total</th><th class="num">Saldo</th><th>Estado</th></tr></thead><tbody>'+
-    x.ids.map(fac).sort((a,b)=>a.vence.localeCompare(b.vence)).map(f=>{const c=calc(f);return '<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td class="b">'+esc(f.numero)+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':'')+'</td><td class="num">'+money(f.total)+'</td><td class="num b">'+money(c.saldo)+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>';}).join('')+
+    x.progs.map(q=>'<tr'+(esProv()?'':' class="clic" data-act="verFijo" data-id="'+q.g.id+'"')+'><td class="b">'+esc(q.g.concepto)+'<div class="mut">Gasto fijo '+esc(q.g.codigo)+' · se genera el '+fecha(q.fecha)+'</div></td><td>'+fecha(q.vence)+'</td><td class="num">'+money(q.total)+'</td><td class="num b">'+money(q.total)+'</td><td><span class="chip">Programado</span></td></tr>').join('')+
+    x.ids.map(fac).sort((a,b)=>a.vence.localeCompare(b.vence)).map(f=>{const c=calc(f);return '<tr class="clic" data-act="verFac" data-id="'+f.id+'"><td class="b">'+esc(f.numero)+(f.fijoId?'<div class="mut">Gasto fijo</div>':'')+'</td><td>'+fecha(f.vence)+(c.vencida?'<div style="color:var(--err);font-size:12px;font-weight:700">Vencida hace '+c.dias+' d</div>':'')+'</td><td class="num">'+money(f.total)+'</td><td class="num b">'+money(c.saldo)+'</td><td>'+chip(c.est,ESTADO_FAC)+'</td></tr>';}).join('')+
     '</tbody></table></div>',[{t:'Cerrar',on:cerrarModal}]);
+}
+
+
+/* ════════ GASTOS FIJOS ════════
+   Pagos que se repiten cada mes por un monto casi igual (vigilancia, limpieza, alquileres).
+   El día indicado del mes la app genera el cargo como factura con el monto pactado («Falta factura fiscal»).
+   El proveedor (o el coordinador) sube la factura fiscal sobre ese cargo; el monto se puede ajustar y,
+   si la variación pasa la tolerancia, se pide el motivo. Después sigue el camino normal hasta pagada (verde en el mapa).
+   Los meses que aún no llegan a su día salen en gris en el mapa: así se ve todo lo que hay que pagar. */
+const fijo=id=>(S.db.fijos||[]).find(g=>g.id===id);
+const mesNombre=per=>{const n=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];return n[+per.slice(5)-1]+' '+per.slice(0,4);};
+const totalFijo=g=>r2(g.monto+(g.conItbms?r2(g.monto*S.db.parametros.itbms/100):0));
+const vigente=(g,per)=>g.activo&&per>=g.desde&&(!g.hasta||per<=g.hasta);
+const cargoDe=(g,per)=>S.db.facturas.find(f=>f.fijoId===g.id&&f.periodo===per);
+/* genera los cargos cuyo día ya llegó (hasta 12 meses atrás si se registró con fecha pasada) */
+function generarFijos(){
+  let n=0;const H=hoy(),actual=H.slice(0,7);
+  (S.db.fijos||[]).forEach(g=>{
+    const pv=prov(g.provId);if(!pv)return;
+    for(let per=g.desde<mesSig(actual,-11)?mesSig(actual,-11):g.desde;per<=actual;per=mesSig(per)){
+      if(!vigente(g,per)||cargoDe(g,per))continue;
+      const fe=diaDelMes(per,g.dia);if(fe>H)continue;
+      const it=g.conItbms?r2(g.monto*S.db.parametros.itbms/100):0;
+      const f={id:uid('f'),provId:g.provId,numero:'Por facturar · '+g.codigo+' '+per,fecha:fe,recibida:fe,vence:sumar(fe,pv.plazo),subtotal:g.monto,itbms:it,total:r2(g.monto+it),oc:'',file:'',concepto:g.concepto+' · '+per,
+        estado:'recibida',check:{oc:false,servicio:false,fiscal:false},motivo:'',creadoPor:'sistema',fijoId:g.id,periodo:per,generada:true,fiscalPendiente:true,adjuntos:[],
+        aprobCorreo:{por:'Gasto fijo '+g.codigo,fecha:g.desde+'-01',ref:'Contrato · '+g.concepto},log:[{t:ahora(),u:'Sistema',a:'Generó el cargo del mes del gasto fijo '+g.codigo+' · '+money(r2(g.monto+it))}]};
+      S.db.facturas.push(f);n++;
+      notificar('fijo_cargo','Cargo de gasto fijo generado',pv.nombre+' · '+g.concepto+' · '+mesNombre(per)+' por '+money(f.total)+'. Falta la factura fiscal.',{act:'verFac',id:f.id});
+      notificar('p_fijo','Cargo de '+mesNombre(per),'Se generó el cargo de '+g.concepto+' por '+money(f.total)+'. Sube tu factura fiscal sobre él en Mis facturas.',{act:'verFac',id:f.id},{provId:g.provId});
+    }
+  });
+  if(n)api._persistir();
+  return n;
+}
+/* cargos que todavía no llegan a su día, entre dos meses */
+function cargosProgramados(desde,hasta){
+  const out=[],H=hoy();
+  (S.db.fijos||[]).filter(g=>!esProv()||g.provId===miProv()).forEach(g=>{const pv=prov(g.provId);if(!pv)return;
+    for(let per=desde;per<=hasta;per=mesSig(per)){if(!vigente(g,per)||cargoDe(g,per))continue;const fe=diaDelMes(per,g.dia);if(fe<=H)continue;
+      out.push({g,per,fecha:fe,vence:sumar(fe,pv.plazo),total:totalFijo(g)});}});
+  return out;
+}
+function estadoMes(g,per){
+  const f=cargoDe(g,per);
+  if(!f)return vigente(g,per)?['Programado · día '+Math.min(g.dia,+diaDelMes(per,g.dia).slice(8)),'']:['Fuera de vigencia',''];
+  const c=calc(f);if(f.estado==='rechazada')return ['Rechazado','err',f];
+  if(f.fiscalPendiente)return [c.vencida?'Vencido · falta factura fiscal':'Falta factura fiscal',c.vencida?'err':'warn',f];
+  if(c.est==='pagada')return ['Pagado','ok',f];
+  return [c.vencida?'Vencido':ESTADO_FAC[c.est][0],c.vencida?'err':ESTADO_FAC[c.est][1]||'info',f];
+}
+function vFijos(){
+  return '<div class="vhead"><div><h1 class="vtitle">Gastos fijos</h1><p class="vsub">Pagos que se repiten cada mes. El día indicado la app genera el cargo del mes y el proveedor sube su factura fiscal sobre él. Lo variable entra como factura normal.</p></div>'+
+    (PUEDE.registrar()?'<button class="btn pri" data-act="nuevoFijo">Nuevo gasto fijo</button>':'')+'</div><div id="lista"></div>';
+}
+function listaFijos(){
+  const per=hoy().slice(0,7),l=[...(S.db.fijos||[])].sort((a,b)=>(b.activo-a.activo)||a.codigo.localeCompare(b.codigo));
+  const mensual=l.filter(g=>vigente(g,per)).reduce((s,g)=>s+totalFijo(g),0);
+  $('lista').innerHTML=(l.length?'<div class="tw"><table><thead><tr><th>Gasto fijo</th><th class="hide-sm">Proveedor</th><th class="num">Monto mensual</th><th class="hide-sm">Día</th><th>'+esc(mesNombre(per))+'</th></tr></thead><tbody>'+
+    l.map(g=>{const e=estadoMes(g,per);return '<tr class="clic" data-act="verFijo" data-id="'+g.id+'"><td><div class="b">'+esc(g.concepto)+'</div><div class="mut">'+esc(g.codigo)+(g.activo?'':' · pausado')+'</div><div class="mut show-sm">'+esc((prov(g.provId)||{}).nombre||'')+'</div></td><td class="hide-sm">'+esc((prov(g.provId)||{}).nombre||'')+'</td>'+
+      '<td class="num b">'+money(totalFijo(g))+'<div class="mut">tolerancia '+g.tolerancia+' %</div></td><td class="hide-sm">'+g.dia+' de cada mes</td><td><span class="chip '+e[1]+'">'+esc(e[0])+'</span></td></tr>';}).join('')+
+    '</tbody></table></div><div class="tot"><span class="mut">'+l.filter(g=>g.activo).length+' activos</span><span>Compromiso mensual <b>'+money(mensual)+'</b></span></div>'
+    :'<div class="card vacio">No hay gastos fijos. Regístralos para que la app genere sus cargos cada mes.</div>');
+}
+function resumenFijos(){
+  const per=hoy().slice(0,7),l=(S.db.fijos||[]).filter(g=>vigente(g,per));if(!l.length)return '';
+  const est=l.map(g=>({g,e:estadoMes(g,per)})),pag=est.filter(x=>x.e[1]==='ok').length;
+  const mesF=facturasVisibles().filter(f=>f.estado!=='rechazada'&&f.fecha.slice(0,7)===per);
+  const tf=l.reduce((s,g)=>s+totalFijo(g),0),tv=mesF.filter(f=>!f.fijoId).reduce((s,f)=>s+f.total,0);
+  return '<div class="card" style="margin-top:14px"><h2 style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">Gastos fijos de '+esc(mesNombre(per))+'<span class="mut" style="font:600 13px var(--fb);text-transform:none;letter-spacing:0">'+pag+' de '+l.length+' pagados · fijos '+money(tf)+' · variables facturados '+money(tv)+'</span></h2>'+
+    '<div class="barra" style="margin-bottom:12px"><i style="width:'+(pag/l.length*100).toFixed(0)+'%"></i></div><div class="tareas">'+
+    est.map(({g,e})=>'<button class="tarea" data-act="'+(e[2]?'verFac':'verFijo')+'" data-id="'+(e[2]?e[2].id:g.id)+'"><span><b>'+esc(g.concepto)+'</b> · '+esc((prov(g.provId)||{}).nombre||'')+'<br><span class="mut">'+money(totalFijo(g))+' · día '+g.dia+'</span></span><span class="chip '+e[1]+'">'+esc(e[0])+'</span></button>').join('')+'</div></div>';
+}
+function formFijo(g){
+  const nuevo=!g;g=g||{conItbms:true,dia:1,tolerancia:10,desde:hoy().slice(0,7),activo:true};
+  const provs=S.db.proveedores.filter(p=>p.estado==='aprobado'||p.id===g.provId).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  modal(nuevo?'Nuevo gasto fijo':'Editar · '+g.codigo,'<div class="form">'+
+    '<label class="f full"><span>Proveedor</span><select class="sel" id="gxProv"><option value="">Elige el proveedor</option>'+provs.map(p=>'<option value="'+p.id+'"'+(g.provId===p.id?' selected':'')+'>'+esc(p.nombre)+' · '+p.plazo+' días de crédito</option>').join('')+'</select></label>'+
+    '<label class="f full"><span>Concepto</span><input class="in" id="gxCon" value="'+esc(g.concepto||'')+'" placeholder="Ej.: Vigilancia 24/7, alquiler de montacargas"></label>'+
+    '<label class="f"><span>Monto mensual sin ITBMS (USD)</span><input class="in" type="number" step="0.01" min="0" id="gxMonto" value="'+esc(g.monto==null?'':g.monto)+'"></label>'+
+    '<label class="f"><span>ITBMS</span><select class="sel" id="gxIt"><option value="1"'+(g.conItbms?' selected':'')+'>Con ITBMS '+S.db.parametros.itbms+' %</option><option value="0"'+(g.conItbms?'':' selected')+'>Exento</option></select></label>'+
+    '<label class="f"><span>Día del mes en que se refleja como facturado</span><input class="in" type="number" min="1" max="31" id="gxDia" value="'+esc(g.dia)+'"></label>'+
+    '<label class="f"><span>Variación permitida sin motivo (%)</span><input class="in" type="number" min="0" max="100" step="0.5" id="gxTol" value="'+esc(g.tolerancia)+'"></label>'+
+    '<label class="f"><span>Desde (mes)</span><input class="in" type="month" id="gxDesde" value="'+esc(g.desde)+'"></label>'+
+    '<label class="f"><span>Hasta (opcional)</span><input class="in" type="month" id="gxHasta" value="'+esc(g.hasta||'')+'"></label>'+
+    '<p class="mut full" style="margin:0">Si el mes no tiene ese día (por ejemplo 31), el cargo se genera el último día del mes. Vence en la fecha del cargo más los días de crédito del proveedor. Un cambio de monto aplica a los meses que aún no se generan.</p>'+
+    '</div><div class="err-msg" id="mErr"></div>',
+    [{t:'Cancelar',on:()=>nuevo?cerrarModal():verFijo(g.id)},{t:'Guardar',cls:'pri',on:async()=>{
+      const v=id=>$(id).value.trim(),err=m=>$('mErr').textContent=m;
+      const provId=v('gxProv'),monto=r2(v('gxMonto')),dia=+v('gxDia'),tol=+v('gxTol'),desde=v('gxDesde'),hasta=v('gxHasta');
+      if(!provId)return err('Elige el proveedor.');if(v('gxCon').length<3)return err('Escribe el concepto.');
+      if(!(monto>0))return err('El monto mensual debe ser mayor que cero.');
+      if(!(dia>=1&&dia<=31&&Number.isInteger(dia)))return err('El día del mes va de 1 a 31.');
+      if(!(tol>=0&&tol<=100))return err('La variación permitida va de 0 a 100 %.');
+      if(!desde)return err('Indica desde qué mes aplica.');if(hasta&&hasta<desde)return err('El mes final no puede ser antes del inicial.');
+      const antes=nuevo?null:{monto:g.monto,dia:g.dia,tolerancia:g.tolerancia};
+      if(nuevo){const n=(S.db.fijos||[]).length+1;Object.assign(g,{id:uid('x'),codigo:'GF-'+String(n).padStart(3,'0'),creadoPor:S.user.u,creado:ahora(),log:[]});}
+      Object.assign(g,{provId,concepto:v('gxCon'),monto,conItbms:v('gxIt')==='1',dia,tolerancia:tol,desde,hasta});
+      g.log.push({t:ahora(),u:quien(),a:nuevo?'Registró el gasto fijo · '+money(monto)+(g.conItbms?' + ITBMS':'')+' el día '+dia+' de cada mes desde '+mesNombre(desde):
+        'Editó el gasto fijo'+(antes.monto!==monto?' · monto de '+money(antes.monto)+' a '+money(monto):'')+(antes.dia!==dia?' · día de '+antes.dia+' a '+dia:'')+(antes.tolerancia!==tol?' · tolerancia de '+antes.tolerancia+' % a '+tol+' %':'')});
+      await api.guardar('fijos',g);const n=generarFijos();
+      toast(nuevo?'Gasto fijo registrado.'+(n?' Se generaron '+n+' cargo'+(n>1?'s':'')+' de meses cuyo día ya pasó.':''):'Gasto fijo actualizado.');pintar();verFijo(g.id);
+    }}]);
+}
+function verFijo(id){
+  const g=fijo(id);if(!g||esProv())return;
+  const acc=[{t:'Cerrar',on:cerrarModal}];
+  if(PUEDE.registrar()){acc.unshift({t:'Editar',on:()=>formFijo(g)});
+    acc.unshift({t:g.activo?'Pausar':'Reactivar',cls:g.activo?'mal':'',on:async()=>{g.activo=!g.activo;g.log.push({t:ahora(),u:quien(),a:g.activo?'Reactivó el gasto fijo':'Pausó el gasto fijo: no se generan más cargos'});await api.guardar('fijos',g);if(g.activo)generarFijos();toast(g.activo?'Gasto fijo reactivado.':'Gasto fijo pausado.');pintar();verFijo(id);}});}
+  const desde=g.desde<mesSig(hoy().slice(0,7),-11)?mesSig(hoy().slice(0,7),-11):g.desde,meses=[];
+  for(let per=desde;per<=mesSig(hoy().slice(0,7),2);per=mesSig(per))meses.push(per);
+  modal(g.codigo+' · '+g.concepto,
+    '<div style="margin-bottom:14px">'+(g.activo?'<span class="chip ok">Activo</span>':'<span class="chip">Pausado</span>')+' <span class="mut">'+esc(prov(g.provId).nombre)+'</span></div>'+
+    '<div class="kv">'+[['Monto mensual',money(g.monto)+(g.conItbms?' + ITBMS':'')],['Total del cargo',money(totalFijo(g))],['Se refleja el día',g.dia+' de cada mes'],['Variación sin motivo','hasta '+g.tolerancia+' %'],['Desde',mesNombre(g.desde)],['Hasta',g.hasta?mesNombre(g.hasta):'Sin fecha final'],['Días de crédito',prov(g.provId).plazo+' días']].map(([k,v])=>'<div><span>'+k+'</span><b>'+esc(v)+'</b></div>').join('')+'</div>'+
+    '<h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Mes a mes</h2><div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Mes</th><th class="num">Monto</th><th>Estado</th></tr></thead><tbody>'+
+      meses.reverse().map(per=>{const e=estadoMes(g,per),f=e[2];return '<tr'+(f?' class="clic" data-act="verFac" data-id="'+f.id+'"':'')+'><td class="b">'+esc(mesNombre(per))+(f&&!f.fiscalPendiente?'<div class="mut">'+esc(f.numero)+'</div>':'')+'</td><td class="num">'+money(f?f.total:totalFijo(g))+'</td><td><span class="chip '+e[1]+'">'+esc(e[0])+'</span></td></tr>';}).join('')+
+    '</tbody></table></div><h2 style="font:800 14px var(--fd);letter-spacing:1px;text-transform:uppercase;color:var(--ind-t);margin:0 0 8px">Historial</h2>'+hist(g.log),acc);
+}
+/* el proveedor (o el coordinador) sube la factura fiscal sobre el cargo generado */
+function completarFijo(id){
+  const f=fac(id),g=fijo(f.fijoId),it=S.db.parametros.itbms;
+  modal('Factura fiscal · '+g.concepto+' · '+mesNombre(f.periodo),
+    '<div class="aviso info">Monto pactado: <b>'+money(g.monto)+'</b>'+(g.conItbms?' + ITBMS':'')+'. Puedes ajustarlo si la factura trae otro monto; si la diferencia pasa del '+g.tolerancia+' %, escribe el motivo.</div><div class="form">'+
+    '<label class="f"><span>Número de factura fiscal</span><input class="in" id="cfNum" placeholder="A-0001"></label>'+
+    '<label class="f"><span>Fecha de la factura fiscal</span><input class="in" type="date" id="cfFecha" value="'+esc(f.fecha)+'" max="'+hoy()+'"></label>'+
+    '<label class="f"><span>Subtotal (USD)</span><input class="in" type="number" step="0.01" min="0" id="cfSub" value="'+f.subtotal+'"></label>'+
+    '<div class="f"><span>Total con ITBMS</span><b id="cfTot" style="font:800 20px var(--fd)"></b></div>'+
+    '<label class="f full" id="cfMotW" hidden><span>Motivo de la variación</span><input class="in" id="cfMot" placeholder="Ej.: horas extra de vigilancia en el feriado"></label>'+
+    '<label class="f full"><span>Archivo de la factura fiscal · PDF, JPG o PNG, máximo 10 MB</span><input class="in" type="file" id="cfArch" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"></label>'+
+    '</div><div class="err-msg" id="mErr"></div>',
+    [{t:'Cancelar',on:()=>verFac(id)},{t:'Subir factura fiscal',cls:'pri',on:async()=>{
+      const err=m=>$('mErr').textContent=m,num=$('cfNum').value.trim(),fe=$('cfFecha').value,sub=r2($('cfSub').value),files=[...$('cfArch').files];
+      if(!num)return err('Escribe el número de la factura fiscal.');
+      if(S.db.facturas.some(x=>x!==f&&x.provId===f.provId&&x.numero.toLowerCase()===num.toLowerCase()))return err('Esa factura ya está registrada para este proveedor.');
+      if(!fe||fe>hoy())return err('Revisa la fecha de la factura fiscal.');
+      if(!(sub>0))return err('El subtotal debe ser mayor que cero.');
+      const varPc=Math.abs(sub-g.monto)/g.monto*100,mot=$('cfMot').value.trim();
+      if(varPc>g.tolerancia+0.001&&mot.length<4)return err('La variación es de '+varPc.toFixed(1)+' %: escribe el motivo.');
+      if(!files.length)return err('Adjunta el archivo de la factura fiscal.');
+      const malo=revisarArchivos(files);if(malo)return err(malo);
+      let adj;try{adj=(await Promise.all(files.map(x=>api.subirArchivo(x)))).map(a=>Object.assign(a,{clase:'fiscal'}));}catch(e){return err('No se pudo guardar el archivo en este navegador.');}
+      const itb=f.itbms>0?r2(sub*it/100):0,antes=f.total;
+      Object.assign(f,{numero:num,fecha:fe,vence:sumar(fe,prov(f.provId).plazo),subtotal:sub,itbms:itb,total:r2(sub+itb),fiscalPendiente:false,adjuntos:(f.adjuntos||[]).concat(adj),
+        variacion:Math.abs(sub-g.monto)>0.004?(sub>g.monto?'+':'-')+money(Math.abs(sub-g.monto))+' ('+varPc.toFixed(1)+' %)'+(mot?' · '+mot:''):''});
+      f.log.push({t:ahora(),u:firma(),a:'Subió la factura fiscal '+num+' del gasto fijo · '+money(f.total)+(Math.abs(f.total-antes)>0.004?' (pactado '+money(antes)+(mot?', motivo: '+mot:'')+')':'')});
+      await api.guardar('facturas',f);
+      notificar('fac_nueva','Factura fiscal de gasto fijo',prov(f.provId).nombre+' · '+g.concepto+' · '+mesNombre(f.periodo)+' · '+num+' por '+money(f.total)+'.',{act:'verFac',id:f.id});
+      toast('Factura fiscal subida. Sigue la validación contra el gasto fijo.');pintar();verFac(id);
+    }}]);
+  const upd=()=>{const sub=r2($('cfSub').value),tot=r2(sub+(f.itbms>0?sub*it/100:0)),pc=Math.abs(sub-g.monto)/g.monto*100;$('cfTot').textContent=money(tot);$('cfMotW').hidden=!(pc>g.tolerancia+0.001);};
+  $('cfSub').oninput=upd;upd();
 }
 
 /* ════════ NOTIFICACIONES ════════
@@ -1167,6 +1360,8 @@ const NOTIF=[
   ['pago_pend','Pagos por autorizar','Cada solicitud de pago nueva.',['aprobador','admin']],
   ['pago_aut','Pagos autorizados o rechazados','Listos para ejecutar o devueltos.',['coordinador','admin']],
   ['reclamo_nuevo','Reclamos de proveedores','Solicitudes de información o de programación de pago.',['coordinador','aprobador','admin']],
+  ['fijo_cargo','Cargos de gastos fijos','El día de cada gasto fijo, cuando la app genera el cargo del mes.',['coordinador','admin']],
+  ['p_fijo','Cargos mensuales de tu gasto fijo','Cuando se genera el cargo del mes: sube tu factura fiscal sobre él.',['proveedor']],
   ['venc','Resumen de vencimientos','Al entrar cada día: facturas vencidas y las que vencen en 3 días.',['coordinador','aprobador','admin']],
   ['p_fac','Estado de tus facturas','Validada, aprobada para pago o rechazada.',['proveedor']],
   ['p_pago','Tus pagos','Pago programado y pago realizado con su referencia.',['proveedor']],
@@ -1314,7 +1509,7 @@ function pasosTutorial(){
     P.push({nav:'facturas',sel:'.vhead [data-act="nuevaFac"]',t:'Subir factura fiscal',d:'Primero envías el respaldo por correo y DP World lo aprueba por correo. Después subes aquí la factura fiscal con su fecha, el archivo y los datos de ese correo. Vence en la fecha de la factura más tus días de crédito.'});
     P.push({nav:'facturas',sel:'#lista',t:'Mis facturas',d:'El estado de cada una: recibida, validada, aprobada para pago o pagada, y cuánto falta por pagar.'});
     P.push({nav:'pagos',sel:'#lista',t:'Mis pagos',d:'Pagos programados y realizados, con su referencia bancaria.'});
-    P.push({nav:'mapa',sel:'#lista',t:'Mapa de pagos',d:'Tus facturas por mes: verde pagadas, rojo vencidas y ámbar por vencer.'});
+    P.push({nav:'mapa',sel:'#lista',t:'Mapa de pagos',d:'Tus facturas por mes: verde pagadas, rojo vencidas, ámbar por vencer y gris los cargos fijos que aún no llegan a su día.'});
     P.push({nav:'reclamos',sel:'.vhead [data-act="nuevoReclamo"]',t:'Reclamos',d:'Si una factura se vence sin pago, pide información o la programación de su pago. DP World te responde aquí y te llega una notificación.'});
   }else{
     P.push({nav:'resumen',sel:()=>document.querySelector('.tareas')||document.querySelector('.kpis'),t:'Lo que te toca',d:r==='aprobador'?'Facturas por aprobar, pagos por autorizar, proveedores por aprobar y reclamos.':'Facturas por validar, pagos por ejecutar y reclamos de proveedores por responder.'});
@@ -1327,6 +1522,7 @@ function pasosTutorial(){
       P.push({nav:'pagos',sel:'#lista',t:'Pagos',d:'Autorizas o rechazas cada solicitud de pago.'});
       P.push({nav:'proveedores',sel:'#lista',t:'Proveedores',d:'Apruebas los proveedores nuevos cuando tienen todos sus documentos.'});
     }
+    P.push({nav:'fijos',sel:'#lista',t:'Gastos fijos',d:'Pagos que se repiten cada mes por un monto casi igual. Eliges el día del mes en que se reflejan como facturados: ese día la app genera el cargo y el proveedor sube su factura fiscal sobre él.'});
     P.push({nav:'mapa',sel:'#lista',t:'Mapa de pagos',d:'Proveedores en filas y meses en columnas: verde pagadas, rojo vencidas y ámbar por vencer. Toca una celda para ver sus facturas.'});
     P.push({nav:'reclamos',sel:'#lista',t:'Reclamos',d:'Los proveedores reclaman sus facturas vencidas. Respóndeles aquí y, si aplica, da la fecha programada de pago.'});
     P.push({nav:'bitacora',sel:'#lista',t:'Bitácora',d:'Cada acción con quién la hizo y cuándo.'});
@@ -1399,7 +1595,7 @@ const ACT={
   salir,cerrarModal,
   fondoModal:(id,el,e)=>{if(e.target===el)cerrarModal();},
   nuevoProv,nuevaFac,nuevoPago:()=>nuevoPago(),
-  verProv,verFac,verPago,verArchivo,quitarArchivo,verEstados,verReclamo,nuevoReclamo:id=>nuevoReclamo(id),verCelda,
+  verProv,verFac,verPago,verArchivo,quitarArchivo,verEstados,verFijo,nuevoFijo:()=>formFijo(),completarFijo,verReclamo,nuevoReclamo:id=>nuevoReclamo(id),verCelda,
   marcarLeidas,abrirAviso,avisoSw,tutSaltar:()=>cerrarTutorial(),tutAnt:()=>pasoTutorial(-1),tutSig:()=>_tour&&_tour.i===_tour.pasos.length-1?cerrarTutorial():pasoTutorial(1),irVista:id=>ir(id),pushOn:pushActivar,pushOff:pushDesactivar,pushTest:pushProbar,waOpen:()=>waMenu($('waMenu').hidden),waGo:()=>waMenu(false),
   guardarWa:async()=>{WA_CONTACTOS.forEach(([k])=>S.db.wa[k]=$('wa_'+k).value.trim());await api.parametros({});await api.registrar('Actualizó los contactos de WhatsApp','Parámetros');toast('Contactos guardados.');waPintar();},
   verCuenta:id=>{cerrarModal();S.f.ec=id;ir('cuenta');},
@@ -1416,7 +1612,7 @@ document.addEventListener('click',e=>{
   const fn=ACT[el.dataset.act];if(fn)fn(el.dataset.id,el,e);
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('modal').innerHTML)cerrarModal();});
-const LISTAS={re:listaReclamos,mb:pintarMapa,mm:pintarMapa,pq:listaProv,pe:listaProv,fq:listaFac,fe:listaFac,fp:listaFac,ge:listaPagos,ec:cuentaDetalle,bq:listaBitacora,bt:listaBitacora,bu:listaBitacora,bd:listaBitacora,bh:listaBitacora};
+const LISTAS={ft:listaFac,mt:pintarMapa,re:listaReclamos,mb:pintarMapa,mm:pintarMapa,pq:listaProv,pe:listaProv,fq:listaFac,fe:listaFac,fp:listaFac,ge:listaPagos,ec:cuentaDetalle,bq:listaBitacora,bt:listaBitacora,bu:listaBitacora,bd:listaBitacora,bh:listaBitacora};
 /* sin redibujar si el valor no cambió: el «change» al salir del buscador borraría la fila que se está tocando */
 ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const k=e.target.dataset&&e.target.dataset.f;if(!k||S.f[k]===e.target.value)return;S.f[k]=e.target.value;LISTAS[k]();}));
 
@@ -1435,6 +1631,7 @@ $('lgForm').onsubmit=e=>{
 };
 (async()=>{
   S.db=await api.cargar();
+  generarFijos();
   let ses=null;try{ses=localStorage.getItem(KEY_SES);}catch(e){}
   const u=ses&&S.db.usuarios.find(x=>x.u===ses&&x.activo);
   if(u)entrar(u);
