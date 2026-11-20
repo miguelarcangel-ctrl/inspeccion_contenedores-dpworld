@@ -1,0 +1,63 @@
+/* CSS de referencia de las piezas comunes. Va después de dpw-shell.css; usa las variables de color de la app
+   (--card, --card2, --b, --b2, --t, --t2, --t3, --ok, --err, --warn, --neu-bg, --ind-t, --fd, --fb). */
+/* interruptores de notificaciones (como Control de Horas y Last Mile) */
+.nt{display:grid;gap:6px}
+.nt-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--t2);margin-bottom:4px}
+.nt-i{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 12px;border:1px solid var(--b);border-radius:10px;background:var(--card2)}
+.nt-i div{display:grid;gap:2px;min-width:0}.nt-i b{font-size:14px;font-weight:600}.nt-i span{font-size:12px;color:var(--t2)}
+.sw{position:relative;flex:none;width:46px;height:26px;border-radius:13px;border:1px solid var(--b2);background:var(--neu-bg);cursor:pointer;transition:background .2s,border-color .2s;padding:0}
+.sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .2s}
+.sw.on{background:#00C389;border-color:#00C389}.sw.on i{transform:translateX(20px)}
+.link{background:none;border:0;padding:0;color:var(--ind-t);font:700 12.5px var(--fb);text-decoration:underline;cursor:pointer}
+.ntf-state{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:var(--neu-bg);margin-bottom:10px}
+.ntf-state .dot{width:10px;height:10px;border-radius:50%;background:var(--t3);flex:none}.ntf-state.on .dot{background:#00C389}
+.ntf-state b{display:block;font-size:14px}.ntf-state span{font-size:12.5px;color:var(--t2)}
+.ntf-steps{margin:6px 0 0;padding-left:20px;font-size:13.5px;line-height:1.6}
+.notif{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--b);border-radius:10px;background:var(--card);cursor:pointer}
+.notif:hover{border-color:var(--b2)}.notif.nueva{border-left:3px solid #00C389;background:var(--card2)}
+.notif b{display:block;font-size:14px}.notif p{margin:2px 0 0;font-size:13px;color:var(--t2)}.notif time{margin-left:auto;flex:none;font-size:12px;color:var(--t3);white-space:nowrap}
+/* WhatsApp flotante (como Last Mile) */
+.wa-fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:350;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.wa-btn{width:56px;height:56px;border-radius:50%;border:0;background:#25D366;color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .15s}
+.wa-btn:hover{transform:scale(1.06)}.wa-btn svg{width:30px;height:30px}
+.wa-menu{width:min(320px,calc(100vw - 36px));max-height:min(70vh,560px);overflow-y:auto;background:#fff;color:#1B1B2F;border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.wa-h{background:#075E54;color:#fff;padding:12px 14px;font:700 14px var(--fd);letter-spacing:.6px;text-transform:uppercase}
+.wa-h small{display:block;font:500 12px var(--fb);letter-spacing:0;text-transform:none;opacity:.8;margin-top:2px}
+.wa-i{display:grid;gap:1px;padding:11px 14px;border-top:1px solid #eef0f4;color:inherit;text-decoration:none}
+a.wa-i:hover{background:#f2fbf5}.wa-i b{font-size:14px}.wa-i span{font-size:12.5px;color:#475569}.wa-i small{font-size:11.5px;color:#64748B}
+.wa-i.off{opacity:.55}
+.wa-acts{display:flex;gap:6px;margin-top:6px}
+.wa-a{flex:1;text-align:center;padding:6px 8px;border-radius:8px;border:1px solid #cfe9d9;background:#f2fbf5;color:#075E54;font:700 12px var(--fd);letter-spacing:.5px;text-transform:uppercase;text-decoration:none}
+.wa-note{padding:10px 14px;border-top:1px solid #eef0f4;background:#fafafa;font-size:11.5px;color:#64748B;line-height:1.4}
+/* tutorial (como Control de Horas) */
+.tour{position:fixed;inset:0;z-index:2000}
+.tour-hole{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(8,6,30,.62);transition:all .25s ease;pointer-events:none;outline:2px solid #00C389;outline-offset:3px}
+.tour-hole.sin{width:0;height:0;left:50%;top:40%;outline:none}
+.tour-card{position:fixed;width:min(360px,calc(100vw - 24px));background:var(--card);color:var(--t);border:1px solid var(--b);border-radius:14px;padding:16px 16px 12px;box-shadow:0 18px 50px rgba(0,0,0,.4);transition:top .25s ease,left .25s ease}
+.tour-paso{font:700 11px var(--fd);letter-spacing:1.4px;text-transform:uppercase;color:var(--ok)}
+.tour-card h3{font:800 1.25rem var(--fd);letter-spacing:.3px;margin:4px 0 6px;text-transform:uppercase;color:var(--ind-t)}
+.tour-card p{font-size:.88rem;line-height:1.5;color:var(--t2);margin:0}
+.tour-nav{display:flex;gap:8px;align-items:center;margin-top:14px}.tour-nav .tour-saltar{margin-right:auto}
+.tour-puntos{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap}.tour-puntos i{width:6px;height:6px;border-radius:50%;background:var(--b2)}.tour-puntos i.on{background:#00C389}
+/* mapa de pagos */
+.mapa th.mes{text-align:center}
+.mapa thead th:first-child{left:0;z-index:2}
+.mapa td.cel{text-align:center;padding:6px}
+.mapa .c{display:block;min-width:92px;padding:8px 6px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-variant-numeric:tabular-nums}
+.mapa .c b{display:block;font:800 15px var(--fd);letter-spacing:.3px}.mapa .c small{display:block;font-size:11px;margin-top:2px}
+.mapa .c.verde{background:rgba(0,195,137,.16);border-color:rgba(0,195,137,.45);color:var(--ok)}
+.mapa .c.rojo{background:rgba(232,0,61,.13);border-color:rgba(232,0,61,.45);color:var(--err)}
+.mapa .c.ambar{background:var(--warn-bg);border-color:rgba(245,162,11,.45);color:var(--warn)}
+.mapa .c.vac{color:var(--t3);cursor:default}
+.mapa td.pv{position:sticky;left:0;background:var(--card);z-index:1;min-width:170px}
+@media (max-width:640px){.mapa td.pv{min-width:124px;font-size:13px}.mapa .c{min-width:84px}}
+.ley{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--t2);margin:0 0 12px}
+.ley i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+/* hilo de reclamos */
+.hilo{display:grid;gap:8px;margin-bottom:14px}
+.msg{max-width:88%;padding:10px 12px;border-radius:12px;font-size:14px;line-height:1.45}
+.msg.prov{background:var(--card2);border:1px solid var(--b);justify-self:start}
+.msg.dpw{background:rgba(62,60,144,.1);border:1px solid rgba(62,60,144,.25);justify-self:end}
+.msg small{display:block;font-size:11.5px;color:var(--t3);margin-bottom:3px}
+.msg .prog{margin-top:6px;font-weight:700;color:var(--ok)}
+@media (prefers-reduced-motion:reduce){.sw,.sw i,.wa-btn,.tour-hole,.tour-card{transition:none}}
